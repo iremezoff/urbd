@@ -192,7 +192,7 @@ namespace Ugoria.URBD.CentralService
         public void SendCommand (Command command)
         {
             // Проверить, если база вообще существует, иначе записать в логи, что базы нет
-            IRemoteService remoteService = services[command.baseName];
+            IRemoteService remoteService = serviceBases[command.baseName];
 
             remoteService.CommandExecute(command);
         }

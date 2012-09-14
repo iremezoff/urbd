@@ -80,7 +80,7 @@ namespace Ugoria.URBD.CentralService
                 remoteService.Configure(conf);
                 Event(this, new NoticeEventArgs("Конфигурирование сервиса"));
             });
-            Invoke(operation);
+            Invoke(operation, configuration);
         }
 
         public void CommandExecute (Command command)
@@ -120,7 +120,7 @@ namespace Ugoria.URBD.CentralService
         {
             Delegate operation = new Func<CheckCommand, RemoteProcessStatus>(cmd =>
             {
-                return remoteService.CheckProcess(checkCommand);
+                return remoteService.CheckProcess(cmd);
                 //Event(this, new NoticeEventArgs("Проверка сервиса"));
             });
 
