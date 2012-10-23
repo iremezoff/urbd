@@ -4,128 +4,141 @@ using System.Linq;
 using System.Text;
 using System.ServiceModel;
 using Ugoria.URBD.Contracts;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.Contracts.Data;
 using Ugoria.URBD.Contracts.Data.Commands;
+using System.Net.Sockets;
+using System.Threading;
 
 namespace Ugoria.URBD.CentralService
 {
-    public delegate void NoticeHandler (RemoteServiceProxy sender, NoticeEventArgs e);
-    public delegate void CommandSendedHandler (RemoteServiceProxy sender, SendCommandEventArgs e);
     public enum Code { FaultFail, CommunicationFail, Success, MissProcess };
 
-    public class RemoteServiceProxy : IRemoteService
+    public class RemoteServiceProxy : IRemoteService, IDisposable
     {
         #region privates
+        private int attempts = 3;
         private IRemoteService remoteService;
-        private int attemptCount = 3;
-        private object objLock = new object(); // для предотвращения одновременных отправок нескольких команд
 
-        private Uri addr;
+        private Exception exception;
+
+        public Exception Exception
+        {
+            get { return exception; }
+        }
+
+        private EndpointAddress addr;
         private ChannelFactory<IRemoteService> channelFactory;
         #endregion
 
-        #region events
-        public event NoticeHandler Event;// = new NoticeHandler((a1, a2) => { });
-        public event CommandSendedHandler CommandSended;
-        #endregion
+        private ICommunicationObject commObj;
 
-        #region Properties
-        public IRemoteService RemoteService
+        private bool isSuccess;
+
+        public bool IsSuccess
         {
-            get { return remoteService; }
-            set { remoteService = value; }
+            get { return isSuccess; }
         }
 
-        public int AttemptCount
+        public RemoteServiceProxy (ChannelFactory<IRemoteService> channelFactory, EndpointAddress addr)
         {
-            get { return attemptCount; }
-        }
-        #endregion
-
-        public RemoteServiceProxy (Uri addr, ChannelFactory<IRemoteService> channelFactory)
-        {
-            this.addr = addr;
             this.channelFactory = channelFactory;
-            remoteService = channelFactory.CreateChannel(new EndpointAddress(addr));
+            this.addr = addr;
+            remoteService = channelFactory.CreateChannel(addr);
+            commObj = (ICommunicationObject)remoteService;
         }
 
-        private object Invoke (Delegate operation, params object[] args)
+        private void RebuildService (Exception ex)
         {
-            lock (objLock)
+            attempts--;
+            Thread.Sleep(new TimeSpan(0,0,30));
+            remoteService = channelFactory.CreateChannel(addr);
+            commObj = (ICommunicationObject)remoteService;
+            exception = ex;
+        }
+
+        public void ResetConfiguration ()
+        {
+            while (attempts > 0)
             {
-                while (attemptCount > 0)
+                try
                 {
-                    try
-                    {
-                        return operation.DynamicInvoke(args);
-                    }
-                    catch (Exception ex)
-                    {
-                        attemptCount--;
-                        if (attemptCount > 0)
-                            remoteService = channelFactory.CreateChannel(new EndpointAddress(addr));
-                        else
-                            Event(this, new NoticeEventArgs(ex));
-                    }
+                    //commObj.Open();
+                    remoteService.ResetConfiguration();
+                    isSuccess = true;
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    RebuildService(ex);
                 }
             }
-            return null;
-        }
-
-        public void Configure (RemoteConfiguration configuration)
-        {
-            Delegate operation = new Action<RemoteConfiguration>(conf =>
-            {
-                remoteService.Configure(conf);
-                Event(this, new NoticeEventArgs("Конфигурирование сервиса"));
-            });
-            Invoke(operation, configuration);
         }
 
         public void CommandExecute (Command command)
         {
-            command.commandDate = DateTime.Now; // команда подана
-            command.guid = Guid.NewGuid();
-            Delegate operation = new Action<Command>(cmd =>
+            while (attempts > 0)
             {
-                remoteService.CommandExecute(cmd);
-                // здесь также указать, какая база обновляется
-                string message = String.Format("Запрос на {0}.\nИБ: {1}.\nРежим: {2}.\nMD: {3}.",
-                    cmd.commandType == CommandType.Exchange ? "обмен пакетами" : "обновление ExtForms",
-                    cmd.baseName,
-                    cmd.commandType == CommandType.Exchange ? cmd.modeType.ToString() : "-",
-                    cmd.commandType == CommandType.Exchange ? cmd.withMD.ToString() : "-");
-                Event(this, new NoticeEventArgs(message));
-
-                CommandSended(this, new SendCommandEventArgs(cmd));
-            });
-
-            Invoke(operation, command);
-        }
-
-
-        public void RegisterCentralService (Uri centralUri)
-        {
-            Delegate operation = new Action<Uri>(uri =>
-            {
-                remoteService.RegisterCentralService(uri);
-                Event(this, new NoticeEventArgs("Сервис зарегистрирован"));
-            });
-
-            Invoke(operation, centralUri);
+                try
+                {
+                    remoteService.CommandExecute(command);
+                    isSuccess = true;
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    RebuildService(ex);
+                }
+            }
         }
 
         public RemoteProcessStatus CheckProcess (CheckCommand checkCommand)
         {
-            Delegate operation = new Func<CheckCommand, RemoteProcessStatus>(cmd =>
+            while (attempts > 0)
             {
-                return remoteService.CheckProcess(cmd);
-                //Event(this, new NoticeEventArgs("Проверка сервиса"));
-            });
+                try
+                {
+                    RemoteProcessStatus status = remoteService.CheckProcess(checkCommand);
+                    commObj.Close();
+                    isSuccess = true;
+                    return status;
+                }
+                catch (Exception ex)
+                {
+                    RebuildService(ex);
+                }
+            }
+            return RemoteProcessStatus.UnknownFail;
+        }
 
-            object status = Invoke(operation, checkCommand) ?? RemoteProcessStatus.UnknownFail;
-            return (RemoteProcessStatus)status;
+        public void Dispose ()
+        {
+            try
+            {
+                // Определить, односторонняя ли операция и вырубить соединение
+                //if (commObj.State == CommunicationState.Opened)
+                //  commObj.Close();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public void InterruptProcess(Guid commandGuid)
+        {
+            while (attempts > 0)
+            {
+                try
+                {
+                    remoteService.InterruptProcess(commandGuid);
+                    isSuccess = true;
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    RebuildService(ex);
+                }
+            }
         }
     }
 }

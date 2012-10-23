@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.ServiceModel;
 using Ugoria.URBD.Contracts.Data.Reports;
+using Ugoria.URBD.Contracts.Data;
 
-namespace Ugoria.URBD.Contracts.Service
+namespace Ugoria.URBD.Contracts.Services
 {
     [ServiceContract]
     public interface ICentralService
@@ -16,7 +17,7 @@ namespace Ugoria.URBD.Contracts.Service
         [OperationContract(IsOneWay = true)]
         void NoticeReport (OperationReport report, Uri address);
 
-        [OperationContract(IsOneWay = true)]
-        void RequestConfiguration (Uri address);
+        [OperationContract]
+        RemoteConfiguration RequestConfiguration (Uri address);
     }
 }

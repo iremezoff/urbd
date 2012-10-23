@@ -7,13 +7,14 @@ namespace Ugoria.URBD.Core.Reporting
 {
     class ReportInfo
     {
-        public string serviceAddress;
-        public string baseName;
-        public DateTime commandDate;
-        public DateTime startDate;
-        public DateTime completeDate;
-        public int pid;
-        public Guid reportGuid;
-        public Guid launchGuid;
+        public string ServiceAddress { get; set; }
+        public string BaseName { get; set; }
+        public DateTime CommandDate { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime CompleteDate { get; set; }
+        public DateTime ReleaseDate { get; set; }
+        public int Pid { get; set; }
+        public Guid ReportGuid { get; set; }
+        public Guid LaunchGuid { get; set; }
     }
 }

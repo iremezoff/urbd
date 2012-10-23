@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Ugoria.URBD.Logging;
 
 namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
 {
@@ -7,24 +8,21 @@ namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
     {
         private bool attempt = false;
         private int waitTime = 10; // 10 минут
+        private Verifier verifier;
 
-        public new string Status
-        {
-            get { return "Normal mode: " + status; }
-        }
-
-        public NormalMode (string logFilename, int waitTime)
-            : base(logFilename)
+        public NormalMode(Verifier verifier, int waitTime)
+            : base(verifier)
         {
             this.waitTime = waitTime;
         }
 
-        public override bool Verification ()
+        public override bool CompleteExchange()
         {
             // ошибок при обмене не было либо ранее попытка была проведена
-            if (base.Verification() || attempt)
+            if (base.CompleteExchange() || attempt)
                 return true;
 
+            LogHelper.Write2Log("Режим Normal. Повтор запуска через (мин):" + waitTime, LogLevel.Information);
             attempt = true; // попытались раз
             Thread.Sleep(new TimeSpan(0, waitTime, 0)); // спать 10 минут до следующей попытки
             return false;

@@ -3,53 +3,73 @@ using Ugoria.URBD.Contracts;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using Ugoria.URBD.Contracts.Data.Commands;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.Contracts.Data;
+using System.Net.Sockets;
 
 namespace Ugoria.URBD.RemoteService
 {
-    public delegate void RegisteredHandler(IRemoteService sender, RegisteredEventArgs args);
-    public delegate void ConfiguredHandler(IRemoteService sender, ConfigureEventArgs args);
+    public delegate void ResetConfigureHandler(IRemoteService sender, EventArgs args);
     public delegate void CommandSendedHandler(IRemoteService sender, CommandEventArgs args);
     public delegate RemoteProcessStatus CheckProcessHandler(IRemoteService sender, CheckEventArgs args);
+    public delegate void InterruptProcessHandler(IRemoteService sender, InterruptEventArgs args);
 
-    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Single)] // единственный экземпляр на все входящие подключения и последовательная обработка входящих команд
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Single, IncludeExceptionDetailInFaults = true)] // единственный экземпляр на все входящие подключения и последовательная обработка входящих команд
     class RemoteService : IRemoteService
     {
-        public event RegisteredHandler Registered;
-        public event ConfiguredHandler Configured;
+        public event ResetConfigureHandler Configured;
         public event CommandSendedHandler CommandSended;
         public event CheckProcessHandler ProcessChecked;
+        public event InterruptProcessHandler Interrupted;
 
-        public void Configure(RemoteConfiguration configuration)
+        private Uri localUri;
+        private Uri centralUri;
+
+        public Uri CentralUri
         {
-            Console.WriteLine("конфигурирование сервиса");
+            get { return centralUri; }
+        }
+
+        public Uri LocalUri
+        {
+            get { return localUri; }
+        }
+
+        public void ResetConfiguration()
+        {
+            localUri = OperationContext.Current.IncomingMessageProperties.Via;
+            RemoteEndpointMessageProperty property = (RemoteEndpointMessageProperty)OperationContext.Current.IncomingMessageProperties[RemoteEndpointMessageProperty.Name];
+            centralUri = new Uri(String.Format("net.tcp://{0}:8000/URBDCentralService", property.Address));
             if (Configured != null)
-                Configured(this, new ConfigureEventArgs(configuration));
+                Configured(this, new EventArgs());
         }
 
         public void CommandExecute(Command command)
         {
-            Console.WriteLine("послана команда");
+            localUri = OperationContext.Current.IncomingMessageProperties.Via;
+            RemoteEndpointMessageProperty property = (RemoteEndpointMessageProperty)OperationContext.Current.IncomingMessageProperties[RemoteEndpointMessageProperty.Name];
+            centralUri = new Uri(String.Format("net.tcp://{0}:8000/URBDCentralService", property.Address));
             if (CommandSended != null)
                 CommandSended(this, new CommandEventArgs(command));
         }
 
-        public void RegisterCentralService(Uri callbackUri)
-        {
-            RemoteEndpointMessageProperty property = (RemoteEndpointMessageProperty)OperationContext.Current.IncomingMessageProperties[RemoteEndpointMessageProperty.Name];
-            Console.WriteLine("регистрация сервиса");
-            string ctor = String.Format("{0}://{1}:{2}{3}", callbackUri.Scheme, property.Address, callbackUri.Port, callbackUri.LocalPath);
-            if (Registered != null)
-                Registered(this, new RegisteredEventArgs(new Uri(ctor), OperationContext.Current.IncomingMessageProperties.Via));
-        }
-
         public RemoteProcessStatus CheckProcess(CheckCommand command)
         {
-            Console.WriteLine("проверка процесса");
+            localUri = OperationContext.Current.IncomingMessageProperties.Via;
+            RemoteEndpointMessageProperty property = (RemoteEndpointMessageProperty)OperationContext.Current.IncomingMessageProperties[RemoteEndpointMessageProperty.Name];
+            centralUri = new Uri(String.Format("net.tcp://{0}:8000/URBDCentralService", property.Address)); 
             if (ProcessChecked != null)
                 return ProcessChecked(this, new CheckEventArgs(command));
             return RemoteProcessStatus.UnknownFail;
+        }
+
+        public void InterruptProcess(Guid reportGuid)
+        {
+            localUri = OperationContext.Current.IncomingMessageProperties.Via;
+            RemoteEndpointMessageProperty property = (RemoteEndpointMessageProperty)OperationContext.Current.IncomingMessageProperties[RemoteEndpointMessageProperty.Name];
+            centralUri = new Uri(String.Format("net.tcp://{0}:8000/URBDCentralService", property.Address));
+            if (Interrupted != null)
+                Interrupted(this, new InterruptEventArgs(reportGuid));
         }
     }
 
@@ -98,6 +118,21 @@ namespace Ugoria.URBD.RemoteService
         }
     }
 
+    public class InterruptEventArgs : EventArgs
+    {
+        private Guid guid;
+
+        public Guid CommandGuid
+        {
+            get { return guid; }
+        }
+
+        internal InterruptEventArgs(Guid guid)
+        {
+            this.guid = guid;
+        }
+    }
+
     public class RegisteredEventArgs : EventArgs
     {
         private Uri centralUri;
@@ -106,7 +141,7 @@ namespace Ugoria.URBD.RemoteService
         public Uri CentralUri
         {
             get { return centralUri; }
-        }        
+        }
 
         public Uri LocalUri
         {

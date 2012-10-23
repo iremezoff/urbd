@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
 
 namespace Ugoria.URBD.Contracts.Data.Commands
 {
@@ -14,7 +14,7 @@ namespace Ugoria.URBD.Contracts.Data.Commands
         public Guid guid;
 
         [DataMember]
-        public string baseName = "";
+        public int baseId;
 
         [DataMember]
         public DateTime commandDate;
@@ -26,6 +26,6 @@ namespace Ugoria.URBD.Contracts.Data.Commands
         public ModeType modeType;
 
         [DataMember]
-        public bool withMD;
+        public DateTime releaseUpdate;
     }
 }

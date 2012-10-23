@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 using System.IO;
-using ICSharpCode.SharpZipLib.Zip;
 
 namespace Ugoria.URBD.RemoteService
 {
@@ -21,11 +20,11 @@ namespace Ugoria.URBD.RemoteService
 
         public static string GetFileMd5Hash(string filepath)
         {
-            FileStream fileStream = new FileStream(filepath, FileMode.Open);
-
-            byte[] data = md5Hash.ComputeHash(fileStream);
-
-            return GetStringFromMD5Byte(data);
+            using (FileStream fileStream = new FileStream(filepath, FileMode.Open))
+            {
+                byte[] data = md5Hash.ComputeHash(fileStream);
+                return GetStringFromMD5Byte(data);
+            }
         }
 
         public static string GetStringFromMD5Byte(byte[] data)

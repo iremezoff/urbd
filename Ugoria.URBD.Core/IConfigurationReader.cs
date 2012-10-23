@@ -37,7 +37,7 @@ namespace Ugoria.URBD.Core
             this.dataProvider = dataProvider;
         }
 
-        private Hashtable ParseData(DataTable dataTable)
+        private static Hashtable ParseData(DataTable dataTable)
         {
             Hashtable hashtable = new Hashtable();
 
@@ -48,7 +48,7 @@ namespace Ugoria.URBD.Core
             return hashtable;
         }
 
-        private Hashtable ParseData(DataRow dataRow)
+        private static Hashtable ParseData(DataRow dataRow)
         {
             Hashtable hashtable = new Hashtable();
             foreach (DataColumn column in dataRow.Table.Columns)
@@ -58,16 +58,15 @@ namespace Ugoria.URBD.Core
             return hashtable;
         }
 
+        public static IConfiguration GetConfiguration(DataRow dataRow)
+        {
+            return new Configuration(ParseData(dataRow));
+        }
+
         public IConfiguration GetCentralServiceConfiguration()
         {
             DataTable settingsData = dataProvider.GetSettings();
             return new Configuration(ParseData(settingsData));
-        }
-
-        public IConfiguration GetRemoteService(string basename) {
-            DataSet dataSet = dataProvider.GetScheduleData(basename);
-            
-            return new Configuration(ParseData(dataSet.Tables["Base"]));
         }
 
         public IConfiguration GetRemoteServiceConfiguration(string address)

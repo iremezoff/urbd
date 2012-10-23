@@ -15,7 +15,10 @@ namespace Ugoria.URBD.Contracts.Data.Reports
         public Guid reportGuid;
 
         [DataMember]
-        public string baseName = "";
+        public int baseId;
+
+        [DataMember]
+        public string baseName="";
 
         [DataMember]
         public DateTime dateCommand;

@@ -9,6 +9,8 @@ namespace Ugoria.URBD.RemoteService
     interface ICommandStrategy
     {
         Guid LaunchGuid {get;}
+        bool IsInterrupt { get; }
         void Launch(ReportAsyncCallback reportAsyncsCallback);
+        void Interrupt();
     }
 }

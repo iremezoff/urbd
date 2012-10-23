@@ -7,17 +7,13 @@ namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
 {
     class PassiveMode : ModeStrategy
     {
-        public new string Status
-        {
-            get { return "Passive mode: " + status; }
-        }
+        public PassiveMode (Verifier verifier)
+            : base(verifier) { }
 
-        public PassiveMode (string logFilename)
-            : base(logFilename) { }
-
-        public override bool Verification ()
+        public override bool CompleteExchange ()
         {
-            return base.Verification();
+            base.CompleteExchange();
+            return true;
         }
     }
 }

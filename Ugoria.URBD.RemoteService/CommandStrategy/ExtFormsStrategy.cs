@@ -26,5 +26,15 @@ namespace Ugoria.URBD.RemoteService
         {
             get { throw new NotImplementedException(); }
         }
+
+        public bool IsInterrupt
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public void Interrupt()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

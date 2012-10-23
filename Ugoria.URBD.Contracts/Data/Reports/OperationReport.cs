@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
 
 namespace Ugoria.URBD.Contracts.Data.Reports
 {
@@ -25,5 +25,11 @@ namespace Ugoria.URBD.Contracts.Data.Reports
 
         [DataMember]
         public List<ReportPacket> packetList = new List<ReportPacket>();
+
+        [DataMember]
+        public string mdRelease = "";
+
+        [DataMember]
+        public DateTime dateRelease;
     }
 }

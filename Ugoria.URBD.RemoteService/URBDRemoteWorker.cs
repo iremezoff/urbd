@@ -1,54 +1,70 @@
 ﻿using System;
 using System.ServiceModel;
 using Ugoria.URBD.Contracts;
-using Ugoria.URBD.Core;
 using System.ServiceModel.Channels;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.Contracts.Data.Reports;
+using Ugoria.URBD.Contracts.Data;
+using Ugoria.URBD.Logging;
 
 namespace Ugoria.URBD.RemoteService
 {
-    class URBDRemoteWorker
+    public class URBDRemoteWorker
     {
         private RemoteService service;
         private ServiceHost serviceHost;
         private QueueExecuteManager queueManager;
-        private ICentralService centralService;
-        //private ILogger logger;
         private RemoteConfigurationManager remoteConfigurationManager;
         private ChannelFactory<ICentralService> channelFactory;
-        private Uri localUri;
-        private Uri centralUri;
-        private string port = "7000";
-        private ICommunicationObject comm;
 
-        public URBDRemoteWorker ()
+        public URBDRemoteWorker()
         {
             Init();
         }
 
-        private void Init ()
+        private void Init()
         {
+            LogHelper.IsConsoleOutputEnabled = true;
+            LogHelper.CurrentComponent = URBDComponent.Remote;
+
             remoteConfigurationManager = new RemoteConfigurationManager();
             queueManager = new QueueExecuteManager(remoteConfigurationManager);
 
             service = new RemoteService();
-            service.Registered += ServiceRegistered;
-            service.Configured += ServiceConfigure;
+            service.Configured += ResetConfiguration;
             service.CommandSended += ServiceCommandSender;
             service.ProcessChecked += ServiceProcessCheck;
+            service.Interrupted += ServiceInterrupt;
             serviceHost = new ServiceHost(service);
-            serviceHost.AddServiceEndpoint(typeof(IRemoteService),
-                new NetTcpBinding(SecurityMode.None),
-                new Uri(String.Format("net.tcp://localhost:{0}/URBDRemoteService", port)));
 
             channelFactory = new ChannelFactory<ICentralService>(new NetTcpBinding(SecurityMode.None));
         }
 
-        public void ServiceConfigure (IRemoteService service, ConfigureEventArgs args)
+        public void ServiceInterrupt(IRemoteService service, InterruptEventArgs e)
         {
-            // конфигурирование только при отсутствующих процессах 1С - предусмотреть
-            remoteConfigurationManager.RemoteConfiguration = args.Configuration;
+            RequireConfiguration();
+
+            LogHelper.Write2Log("Запрос на снятие задачи " + e.CommandGuid, LogLevel.Information);
+            try
+            {
+                queueManager.KillTask(e.CommandGuid, OperationCallback);
+                LogHelper.Write2Log("Попытка снятия задачи завершена " + e.CommandGuid, LogLevel.Information);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Write2Log(ex);
+            }
+        }
+
+        public void ResetConfiguration(IRemoteService service, EventArgs args)
+        {
+            LogHelper.Write2Log("Сброс конфигурации", LogLevel.Information);
+            remoteConfigurationManager.RemoteConfiguration = null;
+        }
+
+        private void Configure(RemoteConfiguration configuration)
+        {
+            remoteConfigurationManager.RemoteConfiguration = configuration;
             lock (queueManager)
             {
                 remoteConfigurationManager.CreateFileAndRegistryKeys();
@@ -56,59 +72,60 @@ namespace Ugoria.URBD.RemoteService
             }
         }
 
-        public void ServiceRegistered (IRemoteService service, RegisteredEventArgs args)
+        public void RequireConfiguration()
         {
-            centralUri = args.CentralUri;
-            centralService = channelFactory.CreateChannel(new EndpointAddress(centralUri));
+            // конфигурирование только при отсутствующих процессах 1С - предусмотреть
+            if (remoteConfigurationManager.RemoteConfiguration != null)
+                return;
+            LogHelper.Write2Log("Конфигурирование сервиса", LogLevel.Information);
 
-            ICommunicationObject comm = (ICommunicationObject)centralService;
-            comm.Open();
-
-            localUri = args.LocalUri;
-
-            if (remoteConfigurationManager.RemoteConfiguration == null)
-                centralService.RequestConfiguration(args.LocalUri);
-        }
-
-        public void ServiceCommandSender (IRemoteService service, CommandEventArgs args)
-        {
-            queueManager.AddOperation(args.Command, OperationCallback);
-        }
-
-        private void OperationCallback (Report report)
-        {
-            bool isDone = false;
-            int attemptCount = 3;
-            while (!isDone)
+            try
             {
-                try
+                using (CentralServiceProxy proxy = new CentralServiceProxy(channelFactory, new EndpointAddress(service.CentralUri)))
                 {
-                    if (report is LaunchReport)
-                        centralService.NoticePID1C((LaunchReport)report, localUri);
+                    remoteConfigurationManager.RemoteConfiguration = proxy.RequestConfiguration(service.LocalUri);
+                    remoteConfigurationManager.CreateFileAndRegistryKeys();
+                    queueManager.ConfigurationManager = remoteConfigurationManager;
+
+                    if (!proxy.IsSuccess)
+                        LogHelper.Write2Log(proxy.Exception);
                     else
-                    {
-                        Console.WriteLine(((ICommunicationObject)centralService).State);
-                        centralService.NoticeReport((OperationReport)report, localUri);
-                        Console.WriteLine(((ICommunicationObject)centralService).State);
-                    }
-                    isDone = true;
+                        LogHelper.Write2Log("Сервис сконфигурирован", LogLevel.Information);
                 }
-                catch (Exception ex)
-                {
-                    attemptCount--;
-                    if (attemptCount > 0)
-                        centralService = channelFactory.CreateChannel(new EndpointAddress(centralUri));
-                    else
-                    {
-                        // panick
-                        isDone = true;
-                    }
-                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Write2Log(ex);
             }
         }
 
-        private RemoteProcessStatus ServiceProcessCheck (IRemoteService service, CheckEventArgs args)
+        public void ServiceCommandSender(IRemoteService service, CommandEventArgs args)
         {
+            RequireConfiguration();
+
+            LogHelper.Write2Log("Постановка задачи в очередь", LogLevel.Information);
+            queueManager.AddOperation(args.Command, OperationCallback);
+        }
+
+        private void OperationCallback(Report report)
+        {
+            LogHelper.Write2Log("Отправка отчета " + report.GetType(), LogLevel.Information);
+
+            using (CentralServiceProxy proxy = new CentralServiceProxy(channelFactory, new EndpointAddress(service.CentralUri)))
+            {
+                if (report is LaunchReport)
+                    proxy.NoticePID1C((LaunchReport)report, service.LocalUri);
+                else
+                    proxy.NoticeReport((OperationReport)report, service.LocalUri);
+                if (!proxy.IsSuccess)
+                    LogHelper.Write2Log(proxy.Exception);
+            }
+        }
+
+        private RemoteProcessStatus ServiceProcessCheck(IRemoteService service, CheckEventArgs args)
+        {
+            RequireConfiguration();
+            LogHelper.Write2Log("Проверка работы процесса 1С", LogLevel.Information);
             // гребаная логика
             // если запуск 1С был, известны время старта (startDate) и pid 
             if (args.CheckCommand.launchGuid != Guid.Empty)
@@ -127,14 +144,31 @@ namespace Ugoria.URBD.RemoteService
             return RemoteProcessStatus.ServiceFail;
         }
 
-        public void Start ()
+        public void Start()
         {
-            serviceHost.Open();
+            try
+            {
+                LogHelper.Write2Log("Запуск удаленного сервиса", LogLevel.Information);
+                remoteConfigurationManager.RemoteConfiguration = null;
+                serviceHost.Open();
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Write2Log(ex);
+            }
         }
 
-        public void Stop ()
+        public void Stop()
         {
-            serviceHost.Close();
+            try
+            {
+                LogHelper.Write2Log("Остановка удаленного сервиса", LogLevel.Information);
+                serviceHost.Close();
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Write2Log(ex);
+            }
         }
     }
 }

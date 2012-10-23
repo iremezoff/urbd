@@ -7,13 +7,14 @@ using System.Net;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using Ugoria.URBD.Contracts.Data.Reports;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
+using Ugoria.URBD.Contracts.Data;
 
 namespace Ugoria.URBD.CentralService
 {
-    public delegate void RemoteServiceHandler(ICentralService sender, RequestConfigureEventArgs args);
-    public delegate void RemoteNoticePID1CHandler(ICentralService sender, NoticePID1CArgs args);
-    public delegate void RemoteNoticeReportHandler(ICentralService sender, NoticeReportArgs args);
+    public delegate RemoteConfiguration RemoteServiceHandler (ICentralService sender, RequestConfigureEventArgs args);
+    public delegate void RemoteNoticePID1CHandler (ICentralService sender, NoticePID1CArgs args);
+    public delegate void RemoteNoticeReportHandler (ICentralService sender, NoticeReportArgs args);
 
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Multiple)]
     class CentralService : ICentralService
@@ -24,27 +25,24 @@ namespace Ugoria.URBD.CentralService
         public event RemoteNoticeReportHandler RemoteNoticeReport;
         #endregion
 
-
-        public void NoticePID1C(LaunchReport launchReport, Uri address)
-        {            
+        public void NoticePID1C (LaunchReport launchReport, Uri address)
+        {
             if (RemoteNoticePID1C != null)
                 RemoteNoticePID1C(this, new NoticePID1CArgs(launchReport, address));
-            Console.WriteLine("remote: запущен notepad, PID: " + launchReport.pid);
         }
 
         public void NoticeReport (OperationReport report, Uri address)
         {
             if (RemoteNoticeReport != null)
                 RemoteNoticeReport(this, new NoticeReportArgs(report, address));
-            Console.WriteLine("remote: " + report.status);
         }
 
-        public void RequestConfiguration(Uri address)        {
+        public RemoteConfiguration RequestConfiguration (Uri address)
+        {
             RemoteEndpointMessageProperty property = (RemoteEndpointMessageProperty)OperationContext.Current.IncomingMessageProperties[RemoteEndpointMessageProperty.Name];
-            Console.WriteLine("регистрация сервиса" + property.Address + " " + property.Port);
             if (RemoteRequestConfiguration != null)
-                RemoteRequestConfiguration(this, new RequestConfigureEventArgs(address));
-            Console.WriteLine("remote: запрос конфигурации");
+                return RemoteRequestConfiguration(this, new RequestConfigureEventArgs(address));
+            return null;            
         }
     }
 
@@ -57,7 +55,7 @@ namespace Ugoria.URBD.CentralService
             get { return uri; }
         }
 
-        internal RequestConfigureEventArgs(Uri uri)
+        internal RequestConfigureEventArgs (Uri uri)
         {
             this.uri = uri;
         }
@@ -79,7 +77,7 @@ namespace Ugoria.URBD.CentralService
             get { return uri; }
         }
 
-        internal NoticePID1CArgs(LaunchReport report, Uri uri)
+        internal NoticePID1CArgs (LaunchReport report, Uri uri)
         {
             this.launchReport = report;
             this.uri = uri;
@@ -102,7 +100,7 @@ namespace Ugoria.URBD.CentralService
             get { return uri; }
         }
 
-        internal NoticeReportArgs(OperationReport report, Uri uri)
+        internal NoticeReportArgs (OperationReport report, Uri uri)
         {
             this.report = report;
             this.uri = uri;

@@ -6,7 +6,7 @@ using Ugoria.URBD.Contracts;
 using System.IO;
 using Ugoria.URBD.Contracts.Data;
 using Ugoria.URBD.Contracts.Data.Reports;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
 
 namespace Ugoria.URBD.RemoteService
 {
@@ -26,13 +26,7 @@ namespace Ugoria.URBD.RemoteService
             get { return message; }
             set { message = value; }
         }
-        private DateTime startDate;
 
-        public DateTime StartDate
-        {
-            get { return startDate; }
-            set { startDate = value; }
-        }
         private DateTime completeDate;
 
         public DateTime CompleteDate
@@ -47,11 +41,21 @@ namespace Ugoria.URBD.RemoteService
         {
             get { return packetList; }
         }
-        private List<MLGMessage> messageList = new List<MLGMessage>();
 
-        public List<MLGMessage> Messages
+        private string mdRelease = "";
+
+        public string MDRelease
         {
-            get { return messageList; }
+            get { return mdRelease; }
+            set { mdRelease = value; }
+        }
+
+        private DateTime releaseDate;
+
+        public DateTime ReleaseDate
+        {
+            get { return releaseDate; }
+            set { releaseDate = value; }
         }
 
         private OperationReportBuilder()
@@ -89,9 +93,10 @@ namespace Ugoria.URBD.RemoteService
             {
                 message = message,
                 status = status,
-                dateComplete = completeDate
+                dateComplete = completeDate,
+                mdRelease = mdRelease,
+                dateRelease = releaseDate
             };
-            report.messageList.AddRange(messageList);
             report.packetList.AddRange(packetList);
             return report;
         }

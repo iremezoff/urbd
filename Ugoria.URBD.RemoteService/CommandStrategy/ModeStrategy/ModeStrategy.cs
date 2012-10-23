@@ -2,90 +2,85 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Ugoria.URBD.Contracts.Data;
 using System.IO;
 
 namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
 {
-    public class ModeStrategy : IModeStrategy
+    abstract class ModeStrategy : IModeStrategy
     {
-        private string logFilename = "";
-        private List<MLGMessage> messageList = new List<MLGMessage>();
-        protected string status = "";
-        protected bool isVerified = false;
+        private Verifier verifier;
+        private bool isAborted = false;
 
-        public string Status
+        public bool IsAborted
         {
-            get { return status; }
+            get { return isAborted; }
+        }
+        private bool isSuccess = true;
+
+        public bool IsSuccess
+        {
+            get { return isSuccess; }
+        }
+        private bool isWarning = false;
+
+        public bool IsWarning
+        {
+            get { return isWarning; }
         }
 
-        public List<MLGMessage> Messages
+        public Verifier Verifier
         {
-            get { return messageList; }
+            get { return verifier; }
         }
 
-        public bool IsVerified
+        private string message = "";
+
+        public string Message
         {
-            get { return isVerified; }
+            get { return message; }
+            set { message = value; }
         }
 
-        public virtual bool Verification ()
+        protected ModeStrategy(Verifier verifier)
         {
-            IEnumerator<MLGMessage> mlgEnumerator = GetMlgEnumerator();
+            this.verifier = verifier;
+        }
 
-            bool isUplSuc = false;
-            bool isDnldSuc = false;
-            while (mlgEnumerator.MoveNext())
+        public virtual bool CompleteExchange()
+        {
+            verifier.Verification();
+            List<string> errMessages = new List<string>();
+
+            foreach (KeyValuePair<FileInfo, PacketInfo> mlgRecord in verifier.MlgReport)
             {
-                switch (mlgEnumerator.Current.eventType)
+                if (!mlgRecord.Value.isSuccess && string.IsNullOrEmpty(mlgRecord.Value.status))
                 {
-                    case "DistrUplSuc":
-                        isUplSuc = true;
-                        break;
-                    case "DistrDnldSuc":
-                        isDnldSuc = true;
-                        break;
-                    case "DistrUplErr":
-                        status = "Ошибка загрузки пакета. " + mlgEnumerator.Current.information;
-                        return false;
-                    case "DistrDnldErr":
-                        status = "Ошибка выгрузки пакета. " + mlgEnumerator.Current.information;
-                        return false;
+                    isAborted = true;
+                    isSuccess = false;
+                    errMessages.Add(String.Format("{0} пакета {1} была прервана", mlgRecord.Value.type == Contracts.Services.PacketType.Load ? "Загрузка" : "Выгрузка", mlgRecord.Key.Name));
                 }
+                else if (!mlgRecord.Value.isSuccess && !string.IsNullOrEmpty(mlgRecord.Value.status))
+                {
+                    if (mlgRecord.Value.status.Contains("Данные из указанного файла переноса данных уже загружались в текущую информационную базу."))
+                        isWarning = true;
+                    else
+                        isSuccess = false;
+                    errMessages.Add(mlgRecord.Value.status);
+                }
+                else if (!mlgRecord.Value.isSuccess)
+                    isSuccess = false;
             }
-            if (!isUplSuc)
-                status = "В log-файле обмена 1С отсутствует запись об успешности загрузки пакета. ";
-            if (!isDnldSuc)
-                status = "В log-файле обмена 1С отсутствует запись об успешности выгрузки пакета. ";
-            isVerified = isUplSuc && isDnldSuc;
-            if (isVerified)
-                status = "Обмен 1С прошел успешно. ";
-            return true;
-        }
-
-        protected ModeStrategy (string logFilename)
-        {
-            this.logFilename = logFilename;
-        }
-
-        protected IEnumerator<MLGMessage> GetMlgEnumerator ()
-        {
-            using (StreamReader read = new StreamReader(new FileStream(logFilename, FileMode.Open), Encoding.GetEncoding(1251)))
+            // Сессия была завершена аварийно
+            if (verifier.MlgReport.Count == 0)
             {
-                string line = "";
-                while ((line = read.ReadLine()) != null)
-                {
-                    MLGMessage mlgMessage = new MLGMessage();
-                    //20070728;13:59:48;Администратор;C;Distr;DistDnldBeg;1;Код ИБ: 'СП ', Файл: 'F:\Base_urbd_sql\SPB\CP\SPB_C.zip';;
-                    string[] messArr = line.Split(new char[] { ';' });
-                    if (!"Distr".Equals(messArr[4])) // пропуск записей, не связанных с обменом
-                        continue;
-                    mlgMessage.eventDate = DateTime.ParseExact(messArr[0] + messArr[1], "yyyyMMddHH:mm:ss", null);
-                    mlgMessage.eventType = messArr[5];
-                    mlgMessage.information = messArr[7];
-                    yield return mlgMessage;
-                }
+                isAborted = true;
+                isSuccess = false;
+                errMessages.Add("Сеанс 1С был аварийно завершен");
             }
+            message = string.Join(". ", errMessages).Replace("..", ".");
+            if (errMessages.Count == 0)
+                message = "Процесс обмена прошел успешно";
+            return isSuccess;
         }
     }
 }

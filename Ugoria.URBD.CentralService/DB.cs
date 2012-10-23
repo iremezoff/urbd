@@ -1,18 +1,19 @@
 ﻿using System.Xml;
 using System.Data.SqlClient;
 using System;
+using System.Configuration;
 
 namespace Ugoria.URBD.CentralService
 {
     public class DB
     {
         private static SqlConnectionStringBuilder cnStrBldr;
-        public static string connectionString = @"Data Source=work\sqlserver;Initial Catalog=URBD2;Persist Security Info=True;User ID=sa;Password=123456";
+        public static string connectionString = ConfigurationManager.ConnectionStrings["CentralServiceConnectionString"].ConnectionString;
 
         private DB() { }
 
         public SqlConnection Connection
-        {
+        {            
             get
             {
                 if (cnStrBldr == null)

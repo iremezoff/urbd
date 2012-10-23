@@ -17,6 +17,33 @@ namespace Ugoria.URBD.CentralService
 
         public DBDataProvider() { }
 
+        public DataRow GetLastCommand(int baseId)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "[urbd_SelectLastCommand]";
+            cmd.Parameters.AddWithValue("@base_id", baseId);
+            DataRow dataRow = null;
+            DataSet dataSet = ExecuteDataSqlCommand(cmd);
+            if (dataSet.Tables[0].Rows.Count != 0)
+                dataRow = dataSet.Tables[0].Rows[0];
+            return dataRow;
+        }
+
+        public DataRow GetBase(int baseId)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "[urbd_SelectBase]";
+            cmd.Parameters.AddWithValue("@base_id", baseId);
+            cmd.Parameters.AddWithValue("@is_get_schedule", false);
+            DataRow dataRow = null;
+            DataSet dataSet = ExecuteDataSqlCommand(cmd);
+            if (dataSet.Tables[0].Rows.Count != 0)
+                dataRow = dataSet.Tables[0].Rows[0];
+            return dataRow;
+        }
+
         public DataTable GetSettings(string key)
         {
             SqlCommand cmd = new SqlCommand();
@@ -40,12 +67,13 @@ namespace Ugoria.URBD.CentralService
             return packetData;
         }
 
-        public DataSet GetScheduleData(string baseName = null)
+        public DataSet GetScheduleData(string baseId = null)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "[urbd_SelectBase]";
-            cmd.Parameters.AddWithValue("@base_name", baseName);
+            cmd.Parameters.AddWithValue("@base_id", baseId);
+            cmd.Parameters.AddWithValue("@is_get_schedule", true);
             DataSet baseData = ExecuteDataSqlCommand(cmd);
             baseData.Tables[0].TableName = "Base";
             baseData.Tables[1].TableName = "ScheduleExtForms";
@@ -91,6 +119,18 @@ namespace Ugoria.URBD.CentralService
             return reportData;
         }
 
+        public DataTable GetAlarmList(string address)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "[urbd_SelectAlarmReceive]";
+            cmd.Parameters.AddWithValue("@address", address);
+
+            DataTable reportData = ExecuteDataSqlCommand(cmd).Tables[0];
+            reportData.TableName = "AlarmReceiver";
+            return reportData;
+        }
+
         public DataSet ExecuteDataSqlCommand(SqlCommand command, string transactionName = null)
         {
             DataSet dataSet = new DataSet();
@@ -118,7 +158,7 @@ namespace Ugoria.URBD.CentralService
 
                 return dataSet;
             }
-            catch (SqlException)
+            catch (SqlException ex)
             {
                 throw;
             }
@@ -165,7 +205,7 @@ namespace Ugoria.URBD.CentralService
             ExecuteVoidSqlCommand(cmd, transactionName);
         }
 
-        public void SetReport(Guid guid, DateTime completeDate, string status, string message, string transactionName = null)
+        public void SetReport(Guid guid, DateTime completeDate, string status, string message, string mdRelease, DateTime releaseDate, string transactionName = null)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
@@ -174,18 +214,21 @@ namespace Ugoria.URBD.CentralService
             cmd.Parameters.AddWithValue("@date_complete", completeDate != DateTime.MinValue ? (object)completeDate : DBNull.Value);
             cmd.Parameters.AddWithValue("@status", status);
             cmd.Parameters.AddWithValue("@message", message);
+            cmd.Parameters.AddWithValue("@md_release", mdRelease);
+            cmd.Parameters.AddWithValue("@date_release", releaseDate != DateTime.MinValue ? (object)releaseDate : DBNull.Value);
 
             ExecuteVoidSqlCommand(cmd, transactionName);
         }
 
-        public void SetCommandReport(Guid guid, string baseName, DateTime commandDate, string transactionName = null)
+        public void SetCommandReport(int userId, Guid guid, int baseId, DateTime commandDate, string transactionName = null)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "[urbd_SetCommandReport]";
-            cmd.Parameters.AddWithValue("@base_name", baseName);
+            cmd.Parameters.AddWithValue("@base_id", baseId);
             cmd.Parameters.AddWithValue("@date_command", commandDate);
             cmd.Parameters.AddWithValue("@report_guid", guid);
+            cmd.Parameters.AddWithValue("@user_id", userId);
 
             ExecuteVoidSqlCommand(cmd, transactionName);
         }
@@ -203,14 +246,15 @@ namespace Ugoria.URBD.CentralService
             ExecuteVoidSqlCommand(cmd, transactionName);
         }
 
-        public void SetReportPacket(Guid guid, string filename, DateTime packetDate, long filesize, string filehash, string transactionName = null)
+        public void SetReportPacket(Guid guid, string filename, DateTime packetDate, char type, long filesize, string filehash, string transactionName = null)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "[urbd_SetReportPacket]";
-            cmd.Parameters.AddWithValue("@report_guid", guid);
+            cmd.Parameters.AddWithValue("@guid", guid);
             cmd.Parameters.AddWithValue("@filename", filename);
-            cmd.Parameters.AddWithValue("@date_packet", packetDate);
+            cmd.Parameters.AddWithValue("@type", type);
+            cmd.Parameters.AddWithValue("@date_file", packetDate);
             cmd.Parameters.AddWithValue("@filesize", filesize);
             cmd.Parameters.AddWithValue("@filehash", filehash);
 

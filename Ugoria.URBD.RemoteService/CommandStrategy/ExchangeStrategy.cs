@@ -1,28 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
 using Ugoria.URBD.Core;
-using Ugoria.URBD.Contracts;
 using System.Net;
 using System.IO;
 using System.Threading;
-using ICSharpCode.SharpZipLib.Zip;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
+using Ugoria.URBD.Contracts.Data.Reports;
+using System.ComponentModel;
+using System.Linq;
+using Ugoria.URBD.Logging;
+using System.Text.RegularExpressions;
+using System.Text;
 
-namespace Ugoria.URBD.RemoteService
+namespace Ugoria.URBD.RemoteService.CommandStrategy
 {
     class ExchangeStrategy : ICommandStrategy
     {
         private IConfiguration configuration;
         private IModeStrategy modeStrategy;
-        private bool withMD = false;
         private Guid reportGuid;
 
         private Process process;
         private WebClient ftpClient;
+        private DateTime releaseDate;
 
         private Guid launchGuid;
+        private volatile bool isInterrupt = false;
+
+        public bool IsInterrupt
+        {
+            get { return isInterrupt; }
+        }
 
         public Guid LaunchGuid
         {
@@ -39,42 +48,46 @@ namespace Ugoria.URBD.RemoteService
 
             try
             {
+                LogHelper.Write2Log("Запуск загрузки файлов", LogLevel.Information);
                 PacketPathBuilder ppb = new PacketPathBuilder();
-                ppb.PCPath = configuration.GetParameter("pc_path").ToString();
-                ppb.CPPath = configuration.GetParameter("cp_path").ToString();
+                ppb.FtpCP = configuration.GetParameter("ftp_cp").ToString();
+                ppb.FtpPC = configuration.GetParameter("ftp_pc").ToString();
                 ppb.BasePath = configuration.GetParameter("base_path").ToString();
                 ppb.FtpAddress = configuration.GetParameter("ftp_address").ToString();
 
-                List<string> loadFiles = new List<string>();
-                foreach (IConfiguration loadPacket in (List<IConfiguration>)configuration.GetParameter("packets"))
+                List<Uri> loadPacketUris = new List<Uri>();
+                foreach (IConfiguration packetConfig in (List<IConfiguration>)configuration.GetParameter("packets"))
                 {
-                    if ((PacketType)loadPacket.GetParameter("type") != PacketType.Load)
+                    ppb.PacketName = packetConfig.GetParameter("filename").ToString();
+                    if ((PacketType)packetConfig.GetParameter("type") != PacketType.Load)
+                    {
+                        // очистка ранее неудаленных файлов
+                        string filepath = ppb.BuildUnloadPaths()[PacketPathBuilder.SOURCE].LocalPath;
+                        if (File.Exists(filepath))
+                            File.Delete(filepath);
                         continue;
-                    ppb.PacketName = loadPacket.GetParameter("path").ToString();
-                    string[] paths = ppb.BuildLoadPaths();
+                    }
 
+                    Uri[] paths = ppb.BuildLoadPaths();
+                    // Удаление ранее загруженных пакетов
+                    if (File.Exists(paths[PacketPathBuilder.DEST].LocalPath))
+                        File.Delete(paths[PacketPathBuilder.DEST].LocalPath);
+                    LogHelper.Write2Log(paths[PacketPathBuilder.SOURCE] + " -> " + paths[PacketPathBuilder.DEST].OriginalString, LogLevel.Information);
                     ExchangePacket(paths[PacketPathBuilder.SOURCE],
                         paths[PacketPathBuilder.DEST],
-                        ftpClient,
                         (int)configuration.GetParameter("packet_exchange_attempts"),
                         (int)configuration.GetParameter("packet_exchange_wait_time"));
-                    loadFiles.Add(paths[PacketPathBuilder.DEST]);
-                    bool haveMD = MDInclusion(paths[PacketPathBuilder.DEST]);
-                    if (haveMD && !withMD)
-                    {
-                        orBldr.Status = ReportStatus.ExchangeWarning;
-                        orBldr.Message = String.Format("Запуск без MD. Пакет {0} содержит MD. Операция обмена отложена", ppb.PacketName);
-                        reportBuilder.ConcreteBuilder = orBldr;
-                        callback(reportBuilder.Build());
-                        return;
-                    }
-                }
 
-                bool isComplete = false;
-                while (!isComplete)
+                    loadPacketUris.Add(paths[PacketPathBuilder.SOURCE]);
+                }
+                LogHelper.Write2Log("Загрузка завершена", LogLevel.Information);
+
+                bool launchRequired = true;
+                while (launchRequired && !isInterrupt)
                 {
                     process.Start();
                     launchGuid = Guid.NewGuid();
+                    LogHelper.Write2Log(String.Format("Запущен процесс 1С {0}", launchGuid), LogLevel.Information);
                     lpBldr.Pid = process.Id;
                     lpBldr.StartDate = DateTime.Now;
                     lpBldr.Guid = launchGuid;
@@ -83,90 +96,207 @@ namespace Ugoria.URBD.RemoteService
                     // отправка отчета о запуске процесса
                     callback(reportBuilder.Build());
 
-                    //process.WaitForExit();
-                    Thread.Sleep(900000);
-                    process.Kill();
-                    isComplete = modeStrategy.Verification();
+                    process.WaitForExit();
+                    LogHelper.Write2Log(String.Format("Процесс {0} отработал", launchGuid), LogLevel.Information);
+                    launchRequired = !modeStrategy.CompleteExchange();
                 }
 
-                if (!modeStrategy.IsVerified) orBldr.Status = ReportStatus.ExchangeFail;
-                orBldr.Messages.AddRange(modeStrategy.Messages);
-                orBldr.Message = modeStrategy.Status;
-                orBldr.CompleteDate = DateTime.Now;
-
-                loadFiles.ForEach(f => File.Delete(f)); // удаление загруженных пакетов
-
-                foreach (IConfiguration loadPacket in (List<IConfiguration>)configuration.GetParameter("packets"))
+                FileInfo mdFileInfo = new FileInfo((string)configuration.GetParameter("base_path") + @"\1cv7.md");
+                // для устранения проблемы с погрешностью дат (считаем с точностью до секунды)
+                if (Math.Abs((mdFileInfo.CreationTime - releaseDate).TotalSeconds) >= 1)
                 {
-                    if ((PacketType)loadPacket.GetParameter("type") != PacketType.Unload)
-                        continue;
+                    orBldr.MDRelease = GetRelease(mdFileInfo.FullName);
+                    orBldr.ReleaseDate = mdFileInfo.CreationTime;
+                    LogHelper.Write2Log("Изменение версии MD: " + orBldr.MDRelease, LogLevel.Information);
+                }
 
-                    ppb.PacketName = loadPacket.GetParameter("path").ToString();
-                    string[] paths = ppb.BuildUnloadPaths();
+                LogHelper.Write2Log("Запуск выгрузки файлов", LogLevel.Information);
+                foreach (IConfiguration packetCfg in (List<IConfiguration>)configuration.GetParameter("packets"))
+                {
+                    if ((PacketType)packetCfg.GetParameter("type") == PacketType.Load)
+                    {
+                        ppb.PacketName = packetCfg.GetParameter("filename").ToString();
+                        Uri[] pathsLoad = ppb.BuildLoadPaths();
+                        FileInfo loadPacketFile = modeStrategy.Verifier.MlgReport.FirstOrDefault(r => r.Key.FullName.ToLower().Equals((new FileInfo(pathsLoad[PacketPathBuilder.DEST].LocalPath).FullName.ToLower())) && r.Value.isSuccess && r.Value.type == PacketType.Load).Key;
+                        if (loadPacketFile != null)
+                        {
+                            orBldr.PacketList.Add(new ReportPacket
+                            {
+                                filename = packetCfg.GetParameter("filename").ToString(),
+                                datePacket = loadPacketFile.CreationTime,
+                                fileHash = ServiceUtil.GetFileMd5Hash(loadPacketFile.FullName),
+                                fileSize = loadPacketFile.Length,
+                                type = PacketType.Load
+                            });
+                            //DeletePacketOnFtp(pathsLoad[PacketPathBuilder.SOURCE]);
+                        }
+                        continue;
+                    }
+                    ppb.PacketName = packetCfg.GetParameter("filename").ToString();
+                    Uri[] paths = ppb.BuildUnloadPaths();
+
+                    FileInfo packetFile = new FileInfo(paths[PacketPathBuilder.SOURCE].LocalPath);
+
+                    if (!packetFile.Exists)
+                    {
+                        LogHelper.Write2Log("Файл пакета " + packetFile.Name + " отсутствует", LogLevel.Information);
+                        //continue;
+                    }
+                    orBldr.PacketList.Add(new ReportPacket
+                    {
+                        datePacket = packetFile.CreationTime,
+                        fileHash = ServiceUtil.GetFileMd5Hash(packetFile.FullName),
+                        filename = packetCfg.GetParameter("filename").ToString(),
+                        fileSize = packetFile.Length,
+                        type = PacketType.Unload
+                    });
+                    LogHelper.Write2Log(paths[PacketPathBuilder.SOURCE].OriginalString + " -> " + paths[PacketPathBuilder.DEST], LogLevel.Information);
                     ExchangePacket(paths[PacketPathBuilder.SOURCE],
                         paths[PacketPathBuilder.DEST],
-                        ftpClient,
                         (int)configuration.GetParameter("packet_exchange_attempts"),
                         (int)configuration.GetParameter("packet_exchange_wait_time"));
-                    File.Delete(paths[PacketPathBuilder.SOURCE]); // удаление пакета после выгрузки
-                }
+                    File.Delete(paths[PacketPathBuilder.SOURCE].LocalPath); // удаление пакета после выгрузки
+                }                
+                LogHelper.Write2Log("Процесс выгрузки завершена", LogLevel.Information);
+            }
+            catch (WebException ex)
+            {
+                orBldr.Status = ReportStatus.ExchangeFail;
+                orBldr.Message = "FTP: " + ex.Message;
+                LogHelper.Write2Log(ex);
+            }
+            catch (FileNotFoundException ex)
+            {
+                orBldr.Status = ReportStatus.ExchangeFail;
+                orBldr.Message = "FTP: " + ex.Message;
+                LogHelper.Write2Log(ex);
+            }
+            catch (Win32Exception ex)
+            {
+                orBldr.Status = ReportStatus.ExchangeFail;
+                orBldr.Message = "Запуск 1С: " + ex.Message;
+                LogHelper.Write2Log(ex);
             }
             catch (Exception ex)
             {
                 orBldr.Status = ReportStatus.ExchangeFail;
-                orBldr.Message = ex.Message;
+                orBldr.Message = ex.GetType() + ": " + ex.Message;
+                LogHelper.Write2Log(ex);
             }
+            if (isInterrupt)
+            {
+                orBldr.Status = ReportStatus.Interrupt;
+                orBldr.Message = "Процесс прерван вручную. " + orBldr.Message;
+            }
+            else if (!modeStrategy.IsSuccess && !string.IsNullOrEmpty(modeStrategy.Message))
+            {
+                orBldr.Status = ReportStatus.ExchangeFail;
+                orBldr.Message = modeStrategy.Message;
+            }
+            else if (orBldr.Status != ReportStatus.ExchangeFail && modeStrategy.IsSuccess && modeStrategy.IsWarning)
+            {
+                orBldr.Status = ReportStatus.ExchangeWarning;
+                orBldr.Message = modeStrategy.Message;
+            }
+            else if (orBldr.Status != ReportStatus.ExchangeFail)
+            {
+                orBldr.Status = ReportStatus.ExchangeSuccess;
+                orBldr.Message = modeStrategy.Message;
+            }
+            orBldr.CompleteDate = DateTime.Now;
             reportBuilder.ConcreteBuilder = orBldr;
             callback(reportBuilder.Build());
         }
 
-        private static bool MDInclusion(string filename)
+        private static string GetRelease(string mdFilepath)
         {
-            using (ZipInputStream s = new ZipInputStream(File.OpenRead(filename)))
+            string release = null;
+            int halfBufferSize = 5096;
+            int readLength = 0;
+            Encoding encoding = Encoding.GetEncoding(1251);
+            Regex pattern = new Regex("\"Страхование. Конфигурация Югория\",\"(?:.[^\"]+)\",\"(?<1>.[^\"]+)\"");
+            using (FileStream sr = new FileStream(mdFilepath, FileMode.Open))
             {
-                ZipEntry theEntry;
-                while ((theEntry = s.GetNextEntry()) != null)
+                byte[] buffer = new byte[halfBufferSize * 2];
+                while ((readLength = sr.Read(buffer, 0, halfBufferSize * 2)) > 0)
                 {
-                    if ("1cv7.md".Equals(theEntry.Name.ToLower()))
-                        return true;
+                    string str = encoding.GetString(buffer, 0, readLength);
+                    if (readLength == halfBufferSize * 2)
+                        sr.Seek(0 - halfBufferSize, SeekOrigin.Current); // перемещаем позицию на полбуфера назад, на случай, если искомая строка находится на пересечении считываемых блоков
+                    Match match = pattern.Match(str);
+                    if (!match.Success)
+                        continue;
+                    release = match.Groups[1].Value;
+                    break;
                 }
             }
-            return false;
+            return release;
         }
 
-        private static void ExchangePacket(string packetSource, string packetDest, WebClient client, int attempts, int waitTime)
+        private void ExchangePacket(Uri packetSource, Uri packetDest, int attempts, int waitTime)
         {
-            bool isComplete = false;
-            while (!isComplete)
+            while (attempts > 0)
             {
                 try
                 {
-                    if (packetSource.Contains("ftp"))
-                        client.DownloadFile(packetSource, packetDest);
+                    // WebClient не поддерживает локальные пути по формату Uri (file://[local_path])
+                    if (packetSource.IsFile)
+                    {
+                        LogHelper.Write2Log(String.Format("Попытка загрузки файла {0}: {1}", packetDest.AbsoluteUri, attempts), LogLevel.Information);
+                        ftpClient.UploadFile(string.IsNullOrEmpty(ftpClient.BaseAddress) ? packetDest.AbsoluteUri : packetDest.LocalPath, packetSource.OriginalString);
+                    }
                     else
-                        client.UploadFile(packetSource, packetDest);
-                    isComplete = true;
+                    {
+                        LogHelper.Write2Log(String.Format("Попытка загрузки файла {0}: {1}", packetSource.AbsoluteUri, attempts), LogLevel.Information);
+                        ftpClient.DownloadFile(string.IsNullOrEmpty(ftpClient.BaseAddress) ? packetSource.AbsoluteUri : packetSource.LocalPath, packetDest.OriginalString);
+                    }
+                    return;
                 }
-                catch (WebException)
+                catch (WebException ex)
                 {
+                    LogHelper.Write2Log(String.Format("Не удалось передать файл {0}", packetSource.OriginalString), LogLevel.Information);
                     attempts--;
                     if (attempts == 0)
-                        throw;
+                        throw new WebException(String.Format("передача {0} -> {1} (Ошибка: {2})", packetSource.OriginalString, packetDest.OriginalString, ex.Message), ex);
                     Thread.Sleep(new TimeSpan(0, waitTime, 0));
                 }
             }
         }
 
-        public ExchangeStrategy(IConfiguration configuration, Guid reportGuid, IModeStrategy modeStrategy, bool withMD)
+        private void DeletePacketOnFtp(Uri packetUri)
+        {
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(packetUri);
+            request.Credentials = ftpClient.Credentials;
+            request.Method = WebRequestMethods.Ftp.DeleteFile;
+            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+            LogHelper.Write2Log(String.Format("Удаление файла {0}: {1}", packetUri, response.StatusDescription), LogLevel.Information);
+            response.Close();
+        }
+
+        public void Interrupt()
+        {
+            try
+            {
+                if (launchGuid != Guid.Empty)
+                    process.Kill();
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Write2Log(ex);
+            }
+            isInterrupt = true;
+        }
+
+        public ExchangeStrategy(IConfiguration configuration, Guid reportGuid, IModeStrategy modeStrategy, DateTime releaseDate)
         {
             this.configuration = configuration;
-            this.withMD = withMD;
             this.modeStrategy = modeStrategy;
             this.reportGuid = reportGuid;
+            this.releaseDate = releaseDate;
 
             this.process = new Process();
             process.StartInfo.FileName = (string)configuration.GetParameter("1c_path");
-            process.StartInfo.Arguments = String.Format("config /D\"{0}\" /N {1} /P {2} /@{3}",
+            process.StartInfo.Arguments = String.Format("config /D\"{0}\" /N {1} /P {2} /@\"{3}\"",
                 configuration.GetParameter("base_path"),
                 configuration.GetParameter("username"),
                 configuration.GetParameter("password"),
@@ -175,8 +305,7 @@ namespace Ugoria.URBD.RemoteService
             this.ftpClient = new WebClient();
             ftpClient.BaseAddress = (string)configuration.GetParameter("ftp_address");
             ftpClient.Proxy = null; // для предотвращения использования стандартных настроек прокси Windows
-            ftpClient.Credentials = new NetworkCredential(configuration.GetParameter("ftp_username").ToString(),
-                configuration.GetParameter("ftp_password").ToString());
+            ftpClient.Credentials = new NetworkCredential((string)configuration.GetParameter("ftp_username"), (string)configuration.GetParameter("ftp_password"));
         }
     }
 }

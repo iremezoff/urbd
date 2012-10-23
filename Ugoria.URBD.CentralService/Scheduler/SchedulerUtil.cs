@@ -1,5 +1,5 @@
 ﻿using System;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
 
 namespace Ugoria.URBD.CentralService
 {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Ugoria.URBD.CentralService;
 using Ugoria.URBD.Contracts.Data.Reports;
+using Ugoria.URBD.Contracts.Data.Commands;
 
 namespace Ugoria.URBD.Core.Reporting
 {
@@ -11,7 +12,7 @@ namespace Ugoria.URBD.Core.Reporting
     {
         void SetPID1C (LaunchReport launchReport);
         void SetReport (OperationReport report);
-        void SetCommandReport (Report commandReport);
-        ReportInfo CheckReport (Guid launchGuid);
+        void SetCommandReport (Report commandReport, int userId);
+        ReportInfo GetLastCommand(int baseId);
     }
 }

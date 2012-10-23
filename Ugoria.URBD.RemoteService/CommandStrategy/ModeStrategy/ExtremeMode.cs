@@ -1,36 +1,35 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System;
 
 namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
 {
     class ExtremeMode : AggresiveMode
     {
         private bool attempt = false;
-        private SynchronizedCollection<TaskExecute> executedProcess;
 
-        public new string Status
-        {
-            get { return "Extreme mode: " + status; }
-        }
+        public ExtremeMode(Verifier verifier, string basepath, int waitTime)
+            : base(verifier, basepath, waitTime)
+        { }
 
-        public ExtremeMode (string logfilename, string basepath, int waitTime, SynchronizedCollection<TaskExecute> executedProcess)
-            : base(logfilename, basepath, waitTime)
-        {
-            this.executedProcess = executedProcess;
-        }
-
-        public override bool Verification ()
+        public override bool CompleteExchange()
         {
             // если обмен прошел или Aggresive-попытка не удалась
-            if (base.Verification() || attempt)
+            if (base.CompleteExchange() || attempt)
                 return true;
 
-            // убивать процессы только не выполнящиеся от имени сервиса УРБД (имеются в списке executedProcess)
-            foreach (Process process in Process.GetProcesses())
-            {
-                if ("1cv7s.exe".Equals(process) /*&& executedProcess.FirstOrDefault(p => p.CommandStrategy.Pid == process.Id) == null*/)
-                    process.Kill(); // потом pskill.exe \\адрес_терминального_сервера [-u от имени какого-то пользователя] 1cv7s.exe
-            }
+            Uri basepathUri = new Uri(basepath);
+
+            Process process = new Process();
+            process.StartInfo.FileName = "openfiles.exe";
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.Arguments = String.Format("/query /s {0} /fo csv /nh", basepathUri.IsLoopback ? "localhost" : basepathUri.Host);
+            process.Start();
+            string[] lines = process.StandardOutput.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+
+            // логика вырубания 1cv7.LCK и 1cv7.MD
+
             attempt = true; // последняя попытка исчерпана
             return false;
         }

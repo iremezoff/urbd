@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Ugoria.URBD.Contracts.Service
+namespace Ugoria.URBD.Contracts.Services
 {
     public enum CommandType { Exchange, ExtForms, Checker };
-    public enum ModeType { Aggresive, Passive, Extreme, Normal };
-    public enum PacketType { Load = 0, Unload = 1 };
-    public enum ReportStatus { ExchangeSuccess, ExtFormsSuccess, ExchangeFail, ExtFormsFail, ExchangeWarning };
+    public enum ModeType { Passive='P', Normal='N', Aggresive='A', Extreme='E' };
+    public enum PacketType { Load = 'L', Unload = 'U' };
+    public enum ReportStatus { Interrupt, ExchangeSuccess, ExtFormsSuccess, ExchangeFail, ExtFormsFail, ExchangeWarning };
 
     public enum RemoteProcessStatus : uint
     {

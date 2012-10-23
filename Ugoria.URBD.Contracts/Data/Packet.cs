@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
-using Ugoria.URBD.Contracts.Service;
+using Ugoria.URBD.Contracts.Services;
 
 namespace Ugoria.URBD.Contracts.Data
 {
@@ -11,9 +11,9 @@ namespace Ugoria.URBD.Contracts.Data
     public class Packet
     {
         [DataMember]
-        public string filePath = "";
+        public string filename = "";
 
         [DataMember]
-        public PacketType packetType = PacketType.Load;
+        public PacketType type = PacketType.Load;
     }
 }

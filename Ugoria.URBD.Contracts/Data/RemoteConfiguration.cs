@@ -10,7 +10,7 @@ namespace Ugoria.URBD.Contracts.Data
     public class RemoteConfiguration
     {
         [DataMember]
-        public string ftpAddress = "10.86.1.48";
+        public string ftpAddress = "";
 
         [DataMember]
         public string ftpUsername = "";
@@ -19,7 +19,7 @@ namespace Ugoria.URBD.Contracts.Data
         public string ftpPassword = "";
 
         [DataMember]
-        public string file1CPath = @"c:\1cv7\1cv7.exe";
+        public string file1CPath = "";
 
         [DataMember]
         public int threadsCount = 3;
@@ -28,10 +28,10 @@ namespace Ugoria.URBD.Contracts.Data
         public string extFormsPath = "";
 
         [DataMember]
-        public string cpPath = "";
+        public string ftpPC = "";
 
         [DataMember]
-        public string pcPath = "";
+        public string ftpCP = "";
 
         [DataMember]
         public int waitTime = 10;

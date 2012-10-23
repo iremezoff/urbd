@@ -10,7 +10,10 @@ namespace Ugoria.URBD.Contracts.Data
     public class Base
     {
         [DataMember]
-        public string baseName = "";
+        public int baseId;
+
+        [DataMember]
+        public string baseName="";
 
         [DataMember]
         public string basePath = "";

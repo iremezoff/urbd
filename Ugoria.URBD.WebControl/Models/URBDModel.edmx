@@ -1,0 +1,1283 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="2.0" xmlns:edmx="http://schemas.microsoft.com/ado/2008/10/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="URBD2Model.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2008" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
+        <EntityContainer Name="URBD2ModelStoreContainer">
+          <EntitySet Name="Base" EntityType="URBD2Model.Store.Base" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="BaseReference" EntityType="URBD2Model.Store.BaseReference" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="Group" EntityType="URBD2Model.Store.Group" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="Launch1C" EntityType="URBD2Model.Store.Launch1C" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="Packet" EntityType="URBD2Model.Store.Packet" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="PacketFile" EntityType="URBD2Model.Store.PacketFile" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="Report" EntityType="URBD2Model.Store.Report" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="ReportPacket" EntityType="URBD2Model.Store.ReportPacket" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="ScheduleExchange" EntityType="URBD2Model.Store.ScheduleExchange" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="ScheduleExtForms" EntityType="URBD2Model.Store.ScheduleExtForms" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="Service" EntityType="URBD2Model.Store.Service" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="ServiceLog" EntityType="URBD2Model.Store.ServiceLog" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="User" EntityType="URBD2Model.Store.User" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="UserServicesPermission" EntityType="URBD2Model.Store.UserServicesPermission" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="BaseReportList" EntityType="URBD2Model.Store.BaseReportList" store:Type="Views" store:Schema="dbo" store:Name="BaseReportList">
+            <DefiningQuery>SELECT 
+      [BaseReportList].[base_id] AS [base_id], 
+      [BaseReportList].[group_id] AS [group_id], 
+      [BaseReportList].[group_name] AS [group_name], 
+      [BaseReportList].[base_name] AS [base_name], 
+      [BaseReportList].[md_release] AS [md_release], 
+      [BaseReportList].[status] AS [status], 
+      [BaseReportList].[date_command] AS [date_command], 
+      [BaseReportList].[date_complete] AS [date_complete], 
+      [BaseReportList].[message] AS [message], 
+      [BaseReportList].[service_id] AS [service_id], 
+      [BaseReportList].[service_address] AS [service_address], 
+      [BaseReportList].[service_name] AS [service_name], 
+      [BaseReportList].[report_id] AS [report_id], 
+      [BaseReportList].[pid] AS [pid], 
+      [BaseReportList].[date_start] AS [date_start], 
+      [BaseReportList].[load_packets] AS [load_packets], 
+      [BaseReportList].[unload_packets] AS [unload_packets], 
+      [BaseReportList].[user_id] AS [user_id]
+      FROM [dbo].[BaseReportList] AS [BaseReportList]</DefiningQuery>
+          </EntitySet>
+          <EntitySet Name="ReferenceSchedule" EntityType="URBD2Model.Store.ReferenceSchedule" store:Type="Views" store:Schema="dbo" store:Name="ReferenceSchedule">
+            <DefiningQuery>SELECT 
+      [ReferenceSchedule].[base_id] AS [base_id], 
+      [ReferenceSchedule].[current_id] AS [current_id], 
+      [ReferenceSchedule].[base_name] AS [base_name], 
+      [ReferenceSchedule].[schedule_id] AS [schedule_id], 
+      [ReferenceSchedule].[time] AS [time]
+      FROM [dbo].[ReferenceSchedule] AS [ReferenceSchedule]</DefiningQuery>
+          </EntitySet>
+          <EntitySet Name="ScheduleExchangeOfService" EntityType="URBD2Model.Store.ScheduleExchangeOfService" store:Type="Views" store:Schema="dbo" store:Name="ScheduleExchangeOfService">
+            <DefiningQuery>SELECT 
+      [ScheduleExchangeOfService].[schedule_id] AS [schedule_id], 
+      [ScheduleExchangeOfService].[service_id] AS [service_id], 
+      [ScheduleExchangeOfService].[service_name] AS [service_name], 
+      [ScheduleExchangeOfService].[base_id] AS [base_id], 
+      [ScheduleExchangeOfService].[base_name] AS [base_name], 
+      [ScheduleExchangeOfService].[time] AS [time], 
+      [ScheduleExchangeOfService].[mode] AS [mode], 
+      [ScheduleExchangeOfService].[address] AS [address]
+      FROM [dbo].[ScheduleExchangeOfService] AS [ScheduleExchangeOfService]</DefiningQuery>
+          </EntitySet>
+          <AssociationSet Name="FK_Base_Group" Association="URBD2Model.Store.FK_Base_Group">
+            <End Role="Group" EntitySet="Group" />
+            <End Role="Base" EntitySet="Base" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BaseReference_Base" Association="URBD2Model.Store.FK_BaseReference_Base">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="BaseReference" EntitySet="BaseReference" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BaseReference_Base1" Association="URBD2Model.Store.FK_BaseReference_Base1">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="BaseReference" EntitySet="BaseReference" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Launch1C_Report" Association="URBD2Model.Store.FK_Launch1C_Report">
+            <End Role="Report" EntitySet="Report" />
+            <End Role="Launch1C" EntitySet="Launch1C" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Packet_Structure" Association="URBD2Model.Store.FK_Packet_Structure">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="Packet" EntitySet="Packet" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Report_Base" Association="URBD2Model.Store.FK_Report_Base">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="Report" EntitySet="Report" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Report_User" Association="URBD2Model.Store.FK_Report_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="Report" EntitySet="Report" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ReportPacket_Packet" Association="URBD2Model.Store.FK_ReportPacket_Packet">
+            <End Role="Packet" EntitySet="Packet" />
+            <End Role="ReportPacket" EntitySet="ReportPacket" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ReportPacket_PacketFile" Association="URBD2Model.Store.FK_ReportPacket_PacketFile">
+            <End Role="PacketFile" EntitySet="PacketFile" />
+            <End Role="ReportPacket" EntitySet="ReportPacket" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ReportPacket_Report" Association="URBD2Model.Store.FK_ReportPacket_Report">
+            <End Role="Report" EntitySet="Report" />
+            <End Role="ReportPacket" EntitySet="ReportPacket" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ScheduleExtForms_Base" Association="URBD2Model.Store.FK_ScheduleExtForms_Base">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="ScheduleExtForms" EntitySet="ScheduleExtForms" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SchedulePacket_Base" Association="URBD2Model.Store.FK_SchedulePacket_Base">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="ScheduleExchange" EntitySet="ScheduleExchange" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ServiceLog_Service" Association="URBD2Model.Store.FK_ServiceLog_Service">
+            <End Role="Service" EntitySet="Service" />
+            <End Role="ServiceLog" EntitySet="ServiceLog" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Structure_Service" Association="URBD2Model.Store.FK_Structure_Service">
+            <End Role="Service" EntitySet="Service" />
+            <End Role="Base" EntitySet="Base" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UserServicesPermissions_Service" Association="URBD2Model.Store.FK_UserServicesPermissions_Service">
+            <End Role="Service" EntitySet="Service" />
+            <End Role="UserServicesPermission" EntitySet="UserServicesPermission" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UserServicesPermissions_Users" Association="URBD2Model.Store.FK_UserServicesPermissions_Users">
+            <End Role="User" EntitySet="User" />
+            <End Role="UserServicesPermission" EntitySet="UserServicesPermission" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="Base">
+          <Key>
+            <PropertyRef Name="base_id" />
+          </Key>
+          <Property Name="base_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="group_id" Type="int" Nullable="false" />
+          <Property Name="service_id" Type="int" Nullable="false" />
+          <Property Name="base_name" Type="nvarchar" MaxLength="255" />
+          <Property Name="1c_database" Type="nvarchar" MaxLength="900" />
+          <Property Name="1c_username" Type="nvarchar" MaxLength="50" />
+          <Property Name="1c_password" Type="nvarchar" MaxLength="50" />
+          <Property Name="sql_database" Type="nvarchar" MaxLength="255" />
+          <Property Name="is_active" Type="bit" />
+          <Property Name="is_lock" Type="bit" />
+          <Property Name="md_release" Type="nvarchar" MaxLength="50" />
+          <Property Name="date_release" Type="datetime2" Precision="0" />
+        </EntityType>
+        <EntityType Name="BaseReference">
+          <Key>
+            <PropertyRef Name="reference_id" />
+          </Key>
+          <Property Name="reference_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="primary_id" Type="int" />
+          <Property Name="secondary_id" Type="int" />
+        </EntityType>
+        <EntityType Name="Group">
+          <Key>
+            <PropertyRef Name="group_id" />
+          </Key>
+          <Property Name="group_id" Type="int" Nullable="false" />
+          <Property Name="name" Type="nvarchar" MaxLength="255" />
+        </EntityType>
+        <EntityType Name="Launch1C">
+          <Key>
+            <PropertyRef Name="launch_id" />
+          </Key>
+          <Property Name="launch_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="report_id" Type="int" Nullable="false" />
+          <Property Name="date_start" Type="datetime2" Precision="0" />
+          <Property Name="pid" Type="int" />
+          <Property Name="guid" Type="uniqueidentifier" />
+        </EntityType>
+        <EntityType Name="Packet">
+          <Key>
+            <PropertyRef Name="packet_id" />
+          </Key>
+          <Property Name="packet_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="base_id" Type="int" Nullable="false" />
+          <Property Name="type" Type="nchar" MaxLength="1" />
+          <Property Name="filename" Type="nvarchar" MaxLength="255" />
+        </EntityType>
+        <EntityType Name="PacketFile">
+          <Key>
+            <PropertyRef Name="file_id" />
+          </Key>
+          <Property Name="file_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="hash" Type="nvarchar" MaxLength="32" />
+          <Property Name="size" Type="bigint" />
+          <Property Name="date_created" Type="datetime2" />
+        </EntityType>
+        <EntityType Name="Report">
+          <Key>
+            <PropertyRef Name="report_id" />
+          </Key>
+          <Property Name="report_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="base_id" Type="int" Nullable="false" />
+          <Property Name="status_id" Type="int" Nullable="false" />
+          <Property Name="date_command" Type="datetime2" Precision="0" />
+          <Property Name="date_complete" Type="datetime2" Precision="0" />
+          <Property Name="message" Type="text" />
+          <Property Name="guid" Type="uniqueidentifier" />
+          <Property Name="user_id" Type="int" />
+        </EntityType>
+        <EntityType Name="ReportPacket">
+          <Key>
+            <PropertyRef Name="rp_id" />
+          </Key>
+          <Property Name="rp_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="packet_id" Type="int" Nullable="false" />
+          <Property Name="report_id" Type="int" Nullable="false" />
+          <Property Name="file_id" Type="int" />
+        </EntityType>
+        <EntityType Name="ScheduleExchange">
+          <Key>
+            <PropertyRef Name="schedule_id" />
+          </Key>
+          <Property Name="schedule_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="base_id" Type="int" Nullable="false" />
+          <Property Name="time" Type="nvarchar" MaxLength="50" />
+          <Property Name="mode" Type="char" MaxLength="1" />
+          <Property Name="is_active" Type="bit" />
+        </EntityType>
+        <EntityType Name="ScheduleExtForms">
+          <Key>
+            <PropertyRef Name="schedule_id" />
+          </Key>
+          <Property Name="schedule_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="base_id" Type="int" Nullable="false" />
+          <Property Name="time" Type="nvarchar" MaxLength="50" />
+          <Property Name="is_active" Type="bit" />
+        </EntityType>
+        <EntityType Name="Service">
+          <Key>
+            <PropertyRef Name="service_id" />
+          </Key>
+          <Property Name="service_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="address" Type="nvarchar" MaxLength="50" />
+          <Property Name="1c_path" Type="nvarchar" MaxLength="1000" />
+          <Property Name="service_name" Type="nvarchar" MaxLength="255" />
+          <Property Name="date_change" Type="datetime2" Precision="0" />
+        </EntityType>
+        <EntityType Name="ServiceLog">
+          <Key>
+            <PropertyRef Name="log_id" />
+          </Key>
+          <Property Name="log_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="service_id" Type="int" Nullable="false" />
+          <Property Name="date" Type="datetime2" />
+          <Property Name="status" Type="nchar" MaxLength="1" />
+          <Property Name="text" Type="text" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="user_id" />
+          </Key>
+          <Property Name="user_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="user_name" Type="nvarchar" MaxLength="50" />
+          <Property Name="mail" Type="nvarchar" MaxLength="50" />
+          <Property Name="is_admin" Type="bit" />
+          <Property Name="is_active" Type="bit" />
+        </EntityType>
+        <EntityType Name="UserServicesPermission">
+          <Key>
+            <PropertyRef Name="permission_id" />
+          </Key>
+          <Property Name="permission_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="service_id" Type="int" />
+          <Property Name="user_id" Type="int" />
+          <Property Name="is_notify" Type="bit" />
+        </EntityType>
+        <!--Errors Found During Generation:
+      warning 6002: The table/view 'URBD2.dbo.BaseReportList' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.
+      -->
+        <EntityType Name="BaseReportList">
+          <Key>
+            <PropertyRef Name="base_id" />
+          </Key>
+          <Property Name="base_id" Type="int" Nullable="false" />
+          <Property Name="group_id" Type="int" />
+          <Property Name="group_name" Type="nvarchar" MaxLength="255" />
+          <Property Name="base_name" Type="nvarchar" MaxLength="255" />
+          <Property Name="md_release" Type="nvarchar" MaxLength="50" />
+          <Property Name="status" Type="nvarchar" MaxLength="50" />
+          <Property Name="date_command" Type="datetime2" Precision="0" />
+          <Property Name="date_complete" Type="datetime2" Precision="0" />
+          <Property Name="message" Type="text" />
+          <Property Name="service_id" Type="int" />
+          <Property Name="service_address" Type="nvarchar" MaxLength="50" />
+          <Property Name="service_name" Type="nvarchar" MaxLength="255" />
+          <Property Name="report_id" Type="int" />
+          <Property Name="pid" Type="int" />
+          <Property Name="date_start" Type="datetime2" Precision="0" />
+          <Property Name="load_packets" Type="nvarchar(max)" />
+          <Property Name="unload_packets" Type="nvarchar(max)" />
+          <Property Name="user_id" Type="int" />
+        </EntityType>
+        <!--Errors Found During Generation:
+      warning 6002: The table/view 'URBD2.dbo.ReferenceSchedule' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.
+      -->
+        <EntityType Name="ReferenceSchedule">
+          <Key>
+            <PropertyRef Name="schedule_id" />
+          </Key>
+          <Property Name="base_id" Type="int" />
+          <Property Name="current_id" Type="int" />
+          <Property Name="base_name" Type="nvarchar" MaxLength="255" />
+          <Property Name="schedule_id" Type="int" Nullable="false" />
+          <Property Name="time" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <!--Errors Found During Generation:
+      warning 6002: The table/view 'URBD2.dbo.ScheduleExchangeOfService' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.
+      -->
+        <EntityType Name="ScheduleExchangeOfService">
+          <Key>
+            <PropertyRef Name="schedule_id" />
+            <PropertyRef Name="service_id" />
+            <PropertyRef Name="base_id" />
+          </Key>
+          <Property Name="schedule_id" Type="int" Nullable="false" />
+          <Property Name="service_id" Type="int" Nullable="false" />
+          <Property Name="service_name" Type="nvarchar" MaxLength="255" />
+          <Property Name="base_id" Type="int" Nullable="false" />
+          <Property Name="base_name" Type="nvarchar" MaxLength="255" />
+          <Property Name="time" Type="nvarchar" MaxLength="50" />
+          <Property Name="mode" Type="char" MaxLength="1" />
+          <Property Name="address" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <Association Name="FK_Base_Group">
+          <End Role="Group" Type="URBD2Model.Store.Group" Multiplicity="1" />
+          <End Role="Base" Type="URBD2Model.Store.Base" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Group">
+              <PropertyRef Name="group_id" />
+            </Principal>
+            <Dependent Role="Base">
+              <PropertyRef Name="group_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BaseReference_Base">
+          <End Role="Base" Type="URBD2Model.Store.Base" Multiplicity="0..1" />
+          <End Role="BaseReference" Type="URBD2Model.Store.BaseReference" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="BaseReference">
+              <PropertyRef Name="primary_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BaseReference_Base1">
+          <End Role="Base" Type="URBD2Model.Store.Base" Multiplicity="0..1" />
+          <End Role="BaseReference" Type="URBD2Model.Store.BaseReference" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="BaseReference">
+              <PropertyRef Name="secondary_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Launch1C_Report">
+          <End Role="Report" Type="URBD2Model.Store.Report" Multiplicity="1" />
+          <End Role="Launch1C" Type="URBD2Model.Store.Launch1C" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Report">
+              <PropertyRef Name="report_id" />
+            </Principal>
+            <Dependent Role="Launch1C">
+              <PropertyRef Name="report_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Packet_Structure">
+          <End Role="Base" Type="URBD2Model.Store.Base" Multiplicity="1" />
+          <End Role="Packet" Type="URBD2Model.Store.Packet" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="Packet">
+              <PropertyRef Name="base_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Report_Base">
+          <End Role="Base" Type="URBD2Model.Store.Base" Multiplicity="1" />
+          <End Role="Report" Type="URBD2Model.Store.Report" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="Report">
+              <PropertyRef Name="base_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Report_User">
+          <End Role="User" Type="URBD2Model.Store.User" Multiplicity="0..1" />
+          <End Role="Report" Type="URBD2Model.Store.Report" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="user_id" />
+            </Principal>
+            <Dependent Role="Report">
+              <PropertyRef Name="user_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ReportPacket_Packet">
+          <End Role="Packet" Type="URBD2Model.Store.Packet" Multiplicity="1" />
+          <End Role="ReportPacket" Type="URBD2Model.Store.ReportPacket" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Packet">
+              <PropertyRef Name="packet_id" />
+            </Principal>
+            <Dependent Role="ReportPacket">
+              <PropertyRef Name="packet_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ReportPacket_PacketFile">
+          <End Role="PacketFile" Type="URBD2Model.Store.PacketFile" Multiplicity="0..1" />
+          <End Role="ReportPacket" Type="URBD2Model.Store.ReportPacket" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PacketFile">
+              <PropertyRef Name="file_id" />
+            </Principal>
+            <Dependent Role="ReportPacket">
+              <PropertyRef Name="file_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ReportPacket_Report">
+          <End Role="Report" Type="URBD2Model.Store.Report" Multiplicity="1" />
+          <End Role="ReportPacket" Type="URBD2Model.Store.ReportPacket" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Report">
+              <PropertyRef Name="report_id" />
+            </Principal>
+            <Dependent Role="ReportPacket">
+              <PropertyRef Name="report_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ScheduleExtForms_Base">
+          <End Role="Base" Type="URBD2Model.Store.Base" Multiplicity="1" />
+          <End Role="ScheduleExtForms" Type="URBD2Model.Store.ScheduleExtForms" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="ScheduleExtForms">
+              <PropertyRef Name="base_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SchedulePacket_Base">
+          <End Role="Base" Type="URBD2Model.Store.Base" Multiplicity="1" />
+          <End Role="ScheduleExchange" Type="URBD2Model.Store.ScheduleExchange" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="ScheduleExchange">
+              <PropertyRef Name="base_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ServiceLog_Service">
+          <End Role="Service" Type="URBD2Model.Store.Service" Multiplicity="1" />
+          <End Role="ServiceLog" Type="URBD2Model.Store.ServiceLog" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Service">
+              <PropertyRef Name="service_id" />
+            </Principal>
+            <Dependent Role="ServiceLog">
+              <PropertyRef Name="service_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Structure_Service">
+          <End Role="Service" Type="URBD2Model.Store.Service" Multiplicity="1" />
+          <End Role="Base" Type="URBD2Model.Store.Base" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Service">
+              <PropertyRef Name="service_id" />
+            </Principal>
+            <Dependent Role="Base">
+              <PropertyRef Name="service_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UserServicesPermissions_Service">
+          <End Role="Service" Type="URBD2Model.Store.Service" Multiplicity="0..1" />
+          <End Role="UserServicesPermission" Type="URBD2Model.Store.UserServicesPermission" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Service">
+              <PropertyRef Name="service_id" />
+            </Principal>
+            <Dependent Role="UserServicesPermission">
+              <PropertyRef Name="service_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UserServicesPermissions_Users">
+          <End Role="User" Type="URBD2Model.Store.User" Multiplicity="0..1" />
+          <End Role="UserServicesPermission" Type="URBD2Model.Store.UserServicesPermission" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="user_id" />
+            </Principal>
+            <Dependent Role="UserServicesPermission">
+              <PropertyRef Name="user_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="DataContext" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+        <EntityContainer Name="URBD2Entities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Base" EntityType="DataContext.Base" />
+          <EntitySet Name="BaseReference" EntityType="DataContext.BaseReference" />
+          <EntitySet Name="Group" EntityType="DataContext.Group" />
+          <EntitySet Name="Launch1C" EntityType="DataContext.Launch1C" />
+          <EntitySet Name="Packet" EntityType="DataContext.Packet" />
+          <EntitySet Name="PacketFile" EntityType="DataContext.PacketFile" />
+          <EntitySet Name="ReportPacket" EntityType="DataContext.ReportPacket" />
+          <EntitySet Name="ScheduleExtForms" EntityType="DataContext.ScheduleExtForms" />
+          <EntitySet Name="Service" EntityType="DataContext.Service" />
+          <EntitySet Name="ServiceLog" EntityType="DataContext.ServiceLog" />
+          <EntitySet Name="User" EntityType="DataContext.User" />
+          <EntitySet Name="UserServicesPermission" EntityType="DataContext.UserServicesPermission" />
+          <EntitySet Name="BaseReportList" EntityType="DataContext.BaseReportList" />
+          <EntitySet Name="ReferenceSchedule" EntityType="DataContext.ReferenceSchedule" />
+          <AssociationSet Name="FK_Base_Group" Association="DataContext.FK_Base_Group">
+            <End Role="Group" EntitySet="Group" />
+            <End Role="Base" EntitySet="Base" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BaseReference_Base" Association="DataContext.FK_BaseReference_Base">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="BaseReference" EntitySet="BaseReference" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BaseReference_Base1" Association="DataContext.FK_BaseReference_Base1">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="BaseReference" EntitySet="BaseReference" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Packet_Structure" Association="DataContext.FK_Packet_Structure">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="Packet" EntitySet="Packet" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ScheduleExtForms_Base" Association="DataContext.FK_ScheduleExtForms_Base">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="ScheduleExtForms" EntitySet="ScheduleExtForms" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Structure_Service" Association="DataContext.FK_Structure_Service">
+            <End Role="Service" EntitySet="Service" />
+            <End Role="Base" EntitySet="Base" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ReportPacket_Packet" Association="DataContext.FK_ReportPacket_Packet">
+            <End Role="Packet" EntitySet="Packet" />
+            <End Role="ReportPacket" EntitySet="ReportPacket" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ReportPacket_PacketFile" Association="DataContext.FK_ReportPacket_PacketFile">
+            <End Role="PacketFile" EntitySet="PacketFile" />
+            <End Role="ReportPacket" EntitySet="ReportPacket" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ServiceLog_Service" Association="DataContext.FK_ServiceLog_Service">
+            <End Role="Service" EntitySet="Service" />
+            <End Role="ServiceLog" EntitySet="ServiceLog" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UserServicesPermissions_Service" Association="DataContext.FK_UserServicesPermissions_Service">
+            <End Role="Service" EntitySet="Service" />
+            <End Role="UserServicesPermission" EntitySet="UserServicesPermission" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UserServicesPermissions_Users" Association="DataContext.FK_UserServicesPermissions_Users">
+            <End Role="User" EntitySet="User" />
+            <End Role="UserServicesPermission" EntitySet="UserServicesPermission" />
+          </AssociationSet>
+          <EntitySet Name="Report" EntityType="DataContext.Report" />
+          <AssociationSet Name="FK_Report_Base" Association="DataContext.FK_Report_Base">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="Report" EntitySet="Report" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Launch1C_Report" Association="DataContext.FK_Launch1C_Report">
+            <End Role="Report" EntitySet="Report" />
+            <End Role="Launch1C" EntitySet="Launch1C" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Report_User" Association="DataContext.FK_Report_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="Report" EntitySet="Report" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ReportPacket_Report" Association="DataContext.FK_ReportPacket_Report">
+            <End Role="Report" EntitySet="Report" />
+            <End Role="ReportPacket" EntitySet="ReportPacket" />
+          </AssociationSet>
+          <EntitySet Name="ScheduleExchange" EntityType="DataContext.ScheduleExchange" />
+          <AssociationSet Name="FK_SchedulePacket_Base" Association="DataContext.FK_SchedulePacket_Base">
+            <End Role="Base" EntitySet="Base" />
+            <End Role="ScheduleExchange" EntitySet="ScheduleExchange" />
+          </AssociationSet>
+          <EntitySet Name="ScheduleExchangeOfService" EntityType="DataContext.ScheduleExchangeOfService" />
+        </EntityContainer>
+        <EntityType Name="Base">
+          <Key>
+            <PropertyRef Name="base_id" />
+          </Key>
+          <Property Name="base_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="group_id" Type="Int32" Nullable="false" />
+          <Property Name="service_id" Type="Int32" Nullable="false" />
+          <Property Name="base_name" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="C1c_database" Type="String" MaxLength="900" Unicode="true" FixedLength="false" />
+          <Property Name="C1c_username" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="C1c_password" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="sql_database" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="is_active" Type="Boolean" />
+          <Property Name="is_lock" Type="Boolean" />
+          <NavigationProperty Name="Group" Relationship="DataContext.FK_Base_Group" FromRole="Base" ToRole="Group" />
+          <NavigationProperty Name="BasePrimaryReference" Relationship="DataContext.FK_BaseReference_Base" FromRole="Base" ToRole="BaseReference" />
+          <NavigationProperty Name="BaseSecondaryReference" Relationship="DataContext.FK_BaseReference_Base1" FromRole="Base" ToRole="BaseReference" />
+          <NavigationProperty Name="Packet" Relationship="DataContext.FK_Packet_Structure" FromRole="Base" ToRole="Packet" />
+          <NavigationProperty Name="ScheduleExtForms" Relationship="DataContext.FK_ScheduleExtForms_Base" FromRole="Base" ToRole="ScheduleExtForms" />
+          <NavigationProperty Name="Service" Relationship="DataContext.FK_Structure_Service" FromRole="Base" ToRole="Service" />
+          <Property Type="String" Name="md_release" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Type="DateTime" Name="date_release" />
+          <NavigationProperty Name="Report" Relationship="DataContext.FK_Report_Base" FromRole="Base" ToRole="Report" />
+          <NavigationProperty Name="ScheduleExchange" Relationship="DataContext.FK_SchedulePacket_Base" FromRole="Base" ToRole="ScheduleExchange" />
+        </EntityType>
+        <EntityType Name="BaseReference">
+          <Key>
+            <PropertyRef Name="reference_id" />
+          </Key>
+          <Property Name="reference_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="primary_id" Type="Int32" />
+          <Property Name="secondary_id" Type="Int32" />
+          <NavigationProperty Name="BasePrimaryReference" Relationship="DataContext.FK_BaseReference_Base" FromRole="BaseReference" ToRole="Base" />
+          <NavigationProperty Name="BaseSecondaryReference" Relationship="DataContext.FK_BaseReference_Base1" FromRole="BaseReference" ToRole="Base" />
+        </EntityType>
+        <EntityType Name="Group">
+          <Key>
+            <PropertyRef Name="group_id" />
+          </Key>
+          <Property Name="group_id" Type="Int32" Nullable="false" />
+          <Property Name="name" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="Base" Relationship="DataContext.FK_Base_Group" FromRole="Group" ToRole="Base" />
+        </EntityType>
+        <EntityType Name="Launch1C">
+          <Key>
+            <PropertyRef Name="launch_id" />
+          </Key>
+          <Property Name="launch_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="report_id" Type="Int32" Nullable="false" />
+          <Property Name="date_start" Type="DateTime" />
+          <Property Name="pid" Type="Int32" />
+          <Property Name="guid" Type="Guid" />
+          <NavigationProperty Name="Report" Relationship="DataContext.FK_Launch1C_Report" FromRole="Launch1C" ToRole="Report" />
+        </EntityType>
+        <EntityType Name="Packet">
+          <Key>
+            <PropertyRef Name="packet_id" />
+          </Key>
+          <Property Name="packet_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="base_id" Type="Int32" Nullable="false" />
+          <Property Name="type" Type="String" MaxLength="1" Unicode="true" FixedLength="true" />
+          <Property Name="filename" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="Base" Relationship="DataContext.FK_Packet_Structure" FromRole="Packet" ToRole="Base" />
+          <NavigationProperty Name="ReportPacket" Relationship="DataContext.FK_ReportPacket_Packet" FromRole="Packet" ToRole="ReportPacket" />
+        </EntityType>
+        <EntityType Name="PacketFile">
+          <Key>
+            <PropertyRef Name="file_id" />
+          </Key>
+          <Property Name="file_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="hash" Type="String" MaxLength="32" Unicode="true" FixedLength="false" />
+          <Property Name="size" Type="Int64" />
+          <Property Name="date_created" Type="DateTime" />
+          <NavigationProperty Name="ReportPacket" Relationship="DataContext.FK_ReportPacket_PacketFile" FromRole="PacketFile" ToRole="ReportPacket" />
+        </EntityType>
+        <EntityType Name="ReportPacket">
+          <Key>
+            <PropertyRef Name="rp_id" />
+          </Key>
+          <Property Name="rp_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="packet_id" Type="Int32" Nullable="false" />
+          <Property Name="report_id" Type="Int32" Nullable="false" />
+          <Property Name="file_id" Type="Int32" />
+          <NavigationProperty Name="Packet" Relationship="DataContext.FK_ReportPacket_Packet" FromRole="ReportPacket" ToRole="Packet" />
+          <NavigationProperty Name="PacketFile" Relationship="DataContext.FK_ReportPacket_PacketFile" FromRole="ReportPacket" ToRole="PacketFile" />
+          <NavigationProperty Name="Report" Relationship="DataContext.FK_ReportPacket_Report" FromRole="ReportPacket" ToRole="Report" />
+        </EntityType>
+        <EntityType Name="ScheduleExtForms">
+          <Key>
+            <PropertyRef Name="schedule_id" />
+          </Key>
+          <Property Name="schedule_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="base_id" Type="Int32" Nullable="false" />
+          <Property Name="time" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="is_active" Type="Boolean" />
+          <NavigationProperty Name="Base" Relationship="DataContext.FK_ScheduleExtForms_Base" FromRole="ScheduleExtForms" ToRole="Base" />
+        </EntityType>
+        <EntityType Name="Service">
+          <Key>
+            <PropertyRef Name="service_id" />
+          </Key>
+          <Property Name="service_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="address" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="C1c_path" Type="String" MaxLength="1000" Unicode="true" FixedLength="false" />
+          <Property Name="service_name" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="Base" Relationship="DataContext.FK_Structure_Service" FromRole="Service" ToRole="Base" />
+          <NavigationProperty Name="ServiceLog" Relationship="DataContext.FK_ServiceLog_Service" FromRole="Service" ToRole="ServiceLog" />
+          <NavigationProperty Name="UserServicesPermission" Relationship="DataContext.FK_UserServicesPermissions_Service" FromRole="Service" ToRole="UserServicesPermission" />
+          <Property Type="DateTime" Name="date_change" />
+        </EntityType>
+        <EntityType Name="ServiceLog">
+          <Key>
+            <PropertyRef Name="log_id" />
+          </Key>
+          <Property Name="log_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="service_id" Type="Int32" Nullable="false" />
+          <Property Name="date" Type="DateTime" />
+          <Property Name="status" Type="String" MaxLength="1" Unicode="true" FixedLength="true" />
+          <Property Name="text" Type="String" MaxLength="Max" Unicode="false" FixedLength="false" />
+          <NavigationProperty Name="Service" Relationship="DataContext.FK_ServiceLog_Service" FromRole="ServiceLog" ToRole="Service" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="user_id" />
+          </Key>
+          <Property Name="user_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="user_name" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="mail" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="is_admin" Type="Boolean" />
+          <Property Name="is_active" Type="Boolean" />
+          <NavigationProperty Name="UserServicesPermission" Relationship="DataContext.FK_UserServicesPermissions_Users" FromRole="User" ToRole="UserServicesPermission" />
+          <NavigationProperty Name="Report" Relationship="DataContext.FK_Report_User" FromRole="User" ToRole="Report" />
+        </EntityType>
+        <EntityType Name="UserServicesPermission">
+          <Key>
+            <PropertyRef Name="permission_id" />
+          </Key>
+          <Property Name="permission_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="service_id" Type="Int32" />
+          <Property Name="user_id" Type="Int32" />
+          <Property Name="is_notify" Type="Boolean" />
+          <NavigationProperty Name="Service" Relationship="DataContext.FK_UserServicesPermissions_Service" FromRole="UserServicesPermission" ToRole="Service" />
+          <NavigationProperty Name="User" Relationship="DataContext.FK_UserServicesPermissions_Users" FromRole="UserServicesPermission" ToRole="User" />
+        </EntityType>
+        <EntityType Name="BaseReportList">
+          <Key>
+            <PropertyRef Name="base_id" />
+          </Key>
+          <Property Name="base_id" Type="Int32" Nullable="false" />
+          <Property Name="group_id" Type="Int32" />
+          <Property Name="group_name" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="base_name" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="status" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="date_command" Type="DateTime" />
+          <Property Name="date_complete" Type="DateTime" />
+          <Property Name="message" Type="String" MaxLength="Max" Unicode="false" FixedLength="false" />
+          <Property Name="service_id" Type="Int32" />
+          <Property Name="service_address" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="service_name" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="report_id" Type="Int32" />
+          <Property Name="pid" Type="Int32" />
+          <Property Name="date_start" Type="DateTime" />
+          <Property Name="load_packets" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="unload_packets" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="user_id" Type="Int32" />
+          <Property Type="String" Name="md_release" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="ReferenceSchedule">
+          <Key>
+            <PropertyRef Name="schedule_id" />
+          </Key>
+          <Property Name="base_id" Type="Int32" />
+          <Property Name="current_id" Type="Int32" />
+          <Property Name="base_name" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="schedule_id" Type="Int32" Nullable="false" />
+          <Property Name="time" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+        </EntityType>
+        <Association Name="FK_Base_Group">
+          <End Role="Group" Type="DataContext.Group" Multiplicity="1" />
+          <End Role="Base" Type="DataContext.Base" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Group">
+              <PropertyRef Name="group_id" />
+            </Principal>
+            <Dependent Role="Base">
+              <PropertyRef Name="group_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BaseReference_Base">
+          <End Role="Base" Type="DataContext.Base" Multiplicity="0..1" />
+          <End Role="BaseReference" Type="DataContext.BaseReference" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="BaseReference">
+              <PropertyRef Name="primary_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BaseReference_Base1">
+          <End Role="Base" Type="DataContext.Base" Multiplicity="0..1" />
+          <End Role="BaseReference" Type="DataContext.BaseReference" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="BaseReference">
+              <PropertyRef Name="secondary_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Packet_Structure">
+          <End Role="Base" Type="DataContext.Base" Multiplicity="1" />
+          <End Role="Packet" Type="DataContext.Packet" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="Packet">
+              <PropertyRef Name="base_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ScheduleExtForms_Base">
+          <End Role="Base" Type="DataContext.Base" Multiplicity="1" />
+          <End Role="ScheduleExtForms" Type="DataContext.ScheduleExtForms" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="ScheduleExtForms">
+              <PropertyRef Name="base_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Structure_Service">
+          <End Role="Service" Type="DataContext.Service" Multiplicity="1" />
+          <End Role="Base" Type="DataContext.Base" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Service">
+              <PropertyRef Name="service_id" />
+            </Principal>
+            <Dependent Role="Base">
+              <PropertyRef Name="service_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ReportPacket_Packet">
+          <End Role="Packet" Type="DataContext.Packet" Multiplicity="1" />
+          <End Role="ReportPacket" Type="DataContext.ReportPacket" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Packet">
+              <PropertyRef Name="packet_id" />
+            </Principal>
+            <Dependent Role="ReportPacket">
+              <PropertyRef Name="packet_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ReportPacket_PacketFile">
+          <End Role="PacketFile" Type="DataContext.PacketFile" Multiplicity="0..1" />
+          <End Role="ReportPacket" Type="DataContext.ReportPacket" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PacketFile">
+              <PropertyRef Name="file_id" />
+            </Principal>
+            <Dependent Role="ReportPacket">
+              <PropertyRef Name="file_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ServiceLog_Service">
+          <End Role="Service" Type="DataContext.Service" Multiplicity="1" />
+          <End Role="ServiceLog" Type="DataContext.ServiceLog" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Service">
+              <PropertyRef Name="service_id" />
+            </Principal>
+            <Dependent Role="ServiceLog">
+              <PropertyRef Name="service_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UserServicesPermissions_Service">
+          <End Role="Service" Type="DataContext.Service" Multiplicity="0..1" />
+          <End Role="UserServicesPermission" Type="DataContext.UserServicesPermission" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Service">
+              <PropertyRef Name="service_id" />
+            </Principal>
+            <Dependent Role="UserServicesPermission">
+              <PropertyRef Name="service_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UserServicesPermissions_Users">
+          <End Role="User" Type="DataContext.User" Multiplicity="0..1" />
+          <End Role="UserServicesPermission" Type="DataContext.UserServicesPermission" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="user_id" />
+            </Principal>
+            <Dependent Role="UserServicesPermission">
+              <PropertyRef Name="user_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="Report">
+          <Key>
+            <PropertyRef Name="report_id" />
+          </Key>
+          <Property Type="Int32" Name="report_id" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Type="Int32" Name="base_id" Nullable="false" />
+          <Property Type="Int32" Name="status_id" Nullable="false" />
+          <Property Type="DateTime" Name="date_command" />
+          <Property Type="DateTime" Name="date_complete" />
+          <Property Type="String" Name="message" MaxLength="Max" FixedLength="false" Unicode="false" />
+          <Property Type="Guid" Name="guid" />
+          <Property Type="Int32" Name="user_id" />
+          <NavigationProperty Name="Base" Relationship="DataContext.FK_Report_Base" FromRole="Report" ToRole="Base" />
+          <NavigationProperty Name="Launch1C" Relationship="DataContext.FK_Launch1C_Report" FromRole="Report" ToRole="Launch1C" />
+          <NavigationProperty Name="User" Relationship="DataContext.FK_Report_User" FromRole="Report" ToRole="User" />
+          <NavigationProperty Name="ReportPacket" Relationship="DataContext.FK_ReportPacket_Report" FromRole="Report" ToRole="ReportPacket" />
+        </EntityType>
+        <Association Name="FK_Report_Base">
+          <End Type="DataContext.Base" Role="Base" Multiplicity="1" />
+          <End Type="DataContext.Report" Role="Report" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="Report">
+              <PropertyRef Name="base_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Launch1C_Report">
+          <End Type="DataContext.Report" Role="Report" Multiplicity="1" />
+          <End Type="DataContext.Launch1C" Role="Launch1C" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Report">
+              <PropertyRef Name="report_id" />
+            </Principal>
+            <Dependent Role="Launch1C">
+              <PropertyRef Name="report_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Report_User">
+          <End Type="DataContext.User" Role="User" Multiplicity="0..1" />
+          <End Type="DataContext.Report" Role="Report" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="user_id" />
+            </Principal>
+            <Dependent Role="Report">
+              <PropertyRef Name="user_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ReportPacket_Report">
+          <End Type="DataContext.Report" Role="Report" Multiplicity="1" />
+          <End Type="DataContext.ReportPacket" Role="ReportPacket" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Report">
+              <PropertyRef Name="report_id" />
+            </Principal>
+            <Dependent Role="ReportPacket">
+              <PropertyRef Name="report_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="ScheduleExchange">
+          <Key>
+            <PropertyRef Name="schedule_id" />
+          </Key>
+          <Property Type="Int32" Name="schedule_id" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Type="Int32" Name="base_id" Nullable="false" />
+          <Property Type="String" Name="time" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Type="String" Name="mode" MaxLength="1" FixedLength="true" Unicode="false" />
+          <Property Type="Boolean" Name="is_active" />
+          <NavigationProperty Name="Base" Relationship="DataContext.FK_SchedulePacket_Base" FromRole="ScheduleExchange" ToRole="Base" />
+        </EntityType>
+        <Association Name="FK_SchedulePacket_Base">
+          <End Type="DataContext.Base" Role="Base" Multiplicity="1" />
+          <End Type="DataContext.ScheduleExchange" Role="ScheduleExchange" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Base">
+              <PropertyRef Name="base_id" />
+            </Principal>
+            <Dependent Role="ScheduleExchange">
+              <PropertyRef Name="base_id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="ScheduleExchangeOfService">
+          <Key>
+            <PropertyRef Name="schedule_id" />
+            <PropertyRef Name="service_id" />
+            <PropertyRef Name="base_id" />
+          </Key>
+          <Property Type="Int32" Name="schedule_id" Nullable="false" />
+          <Property Type="Int32" Name="service_id" Nullable="false" />
+          <Property Type="String" Name="service_name" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Type="Int32" Name="base_id" Nullable="false" />
+          <Property Type="String" Name="base_name" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Type="String" Name="time" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Type="String" Name="mode" MaxLength="1" FixedLength="true" Unicode="false" />
+          <Property Type="String" Name="address" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2008/09/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="URBD2ModelStoreContainer" CdmEntityContainer="URBD2Entities">
+          <EntitySetMapping Name="Base"><EntityTypeMapping TypeName="DataContext.Base"><MappingFragment StoreEntitySet="Base">
+            <ScalarProperty Name="date_release" ColumnName="date_release" />
+                <ScalarProperty Name="md_release" ColumnName="md_release" />
+                <ScalarProperty Name="base_id" ColumnName="base_id" />
+            <ScalarProperty Name="group_id" ColumnName="group_id" />
+            <ScalarProperty Name="service_id" ColumnName="service_id" />
+            <ScalarProperty Name="base_name" ColumnName="base_name" />
+            <ScalarProperty Name="C1c_database" ColumnName="1c_database" />
+            <ScalarProperty Name="C1c_username" ColumnName="1c_username" />
+            <ScalarProperty Name="C1c_password" ColumnName="1c_password" />
+            <ScalarProperty Name="sql_database" ColumnName="sql_database" />
+            <ScalarProperty Name="is_active" ColumnName="is_active" />
+            <ScalarProperty Name="is_lock" ColumnName="is_lock" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="BaseReference"><EntityTypeMapping TypeName="DataContext.BaseReference"><MappingFragment StoreEntitySet="BaseReference">
+            <ScalarProperty Name="reference_id" ColumnName="reference_id" />
+            <ScalarProperty Name="primary_id" ColumnName="primary_id" />
+            <ScalarProperty Name="secondary_id" ColumnName="secondary_id" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="Group"><EntityTypeMapping TypeName="DataContext.Group"><MappingFragment StoreEntitySet="Group">
+            <ScalarProperty Name="group_id" ColumnName="group_id" />
+            <ScalarProperty Name="name" ColumnName="name" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="Launch1C"><EntityTypeMapping TypeName="DataContext.Launch1C"><MappingFragment StoreEntitySet="Launch1C">
+            <ScalarProperty Name="launch_id" ColumnName="launch_id" />
+            <ScalarProperty Name="report_id" ColumnName="report_id" />
+            <ScalarProperty Name="date_start" ColumnName="date_start" />
+            <ScalarProperty Name="pid" ColumnName="pid" />
+            <ScalarProperty Name="guid" ColumnName="guid" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="Packet"><EntityTypeMapping TypeName="DataContext.Packet"><MappingFragment StoreEntitySet="Packet">
+            <ScalarProperty Name="packet_id" ColumnName="packet_id" />
+            <ScalarProperty Name="base_id" ColumnName="base_id" />
+            <ScalarProperty Name="type" ColumnName="type" />
+            <ScalarProperty Name="filename" ColumnName="filename" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="PacketFile"><EntityTypeMapping TypeName="DataContext.PacketFile"><MappingFragment StoreEntitySet="PacketFile">
+            <ScalarProperty Name="file_id" ColumnName="file_id" />
+            <ScalarProperty Name="hash" ColumnName="hash" />
+            <ScalarProperty Name="size" ColumnName="size" />
+            <ScalarProperty Name="date_created" ColumnName="date_created" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="ReportPacket"><EntityTypeMapping TypeName="DataContext.ReportPacket"><MappingFragment StoreEntitySet="ReportPacket">
+            <ScalarProperty Name="rp_id" ColumnName="rp_id" />
+            <ScalarProperty Name="packet_id" ColumnName="packet_id" />
+            <ScalarProperty Name="report_id" ColumnName="report_id" />
+            <ScalarProperty Name="file_id" ColumnName="file_id" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="ScheduleExtForms"><EntityTypeMapping TypeName="DataContext.ScheduleExtForms"><MappingFragment StoreEntitySet="ScheduleExtForms">
+            <ScalarProperty Name="schedule_id" ColumnName="schedule_id" />
+            <ScalarProperty Name="base_id" ColumnName="base_id" />
+            <ScalarProperty Name="time" ColumnName="time" />
+            <ScalarProperty Name="is_active" ColumnName="is_active" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="Service"><EntityTypeMapping TypeName="DataContext.Service"><MappingFragment StoreEntitySet="Service">
+            <ScalarProperty Name="date_change" ColumnName="date_change" />
+                <ScalarProperty Name="service_id" ColumnName="service_id" />
+            <ScalarProperty Name="address" ColumnName="address" />
+            <ScalarProperty Name="C1c_path" ColumnName="1c_path" />
+            <ScalarProperty Name="service_name" ColumnName="service_name" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="ServiceLog"><EntityTypeMapping TypeName="DataContext.ServiceLog"><MappingFragment StoreEntitySet="ServiceLog">
+            <ScalarProperty Name="log_id" ColumnName="log_id" />
+            <ScalarProperty Name="service_id" ColumnName="service_id" />
+            <ScalarProperty Name="date" ColumnName="date" />
+            <ScalarProperty Name="status" ColumnName="status" />
+            <ScalarProperty Name="text" ColumnName="text" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="User"><EntityTypeMapping TypeName="DataContext.User"><MappingFragment StoreEntitySet="User">
+            <ScalarProperty Name="user_id" ColumnName="user_id" />
+            <ScalarProperty Name="user_name" ColumnName="user_name" />
+            <ScalarProperty Name="mail" ColumnName="mail" />
+            <ScalarProperty Name="is_admin" ColumnName="is_admin" />
+            <ScalarProperty Name="is_active" ColumnName="is_active" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="UserServicesPermission"><EntityTypeMapping TypeName="DataContext.UserServicesPermission"><MappingFragment StoreEntitySet="UserServicesPermission">
+            <ScalarProperty Name="permission_id" ColumnName="permission_id" />
+            <ScalarProperty Name="service_id" ColumnName="service_id" />
+            <ScalarProperty Name="user_id" ColumnName="user_id" />
+            <ScalarProperty Name="is_notify" ColumnName="is_notify" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="BaseReportList"><EntityTypeMapping TypeName="DataContext.BaseReportList"><MappingFragment StoreEntitySet="BaseReportList">
+            <ScalarProperty Name="md_release" ColumnName="md_release" />
+                <ScalarProperty Name="base_id" ColumnName="base_id" />
+            <ScalarProperty Name="group_id" ColumnName="group_id" />
+            <ScalarProperty Name="group_name" ColumnName="group_name" />
+            <ScalarProperty Name="base_name" ColumnName="base_name" />
+            <ScalarProperty Name="status" ColumnName="status" />
+            <ScalarProperty Name="date_command" ColumnName="date_command" />
+            <ScalarProperty Name="date_complete" ColumnName="date_complete" />
+            <ScalarProperty Name="message" ColumnName="message" />
+            <ScalarProperty Name="service_id" ColumnName="service_id" />
+            <ScalarProperty Name="service_address" ColumnName="service_address" />
+            <ScalarProperty Name="service_name" ColumnName="service_name" />
+            <ScalarProperty Name="report_id" ColumnName="report_id" />
+            <ScalarProperty Name="pid" ColumnName="pid" />
+            <ScalarProperty Name="date_start" ColumnName="date_start" />
+            <ScalarProperty Name="load_packets" ColumnName="load_packets" />
+            <ScalarProperty Name="unload_packets" ColumnName="unload_packets" />
+            <ScalarProperty Name="user_id" ColumnName="user_id" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="ReferenceSchedule"><EntityTypeMapping TypeName="DataContext.ReferenceSchedule"><MappingFragment StoreEntitySet="ReferenceSchedule">
+            <ScalarProperty Name="base_id" ColumnName="base_id" />
+            <ScalarProperty Name="current_id" ColumnName="current_id" />
+            <ScalarProperty Name="base_name" ColumnName="base_name" />
+            <ScalarProperty Name="schedule_id" ColumnName="schedule_id" />
+            <ScalarProperty Name="time" ColumnName="time" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="Report">
+            <EntityTypeMapping TypeName="DataContext.Report">
+              <MappingFragment StoreEntitySet="Report">
+                <ScalarProperty Name="user_id" ColumnName="user_id" />
+                <ScalarProperty Name="guid" ColumnName="guid" />
+                <ScalarProperty Name="message" ColumnName="message" />
+                <ScalarProperty Name="date_complete" ColumnName="date_complete" />
+                <ScalarProperty Name="date_command" ColumnName="date_command" />
+                <ScalarProperty Name="status_id" ColumnName="status_id" />
+                <ScalarProperty Name="base_id" ColumnName="base_id" />
+                <ScalarProperty Name="report_id" ColumnName="report_id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ScheduleExchange">
+            <EntityTypeMapping TypeName="DataContext.ScheduleExchange">
+              <MappingFragment StoreEntitySet="ScheduleExchange">
+                <ScalarProperty Name="is_active" ColumnName="is_active" />
+                <ScalarProperty Name="mode" ColumnName="mode" />
+                <ScalarProperty Name="time" ColumnName="time" />
+                <ScalarProperty Name="base_id" ColumnName="base_id" />
+                <ScalarProperty Name="schedule_id" ColumnName="schedule_id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ScheduleExchangeOfService">
+            <EntityTypeMapping TypeName="DataContext.ScheduleExchangeOfService">
+              <MappingFragment StoreEntitySet="ScheduleExchangeOfService">
+                <ScalarProperty Name="address" ColumnName="address" />
+                <ScalarProperty Name="mode" ColumnName="mode" />
+                <ScalarProperty Name="time" ColumnName="time" />
+                <ScalarProperty Name="base_name" ColumnName="base_name" />
+                <ScalarProperty Name="base_id" ColumnName="base_id" />
+                <ScalarProperty Name="service_name" ColumnName="service_name" />
+                <ScalarProperty Name="service_id" ColumnName="service_id" />
+                <ScalarProperty Name="schedule_id" ColumnName="schedule_id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2008/10/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="False" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="True" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams>
+      <Diagram Name="URBDModel">
+        <EntityTypeShape EntityType="DataContext.Base" Width="1.5" PointX="6.5" PointY="3" Height="4.8648079427083335" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.BaseReference" Width="1.5" PointX="8.375" PointY="1.25" Height="1.9802864583333335" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.Group" Width="1.5" PointX="4.625" PointY="2.875" Height="1.5956835937499996" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.Launch1C" Width="1.5" PointX="7" PointY="11.75" Height="2.172587890625" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.Packet" Width="1.5" PointX="2.875" PointY="5.875" Height="2.1725878906249996" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.PacketFile" Width="1.5" PointX="1" PointY="9.75" Height="1.9802864583333317" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.ReportPacket" Width="1.5" PointX="3" PointY="9.5" Height="2.3648893229166656" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.ScheduleExtForms" Width="1.5" PointX="6.75" PointY="8.375" Height="1.9802864583333317" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.Service" Width="1.5" PointX="8.75" PointY="3.75" Height="2.5571907552083335" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.ServiceLog" Width="1.5" PointX="10" PointY="6.625" Height="2.1725878906250031" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.User" Width="1.5" PointX="12" PointY="6.125" Height="2.3648893229166661" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.UserServicesPermission" Width="1.5" PointX="11" PointY="3" Height="2.172587890624996" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.BaseReportList" Width="1.5" PointX="0.5" PointY="0.5" Height="4.2879036458333388" IsExpanded="true" />
+        <EntityTypeShape EntityType="DataContext.ReferenceSchedule" Width="2.625" PointX="3.75" PointY="0.5" Height="1.9802864583333388" IsExpanded="true" />
+        <AssociationConnector Association="DataContext.FK_Base_Group" ManuallyRouted="false">
+          <ConnectorPoint PointX="6.125" PointY="3.7353417968749993" />
+          <ConnectorPoint PointX="6.5" PointY="3.7353417968749993" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_BaseReference_Base" ManuallyRouted="false">
+          <ConnectorPoint PointX="7.25" PointY="2.9999999999999996" />
+          <ConnectorPoint PointX="7.25" PointY="2.5937512499999995" />
+          <ConnectorPoint PointX="8.375" PointY="2.5937512499999995" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_BaseReference_Base1" ManuallyRouted="false">
+          <ConnectorPoint PointX="7.0868272354914073" PointY="3.0000000000000004" />
+          <ConnectorPoint PointX="7.0868272354914073" PointY="1.890623625" />
+          <ConnectorPoint PointX="8.375" PointY="1.890623625" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_Packet_Structure" ManuallyRouted="false">
+          <ConnectorPoint PointX="6.5" PointY="6.8699039713541659" />
+          <ConnectorPoint PointX="4.375" PointY="6.8699039713541659" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_ScheduleExtForms_Base" ManuallyRouted="false">
+          <ConnectorPoint PointX="7.375" PointY="7.8648079427083326" />
+          <ConnectorPoint PointX="7.375" PointY="8.375" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_Structure_Service" ManuallyRouted="false">
+          <ConnectorPoint PointX="8.75" PointY="5.0285953776041667" />
+          <ConnectorPoint PointX="8" PointY="5.0285953776041667" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_ReportPacket_Packet" ManuallyRouted="false">
+          <ConnectorPoint PointX="3.6875" PointY="8.047587890625" />
+          <ConnectorPoint PointX="3.6875" PointY="9.5" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_ReportPacket_PacketFile" ManuallyRouted="false">
+          <ConnectorPoint PointX="2.5" PointY="10.740143229166666" />
+          <ConnectorPoint PointX="3" PointY="10.740143229166666" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_ServiceLog_Service" ManuallyRouted="false">
+          <ConnectorPoint PointX="10.25" PointY="5.3577563649711877" />
+          <ConnectorPoint PointX="10.875000499999999" PointY="5.3577563649711877" />
+          <ConnectorPoint PointX="10.875000499999999" PointY="6.625" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_UserServicesPermissions_Service" ManuallyRouted="false">
+          <ConnectorPoint PointX="10.25" PointY="4.461293945312498" />
+          <ConnectorPoint PointX="11" PointY="4.461293945312498" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_UserServicesPermissions_Users" ManuallyRouted="false">
+          <ConnectorPoint PointX="12.25" PointY="6.125" />
+          <ConnectorPoint PointX="12.25" PointY="5.172587890624996" />
+        </AssociationConnector>
+        <EntityTypeShape EntityType="DataContext.Report" Width="1.5" PointX="8.875" PointY="9.25" Height="3.3263964843750031" />
+        <AssociationConnector Association="DataContext.FK_Report_Base" ManuallyRouted="false" >
+          <ConnectorPoint PointX="8" PointY="7.3107395537405315" />
+          <ConnectorPoint PointX="9.2403640482640732" PointY="7.3107395537405315" />
+          <ConnectorPoint PointX="9.2403640482640732" PointY="9.25" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_Launch1C_Report" >
+          <ConnectorPoint PointX="8.875" PointY="12.163198242187502" />
+          <ConnectorPoint PointX="8.5" PointY="12.163198242187502" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_Report_User" >
+          <ConnectorPoint PointX="12.75" PointY="8.4898893229166656" />
+          <ConnectorPoint PointX="12.75" PointY="10.913198242187502" />
+          <ConnectorPoint PointX="10.375" PointY="10.913198242187502" />
+        </AssociationConnector>
+        <AssociationConnector Association="DataContext.FK_ReportPacket_Report" >
+          <ConnectorPoint PointX="8.875" PointY="11.148793945312502" />
+          <ConnectorPoint PointX="4.5" PointY="11.148793945312502" />
+        </AssociationConnector>
+        <EntityTypeShape EntityType="DataContext.ScheduleExchange" Width="1.5" PointX="4.875" PointY="8.375" Height="2.1725878906250031" />
+        <AssociationConnector Association="DataContext.FK_SchedulePacket_Base" >
+          <ConnectorPoint PointX="6.5" PointY="7.38274206402658" />
+          <ConnectorPoint PointX="5.625" PointY="7.38274206402658" />
+          <ConnectorPoint PointX="5.625" PointY="8.375" />
+        </AssociationConnector>
+        <EntityTypeShape EntityType="DataContext.ScheduleExchangeOfService" Width="1.5" PointX="2.125" PointY="0.5" Height="2.5571907552083388" />
+      </Diagram>
+    </Diagrams>
+  </Designer>
+</edmx:Edmx>

@@ -4,31 +4,27 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Threading;
+using Ugoria.URBD.Logging;
 
 namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
 {
     class AggresiveMode : ModeStrategy
     {
         private bool attention = false;
-        private string basepath = "";
-        private int waitTime = 10;
+        protected string basepath = "";
+        protected int waitTime = 10;
 
-        public new string Status
-        {
-            get { return "Aggresive mode: " + status; }
-        }
-
-        public AggresiveMode (string logfilename, string basepath, int waitTime)
-            : base(logfilename)
+        public AggresiveMode(Verifier verifier, string basepath, int waitTime)
+            : base(verifier)
         {
             this.basepath = basepath;
             this.waitTime = waitTime;
         }
 
-        public override bool Verification ()
+        public override bool CompleteExchange()
         {
             // проблем при обмене не было либо уже просили о выходе, 2 раза повторять не будем, забиваем на обмен
-            if (base.Verification() || attention)
+            if (base.CompleteExchange() || attention)
             {
                 // Удаление файла с просьбой для обмена
                 if (File.Exists(String.Format(@"{0}\ExtForms\!md_message_urbd.txt", basepath)))
@@ -36,13 +32,13 @@ namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
                 return true;
             }
 
+            LogHelper.Write2Log("Режим Aggressive. Повтор запуска через (мин):" + waitTime, LogLevel.Information);
             // создание файла с просьбой
-            using (StreamWriter sw = new StreamWriter(new FileStream(String.Format(@"{0}\ExtForms\!md_message_urbd.txt", basepath), FileMode.Create),
-                Encoding.GetEncoding(1251)))
+            using (StreamWriter sw = new StreamWriter(String.Format(@"{0}\ExtForms\!md_message_urbd.txt", basepath), false, Encoding.GetEncoding(1251)))
             {
                 sw.WriteLine("Требуется выполнить автообмен, закройте программу 1С");
             }
-            attention = true; // оповещение было
+            attention = true; // попытка с оповещением было
             Thread.Sleep(new TimeSpan(0, waitTime, 0)); // спать до следующей попытки
             return false; // верификация не пройдена
         }

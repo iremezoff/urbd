@@ -8,9 +8,10 @@ using Ugoria.URBD.Core;
 using Ugoria.URBD.Contracts.Data.Reports;
 using Ugoria.URBD.Contracts.Data;
 using Ugoria.URBD.Core.Reporting;
+using Ugoria.URBD.Contracts.Data.Commands;
 
 namespace Ugoria.URBD.CentralService
-{ 
+{
     class Reporter : IReporter
     {
         private IDataProvider dataProvider = null;
@@ -26,7 +27,7 @@ namespace Ugoria.URBD.CentralService
 
             dataProvider.BeginTransaction(transactionName); // начало транзакции
 
-            dataProvider.SetReport(report.reportGuid, report.dateComplete, report.status.ToString(), report.message, transactionName);
+            dataProvider.SetReport(report.reportGuid, report.dateComplete, report.status.ToString(), report.message, report.mdRelease, report.dateRelease, transactionName);
             // обрабокта сообщений лога работы 1С на стороне удаленного сервиса
             foreach (MLGMessage message in report.messageList)
             {
@@ -38,36 +39,35 @@ namespace Ugoria.URBD.CentralService
             {
                 foreach (ReportPacket packet in report.packetList)
                 {
-                    dataProvider.SetReportPacket(report.reportGuid, packet.filename, packet.datePacket, packet.fileSize, packet.fileHash, transactionName);
+                    dataProvider.SetReportPacket(report.reportGuid, packet.filename, packet.datePacket, (char)packet.type, packet.fileSize, packet.fileHash, transactionName);
                 }
             }
 
             dataProvider.Commit(transactionName); // завершение изменений
         }
 
-        public void SetCommandReport(Report commandReport)
+        public void SetCommandReport(Report commandReport, int userId)
         {
-            dataProvider.SetCommandReport(commandReport.reportGuid, commandReport.baseName, commandReport.dateCommand);
+            dataProvider.SetCommandReport(userId, commandReport.reportGuid, commandReport.baseId, commandReport.dateCommand);
         }
 
-        public ReportInfo CheckReport(Guid reportGuid)
+        public ReportInfo GetLastCommand(int baseId)
         {
-            DataTable reportData = dataProvider.GetReport(reportGuid);
-
-            if (reportData.Rows.Count == 0)
+            DataRow lastCommand = dataProvider.GetLastCommand(baseId);
+            if (lastCommand == null)
                 return null;
-            DataRow dataRow = reportData.Rows[0];
             return new ReportInfo
-             {
-                 serviceAddress = (string)dataRow["address"],
-                 baseName = (string)dataRow["base_name"],
-                 startDate = dataRow["date_start"] != DBNull.Value ? (DateTime)dataRow["date_start"] : DateTime.MinValue,
-                 commandDate = dataRow["date_command"] != DBNull.Value ? (DateTime)dataRow["date_command"] : DateTime.MinValue,
-                 completeDate = dataRow["date_complete"] != DBNull.Value ? (DateTime)dataRow["date_complete"] : DateTime.MinValue,
-                 pid = dataRow["pid"] != DBNull.Value ? (int)dataRow["pid"] : 0,
-                 reportGuid = (Guid)dataRow["report_guid"],
-                 launchGuid = dataRow["launch_guid"] != DBNull.Value ? (Guid)dataRow["launch_guid"] : Guid.Empty
-             };
+            {
+                ServiceAddress = (string)lastCommand["address"],
+                BaseName = lastCommand["base_name"].ToString(),
+                CommandDate = (DateTime)lastCommand["date_command"],
+                StartDate = lastCommand["date_start"] != DBNull.Value ? (DateTime)lastCommand["date_start"] : DateTime.MinValue,
+                CompleteDate = lastCommand["date_complete"] != DBNull.Value ? (DateTime)lastCommand["date_complete"] : DateTime.MinValue,
+                ReleaseDate = lastCommand["date_release"] != DBNull.Value ? (DateTime)lastCommand["date_release"] : DateTime.MinValue,
+                Pid = lastCommand["pid"] != DBNull.Value ? (int)lastCommand["pid"] : 0,
+                ReportGuid = (Guid)lastCommand["report_guid"],
+                LaunchGuid = lastCommand["launch_guid"] != DBNull.Value ? (Guid)lastCommand["launch_guid"] : Guid.Empty
+            };
         }
 
         public Reporter(IDataProvider dataProvider)

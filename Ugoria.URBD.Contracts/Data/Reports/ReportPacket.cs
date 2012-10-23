@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
+using Ugoria.URBD.Contracts.Services;
 
 namespace Ugoria.URBD.Contracts.Data.Reports
 {
@@ -20,5 +21,8 @@ namespace Ugoria.URBD.Contracts.Data.Reports
 
         [DataMember]
         public long fileSize;
+
+        [DataMember]
+        public PacketType type;
     }
 }
