@@ -9,7 +9,6 @@
     Управление распределенными базами данных
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
-
     <script type="text/javascript">
         var groupColumn = <%=((string)ViewData["sort"])=="service"?3:5 %>;
         $(document).ready(function () {
@@ -22,6 +21,19 @@
                 },
                 text:false
             });
+
+                        $('a.exchange')
+                .button()
+                .click(function(){
+                    $('#exchange_dialog').dialog('open');
+                    $('#exchange_dialog').dialog('option', 'title', "Режим обмена для ИБ: "+$(this).parents("tr").find("td").eq(1).html());
+                    $('#exchange_dialog form').attr('action', $(this).attr('href'));
+                    //$(this).click();
+                    //$('.ui-dialog-titlebar span').html("Режим обмена для ИБ: "+$(this).parents("tr").find("td").eq(1).html());
+                    return false;
+                })
+                .next()
+                .button();
 
             $("#exchange_dialog" ).dialog({
                 autoOpen:false,
@@ -39,22 +51,35 @@
 			    }
 		    });
 
-            $('a.exchange')
+            $("a.interrupt")
                 .button()
+                .addClass("ui-state-default-other")
                 .click(function(){
-                    $('#exchange_dialog').dialog('open');
-                    $('#exchange_dialog').dialog('option', 'title', "Режим обмена для ИБ: "+$(this).parents("tr").find("td").eq(1).html());
-                    $('#exchange_dialog form').attr('action', $(this).attr('href'));
+                    var base_name=$(this).parents("tr").find("td").eq(1).html();
+                    $('#interrupt_confirm').dialog('open');
+                    $('#interrupt_confirm form').attr('action', $(this).attr('href'));
+                    $('#interrupt_confirm div').html('Отменить операцию обмена для ИБ <b>'+base_name+'</b>?<br/>'+$('#interrupt_confirm div').html());
                     //$(this).click();
                     //$('.ui-dialog-titlebar span').html("Режим обмена для ИБ: "+$(this).parents("tr").find("td").eq(1).html());
                     return false;
-                })
-                .next()
-                .button();
-            $("a.interrupt")
-                .button()
-                .addClass("ui-state-default-other");
-
+                });
+                
+		$( "#interrupt_confirm" ).dialog({
+            autoOpen:false,
+			resizable: false,
+            width:370,
+			modal: true,
+			buttons: {
+				"Да": function() {
+                $('#interrupt_confirm form').submit();
+					$( this ).dialog( "close" );
+				},
+				"Отмена": function() {
+					$( this ).dialog( "close" );
+				}
+			}
+		});
+        
             $('a.exchange').click(function () { return false; });
             var oTable = $('#data').dataTable({
                 "bJQueryUI": true,
@@ -64,7 +89,7 @@
                 "bPaginate": false,        
                 "aoColumnDefs": [
                         { "bSearchable": false, "bVisible": false, "aTargets": [ groupColumn ] },
-                        { "bSearchable": false, "bSortable":false, "aTargets": [ 7,8,9 ] }
+                        { "bSearchable": false, "bSortable":false, "aTargets": [ 6,8,9,10 ] }
                     ],
                 "oLanguage": {
                     "sInfo": "Всего информационных баз: _TOTAL_ ",
@@ -107,35 +132,46 @@
         </div>
         <%Html.EndForm(); %>
     </div>
+    <div id="interrupt_confirm" title="Подтверждение отмены операции">
+        <%Html.BeginForm("Interrupt", "Main", FormMethod.Get); %>
+        <div id="dialog-confirm">
+            <b>Осторожно!</b> Процесс 1С может быть "убит" и потребуется запуск обмена вручную
+            непосредественно на сервере
+        </div>
+        <%Html.EndForm(); %>
+    </div>
     <%=Html.Grid<IBaseReportView>("bases").Columns(column =>
 {
     column.For(b => b.BaseId).HeaderAttributes(width=>"2%").Named("#");
     column.For(b => b.BaseName).HeaderAttributes(width => "8%").Named("Имя ИБ");
     column.For(b => b.MDRelease).HeaderAttributes(width => "5%").Named("Релиз");
-    column.For(b => b.ServiceAddress).Named("Адрес сервиса").HeaderAttributes(width => "8%");
-    column.For(b => b.DateComplete).Named("Дата последнего обмена").HeaderAttributes(width => "7%");
-    column.Custom(b => b.GroupName + " " + Html.ActionLink("Редактировать", "Edit", "Group", new { id = b.GroupId }, new { @class = "edit-button" }) /*Html.ImageActionLink("Edit", "Group", new { id = b.GroupId }, "Content/images/edit.png", "Редактировать")*/).Encode(false).Named("Группа");
-    column.For(b => b.Status).Named("Статус").Attributes(new Func<GridRowViewData<IBaseReportView>, IDictionary<string, object>>(item =>
-    {
-        string @class = "blank";
-        switch (item.Item.Status)
-        {
-            case "ExchangeFail":
-            case "ExtFormsFail": @class = "fail"; break;
-            case "ExchangeWarning": @class = "warning"; break;
-            case "ExchangeSuccess":
-            case "ExtFormsSuccess": @class = "success"; break;
-            case "Busy": @class = "busy"; break;
-            case "Interrupt": @class = "interrupt"; break;
-        }
-        return new Dictionary<string, object>() { { "class", @class } };
-    })).HeaderAttributes(width => "10%");
-    column.For(b => b.Message).Named("Сообщение отчета").HeaderAttributes(width => "29%");
-    column.Custom(b => string.Join("<br/>", b.LoadPackets.ToList().ConvertAll<string>(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Filename, c.Size / 1024f, c.DateCreated)))).Named("Последние загруженные пакеты").HeaderAttributes(width => "12%");
-    column.Custom(b => string.Join("<br/>", b.UnloadPackets.ToList().ConvertAll<string>(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Filename, c.Size / 1024f, c.DateCreated)))).Named("Последние выгруженные пакеты").HeaderAttributes(width => "12%");
+    column.For(b => b.ServiceAddress).HeaderAttributes(width => "8%").Named("Адрес сервиса");
+    column.For(b => b.DateComplete).HeaderAttributes(width => "8%").Named("Дата последнего обмена");
+    column.For(b => b.GroupName).Encode(false).Named("Группа");
+    column.Custom(b => "").Attributes(new Func<GridRowViewData<IBaseReportView>, Dictionary<string, object>>(item=> new Dictionary<string, object>(){{"class",item.Item.Status.Equals("ExchangeFail") 
+        ? "fail"
+        : item.Item.Status.Equals("ExchangeWarning") 
+            ? "warning"
+            : item.Item.Status.Equals("ExchangeSuccess") 
+                ? "success"
+                : item.Item.Status.Equals("Busy") 
+                    ? "busy"
+                    : item.Item.Status.Equals("Interrupt")
+                        ?"interrupt"
+                        :"blank"}})).HeaderAttributes(width => 5);
+    column.For(b => b.Message).HeaderAttributes(width => "23%").Named("Отчёт");
+    column.Custom(b => string.Join("<br/>", b.LoadPackets.ToList().ConvertAll<string>(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Filename, c.Size / 1024f, c.DateCreated)))).Named("Последние загруженные пакеты").HeaderAttributes(width => "19%");
+    column.Custom(b => string.Join("<br/>", b.UnloadPackets.ToList().ConvertAll<string>(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Filename, c.Size / 1024f, c.DateCreated)))).Named("Последние выгруженные пакеты").HeaderAttributes(width => "19%");
     column.Custom(b => ("Busy".Equals(b.Status) ?
         Html.ActionLink("Отмена", "Interrupt", new { id = b.BaseId }, new { @class = "interrupt" }).ToHtmlString() :
-        Html.ActionLink("Обмен", "Exchange", new { id = b.BaseId }, new { @class = "exchange" }).ToHtmlString()) + String.Format("<a href=\"{0}#base{1}\" class=\"edit-button\">Редактировать</a>",Url.Action("Edit", "Service", new {id=b.ServiceId}), b.BaseId)).HeaderAttributes(width => "5%");
+        Html.ActionLink("Обмен", "Exchange", new { id = b.BaseId }, new { @class = "exchange" }).ToHtmlString()) + Html.ActionLink("Редактировать","Edit", "Base", new { id = b.BaseId }, new { @class = "edit-button" })).HeaderAttributes(width => "5%");
     //column.For(b => 1).HeaderAttributes(width => "2%");
-}).Attributes(id => "data", width => "100%")/*.RenderUsing(new BaseReportRenderer<IBaseReportView>())*/%>
+}).Attributes(id => "data", width => "100%")/*.RenderUsing(new BaseReportRenderer<IBaseReportView>())*/%><br />
+<table style="border: 0px;">
+<tr><td colspan="10">Легенда:</td></tr>
+<tr><td class="success" width="10"></td><td>- Успешно</td>
+<td class="fail" width="10"></td><td>- Сбой</td>
+<td class="warning" width="10"></td><td>- Предупреждение</td>
+<td class="busy" width="10"></td><td>- Идет процесс</td>
+<td class="interrupt" width="10"></td><td>- Прервано</td></tr></table>
 </asp:Content>

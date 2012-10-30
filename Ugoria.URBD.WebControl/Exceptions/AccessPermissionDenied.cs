@@ -8,17 +8,9 @@ namespace Ugoria.URBD.WebControl
 {
     public class AccessPermissionDeniedException : HttpException
     {
-        private string user;
-
-        public string User
-        {
-            get { return user; }
-        }
-
-        public AccessPermissionDeniedException(IPrincipal user, string message)
+        public AccessPermissionDeniedException(string message)
             : base(message)
         {
-            this.user = user.Identity.Name;
         }
     }
 }

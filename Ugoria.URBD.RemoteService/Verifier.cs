@@ -13,9 +13,9 @@ namespace Ugoria.URBD.RemoteService
     {
         private string logFilename = "";
         private string message = "";
-        private Dictionary<FileInfo, PacketInfo> mlgReport = new Dictionary<FileInfo, PacketInfo>();
+        private Dictionary<string, PacketInfo> mlgReport = new Dictionary<string, PacketInfo>();
 
-        public Dictionary<FileInfo, PacketInfo> MlgReport
+        public Dictionary<string, PacketInfo> MlgReport
         {
             get { return mlgReport; }
         }
@@ -24,7 +24,7 @@ namespace Ugoria.URBD.RemoteService
 
         public virtual void Verification()
         {
-            FileInfo currentFile = null;
+            string currentFile = null;
 
             using (StreamReader read = new StreamReader(logFilename, Encoding.GetEncoding(1251)))
             {
@@ -37,13 +37,13 @@ namespace Ugoria.URBD.RemoteService
                     switch (mlgMessage.eventType)
                     {
                         case "DistUplBeg":
-                            currentFile = new FileInfo(mlgMessage.information);
-                            if (!mlgReport.ContainsKey(currentFile))
+                            currentFile = new FileInfo(mlgMessage.information).Name;
+                            if (!mlgReport.Any(r => r.Key.Equals(currentFile, StringComparison.InvariantCultureIgnoreCase)))
                                 mlgReport.Add(currentFile, new PacketInfo { isSuccess = false, type = PacketType.Load });
                             break;
                         case "DistDnldBeg":
-                            currentFile = new FileInfo(regexFilepath.Match(mlgMessage.information).Groups[1].Value);
-                            if (!mlgReport.ContainsKey(currentFile))
+                            currentFile = new FileInfo(regexFilepath.Match(mlgMessage.information).Groups[1].Value).Name;
+                            if (!mlgReport.Any(r => r.Key.Equals(currentFile, StringComparison.InvariantCultureIgnoreCase)))
                                 mlgReport.Add(currentFile, new PacketInfo { isSuccess = false, type = PacketType.Unload });
                             break;
                         case "DistUplSuc":
@@ -55,10 +55,10 @@ namespace Ugoria.URBD.RemoteService
                         case "DistUplErr":
                             if (mlgReport[currentFile].isSuccess)
                                 break;
-                            mlgReport[currentFile].status = String.Format("Ошибка загрузки пакета {0}: {1}", currentFile.Name, mlgMessage.information);
+                            mlgReport[currentFile].status = String.Format("Ошибка загрузки пакета {0}: {1}", currentFile, mlgMessage.information);
                             break;
                         case "DistDnlErr":
-                            mlgReport[currentFile].status = String.Format("Ошибка выгрузки пакета: {0}: {1} ", currentFile.Name, mlgMessage.information);
+                            mlgReport[currentFile].status = String.Format("Ошибка выгрузки пакета: {0}: {1} ", currentFile, mlgMessage.information);
                             break;
                     }
                 }

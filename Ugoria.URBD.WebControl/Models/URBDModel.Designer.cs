@@ -25,15 +25,15 @@ using System.Runtime.Serialization;
 [assembly: EdmRelationshipAttribute("DataContext", "FK_ScheduleExtForms_Base", "Base", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.Base), "ScheduleExtForms", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.ScheduleExtForms), true)]
 [assembly: EdmRelationshipAttribute("DataContext", "FK_Structure_Service", "Service", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.Service), "Base", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.Base), true)]
 [assembly: EdmRelationshipAttribute("DataContext", "FK_ReportPacket_Packet", "Packet", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.Packet), "ReportPacket", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.ReportPacket), true)]
-[assembly: EdmRelationshipAttribute("DataContext", "FK_ReportPacket_PacketFile", "PacketFile", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(Ugoria.URBD.WebControl.Models.PacketFile), "ReportPacket", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.ReportPacket), true)]
 [assembly: EdmRelationshipAttribute("DataContext", "FK_ServiceLog_Service", "Service", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.Service), "ServiceLog", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.ServiceLog), true)]
 [assembly: EdmRelationshipAttribute("DataContext", "FK_UserServicesPermissions_Service", "Service", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(Ugoria.URBD.WebControl.Models.Service), "UserServicesPermission", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.UserServicesPermission), true)]
 [assembly: EdmRelationshipAttribute("DataContext", "FK_UserServicesPermissions_Users", "User", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(Ugoria.URBD.WebControl.Models.User), "UserServicesPermission", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.UserServicesPermission), true)]
+[assembly: EdmRelationshipAttribute("DataContext", "FK_SchedulePacket_Base", "Base", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.Base), "ScheduleExchange", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.ScheduleExchange), true)]
 [assembly: EdmRelationshipAttribute("DataContext", "FK_Report_Base", "Base", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.Base), "Report", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.Report), true)]
 [assembly: EdmRelationshipAttribute("DataContext", "FK_Launch1C_Report", "Report", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.Report), "Launch1C", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.Launch1C), true)]
-[assembly: EdmRelationshipAttribute("DataContext", "FK_Report_User", "User", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(Ugoria.URBD.WebControl.Models.User), "Report", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.Report), true)]
+[assembly: EdmRelationshipAttribute("DataContext", "FK_Report_User", "User", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.User), "Report", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.Report), true)]
 [assembly: EdmRelationshipAttribute("DataContext", "FK_ReportPacket_Report", "Report", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.Report), "ReportPacket", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.ReportPacket), true)]
-[assembly: EdmRelationshipAttribute("DataContext", "FK_SchedulePacket_Base", "Base", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.Base), "ScheduleExchange", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.ScheduleExchange), true)]
+[assembly: EdmRelationshipAttribute("DataContext", "FK_Report_ReportStatus", "ReportStatus", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Ugoria.URBD.WebControl.Models.ReportStatus), "Report", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Ugoria.URBD.WebControl.Models.Report), true)]
 
 #endregion
 
@@ -168,22 +168,6 @@ namespace Ugoria.URBD.WebControl.Models
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        public ObjectSet<PacketFile> PacketFile
-        {
-            get
-            {
-                if ((_PacketFile == null))
-                {
-                    _PacketFile = base.CreateObjectSet<PacketFile>("PacketFile");
-                }
-                return _PacketFile;
-            }
-        }
-        private ObjectSet<PacketFile> _PacketFile;
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
         public ObjectSet<ReportPacket> ReportPacket
         {
             get
@@ -280,22 +264,6 @@ namespace Ugoria.URBD.WebControl.Models
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        public ObjectSet<BaseReportList> BaseReportList
-        {
-            get
-            {
-                if ((_BaseReportList == null))
-                {
-                    _BaseReportList = base.CreateObjectSet<BaseReportList>("BaseReportList");
-                }
-                return _BaseReportList;
-            }
-        }
-        private ObjectSet<BaseReportList> _BaseReportList;
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
         public ObjectSet<ReferenceSchedule> ReferenceSchedule
         {
             get
@@ -308,22 +276,6 @@ namespace Ugoria.URBD.WebControl.Models
             }
         }
         private ObjectSet<ReferenceSchedule> _ReferenceSchedule;
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        public ObjectSet<Report> Report
-        {
-            get
-            {
-                if ((_Report == null))
-                {
-                    _Report = base.CreateObjectSet<Report>("Report");
-                }
-                return _Report;
-            }
-        }
-        private ObjectSet<Report> _Report;
     
         /// <summary>
         /// No Metadata Documentation available.
@@ -356,6 +308,54 @@ namespace Ugoria.URBD.WebControl.Models
             }
         }
         private ObjectSet<ScheduleExchangeOfService> _ScheduleExchangeOfService;
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        public ObjectSet<BaseReportList> BaseReportList
+        {
+            get
+            {
+                if ((_BaseReportList == null))
+                {
+                    _BaseReportList = base.CreateObjectSet<BaseReportList>("BaseReportList");
+                }
+                return _BaseReportList;
+            }
+        }
+        private ObjectSet<BaseReportList> _BaseReportList;
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        public ObjectSet<Report> Report
+        {
+            get
+            {
+                if ((_Report == null))
+                {
+                    _Report = base.CreateObjectSet<Report>("Report");
+                }
+                return _Report;
+            }
+        }
+        private ObjectSet<Report> _Report;
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        public ObjectSet<ReportStatus> ReportStatus
+        {
+            get
+            {
+                if ((_ReportStatus == null))
+                {
+                    _ReportStatus = base.CreateObjectSet<ReportStatus>("ReportStatus");
+                }
+                return _ReportStatus;
+            }
+        }
+        private ObjectSet<ReportStatus> _ReportStatus;
 
         #endregion
         #region AddTo Methods
@@ -398,14 +398,6 @@ namespace Ugoria.URBD.WebControl.Models
         public void AddToPacket(Packet packet)
         {
             base.AddObject("Packet", packet);
-        }
-    
-        /// <summary>
-        /// Deprecated Method for adding a new object to the PacketFile EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
-        /// </summary>
-        public void AddToPacketFile(PacketFile packetFile)
-        {
-            base.AddObject("PacketFile", packetFile);
         }
     
         /// <summary>
@@ -457,27 +449,11 @@ namespace Ugoria.URBD.WebControl.Models
         }
     
         /// <summary>
-        /// Deprecated Method for adding a new object to the BaseReportList EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
-        /// </summary>
-        public void AddToBaseReportList(BaseReportList baseReportList)
-        {
-            base.AddObject("BaseReportList", baseReportList);
-        }
-    
-        /// <summary>
         /// Deprecated Method for adding a new object to the ReferenceSchedule EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
         /// </summary>
         public void AddToReferenceSchedule(ReferenceSchedule referenceSchedule)
         {
             base.AddObject("ReferenceSchedule", referenceSchedule);
-        }
-    
-        /// <summary>
-        /// Deprecated Method for adding a new object to the Report EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
-        /// </summary>
-        public void AddToReport(Report report)
-        {
-            base.AddObject("Report", report);
         }
     
         /// <summary>
@@ -494,6 +470,30 @@ namespace Ugoria.URBD.WebControl.Models
         public void AddToScheduleExchangeOfService(ScheduleExchangeOfService scheduleExchangeOfService)
         {
             base.AddObject("ScheduleExchangeOfService", scheduleExchangeOfService);
+        }
+    
+        /// <summary>
+        /// Deprecated Method for adding a new object to the BaseReportList EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// </summary>
+        public void AddToBaseReportList(BaseReportList baseReportList)
+        {
+            base.AddObject("BaseReportList", baseReportList);
+        }
+    
+        /// <summary>
+        /// Deprecated Method for adding a new object to the Report EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// </summary>
+        public void AddToReport(Report report)
+        {
+            base.AddObject("Report", report);
+        }
+    
+        /// <summary>
+        /// Deprecated Method for adding a new object to the ReportStatus EntitySet. Consider using the .Add method of the associated ObjectSet&lt;T&gt; property instead.
+        /// </summary>
+        public void AddToReportStatus(ReportStatus reportStatus)
+        {
+            base.AddObject("ReportStatus", reportStatus);
         }
 
         #endregion
@@ -997,28 +997,6 @@ namespace Ugoria.URBD.WebControl.Models
         [XmlIgnoreAttribute()]
         [SoapIgnoreAttribute()]
         [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("DataContext", "FK_Report_Base", "Report")]
-        public EntityCollection<Report> Report
-        {
-            get
-            {
-                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<Report>("DataContext.FK_Report_Base", "Report");
-            }
-            set
-            {
-                if ((value != null))
-                {
-                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<Report>("DataContext.FK_Report_Base", "Report", value);
-                }
-            }
-        }
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
         [EdmRelationshipNavigationPropertyAttribute("DataContext", "FK_SchedulePacket_Base", "ScheduleExchange")]
         public EntityCollection<ScheduleExchange> ScheduleExchange
         {
@@ -1031,6 +1009,28 @@ namespace Ugoria.URBD.WebControl.Models
                 if ((value != null))
                 {
                     ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<ScheduleExchange>("DataContext.FK_SchedulePacket_Base", "ScheduleExchange", value);
+                }
+            }
+        }
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("DataContext", "FK_Report_Base", "Report")]
+        public EntityCollection<Report> Report
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<Report>("DataContext.FK_Report_Base", "Report");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<Report>("DataContext.FK_Report_Base", "Report", value);
                 }
             }
         }
@@ -1348,6 +1348,30 @@ namespace Ugoria.URBD.WebControl.Models
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
         [DataMemberAttribute()]
+        public global::System.String md_release
+        {
+            get
+            {
+                return _md_release;
+            }
+            set
+            {
+                Onmd_releaseChanging(value);
+                ReportPropertyChanging("md_release");
+                _md_release = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("md_release");
+                Onmd_releaseChanged();
+            }
+        }
+        private global::System.String _md_release;
+        partial void Onmd_releaseChanging(global::System.String value);
+        partial void Onmd_releaseChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
         public global::System.String status
         {
             get
@@ -1630,54 +1654,6 @@ namespace Ugoria.URBD.WebControl.Models
         private global::System.String _unload_packets;
         partial void Onunload_packetsChanging(global::System.String value);
         partial void Onunload_packetsChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public Nullable<global::System.Int32> user_id
-        {
-            get
-            {
-                return _user_id;
-            }
-            set
-            {
-                Onuser_idChanging(value);
-                ReportPropertyChanging("user_id");
-                _user_id = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("user_id");
-                Onuser_idChanged();
-            }
-        }
-        private Nullable<global::System.Int32> _user_id;
-        partial void Onuser_idChanging(Nullable<global::System.Int32> value);
-        partial void Onuser_idChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public global::System.String md_release
-        {
-            get
-            {
-                return _md_release;
-            }
-            set
-            {
-                Onmd_releaseChanging(value);
-                ReportPropertyChanging("md_release");
-                _md_release = StructuralObject.SetValidValue(value, true);
-                ReportPropertyChanged("md_release");
-                Onmd_releaseChanged();
-            }
-        }
-        private global::System.String _md_release;
-        partial void Onmd_releaseChanging(global::System.String value);
-        partial void Onmd_releaseChanged();
 
         #endregion
     
@@ -2176,158 +2152,6 @@ namespace Ugoria.URBD.WebControl.Models
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="DataContext", Name="PacketFile")]
-    [Serializable()]
-    [DataContractAttribute(IsReference=true)]
-    public partial class PacketFile : EntityObject
-    {
-        #region Factory Method
-    
-        /// <summary>
-        /// Create a new PacketFile object.
-        /// </summary>
-        /// <param name="file_id">Initial value of the file_id property.</param>
-        public static PacketFile CreatePacketFile(global::System.Int32 file_id)
-        {
-            PacketFile packetFile = new PacketFile();
-            packetFile.file_id = file_id;
-            return packetFile;
-        }
-
-        #endregion
-        #region Primitive Properties
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
-        public global::System.Int32 file_id
-        {
-            get
-            {
-                return _file_id;
-            }
-            set
-            {
-                if (_file_id != value)
-                {
-                    Onfile_idChanging(value);
-                    ReportPropertyChanging("file_id");
-                    _file_id = StructuralObject.SetValidValue(value);
-                    ReportPropertyChanged("file_id");
-                    Onfile_idChanged();
-                }
-            }
-        }
-        private global::System.Int32 _file_id;
-        partial void Onfile_idChanging(global::System.Int32 value);
-        partial void Onfile_idChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public global::System.String hash
-        {
-            get
-            {
-                return _hash;
-            }
-            set
-            {
-                OnhashChanging(value);
-                ReportPropertyChanging("hash");
-                _hash = StructuralObject.SetValidValue(value, true);
-                ReportPropertyChanged("hash");
-                OnhashChanged();
-            }
-        }
-        private global::System.String _hash;
-        partial void OnhashChanging(global::System.String value);
-        partial void OnhashChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public Nullable<global::System.Int64> size
-        {
-            get
-            {
-                return _size;
-            }
-            set
-            {
-                OnsizeChanging(value);
-                ReportPropertyChanging("size");
-                _size = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("size");
-                OnsizeChanged();
-            }
-        }
-        private Nullable<global::System.Int64> _size;
-        partial void OnsizeChanging(Nullable<global::System.Int64> value);
-        partial void OnsizeChanged();
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
-        public Nullable<global::System.DateTime> date_created
-        {
-            get
-            {
-                return _date_created;
-            }
-            set
-            {
-                Ondate_createdChanging(value);
-                ReportPropertyChanging("date_created");
-                _date_created = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("date_created");
-                Ondate_createdChanged();
-            }
-        }
-        private Nullable<global::System.DateTime> _date_created;
-        partial void Ondate_createdChanging(Nullable<global::System.DateTime> value);
-        partial void Ondate_createdChanged();
-
-        #endregion
-    
-        #region Navigation Properties
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("DataContext", "FK_ReportPacket_PacketFile", "ReportPacket")]
-        public EntityCollection<ReportPacket> ReportPacket
-        {
-            get
-            {
-                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<ReportPacket>("DataContext.FK_ReportPacket_PacketFile", "ReportPacket");
-            }
-            set
-            {
-                if ((value != null))
-                {
-                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<ReportPacket>("DataContext.FK_ReportPacket_PacketFile", "ReportPacket", value);
-                }
-            }
-        }
-
-        #endregion
-    }
-    
-    /// <summary>
-    /// No Metadata Documentation available.
-    /// </summary>
     [EdmEntityTypeAttribute(NamespaceName="DataContext", Name="ReferenceSchedule")]
     [Serializable()]
     [DataContractAttribute(IsReference=true)]
@@ -2492,12 +2316,14 @@ namespace Ugoria.URBD.WebControl.Models
         /// <param name="report_id">Initial value of the report_id property.</param>
         /// <param name="base_id">Initial value of the base_id property.</param>
         /// <param name="status_id">Initial value of the status_id property.</param>
-        public static Report CreateReport(global::System.Int32 report_id, global::System.Int32 base_id, global::System.Int32 status_id)
+        /// <param name="user_id">Initial value of the user_id property.</param>
+        public static Report CreateReport(global::System.Int32 report_id, global::System.Int32 base_id, global::System.Int32 status_id, global::System.Int32 user_id)
         {
             Report report = new Report();
             report.report_id = report_id;
             report.base_id = base_id;
             report.status_id = status_id;
+            report.user_id = user_id;
             return report;
         }
 
@@ -2678,9 +2504,9 @@ namespace Ugoria.URBD.WebControl.Models
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
         [DataMemberAttribute()]
-        public Nullable<global::System.Int32> user_id
+        public global::System.Int32 user_id
         {
             get
             {
@@ -2695,8 +2521,8 @@ namespace Ugoria.URBD.WebControl.Models
                 Onuser_idChanged();
             }
         }
-        private Nullable<global::System.Int32> _user_id;
-        partial void Onuser_idChanging(Nullable<global::System.Int32> value);
+        private global::System.Int32 _user_id;
+        partial void Onuser_idChanging(global::System.Int32 value);
         partial void Onuser_idChanged();
 
         #endregion
@@ -2822,6 +2648,44 @@ namespace Ugoria.URBD.WebControl.Models
                 }
             }
         }
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("DataContext", "FK_Report_ReportStatus", "ReportStatus")]
+        public ReportStatus ReportStatus
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<ReportStatus>("DataContext.FK_Report_ReportStatus", "ReportStatus").Value;
+            }
+            set
+            {
+                ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<ReportStatus>("DataContext.FK_Report_ReportStatus", "ReportStatus").Value = value;
+            }
+        }
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [BrowsableAttribute(false)]
+        [DataMemberAttribute()]
+        public EntityReference<ReportStatus> ReportStatusReference
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<ReportStatus>("DataContext.FK_Report_ReportStatus", "ReportStatus");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedReference<ReportStatus>("DataContext.FK_Report_ReportStatus", "ReportStatus", value);
+                }
+            }
+        }
 
         #endregion
     }
@@ -2934,24 +2798,48 @@ namespace Ugoria.URBD.WebControl.Models
         /// </summary>
         [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
         [DataMemberAttribute()]
-        public Nullable<global::System.Int32> file_id
+        public Nullable<global::System.Int64> size
         {
             get
             {
-                return _file_id;
+                return _size;
             }
             set
             {
-                Onfile_idChanging(value);
-                ReportPropertyChanging("file_id");
-                _file_id = StructuralObject.SetValidValue(value);
-                ReportPropertyChanged("file_id");
-                Onfile_idChanged();
+                OnsizeChanging(value);
+                ReportPropertyChanging("size");
+                _size = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("size");
+                OnsizeChanged();
             }
         }
-        private Nullable<global::System.Int32> _file_id;
-        partial void Onfile_idChanging(Nullable<global::System.Int32> value);
-        partial void Onfile_idChanged();
+        private Nullable<global::System.Int64> _size;
+        partial void OnsizeChanging(Nullable<global::System.Int64> value);
+        partial void OnsizeChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public Nullable<global::System.DateTime> date_created
+        {
+            get
+            {
+                return _date_created;
+            }
+            set
+            {
+                Ondate_createdChanging(value);
+                ReportPropertyChanging("date_created");
+                _date_created = StructuralObject.SetValidValue(value);
+                ReportPropertyChanged("date_created");
+                Ondate_createdChanged();
+            }
+        }
+        private Nullable<global::System.DateTime> _date_created;
+        partial void Ondate_createdChanging(Nullable<global::System.DateTime> value);
+        partial void Ondate_createdChanged();
 
         #endregion
     
@@ -3001,44 +2889,6 @@ namespace Ugoria.URBD.WebControl.Models
         [XmlIgnoreAttribute()]
         [SoapIgnoreAttribute()]
         [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("DataContext", "FK_ReportPacket_PacketFile", "PacketFile")]
-        public PacketFile PacketFile
-        {
-            get
-            {
-                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<PacketFile>("DataContext.FK_ReportPacket_PacketFile", "PacketFile").Value;
-            }
-            set
-            {
-                ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<PacketFile>("DataContext.FK_ReportPacket_PacketFile", "PacketFile").Value = value;
-            }
-        }
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
-        public EntityReference<PacketFile> PacketFileReference
-        {
-            get
-            {
-                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<PacketFile>("DataContext.FK_ReportPacket_PacketFile", "PacketFile");
-            }
-            set
-            {
-                if ((value != null))
-                {
-                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedReference<PacketFile>("DataContext.FK_ReportPacket_PacketFile", "PacketFile", value);
-                }
-            }
-        }
-    
-        /// <summary>
-        /// No Metadata Documentation available.
-        /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
         [EdmRelationshipNavigationPropertyAttribute("DataContext", "FK_ReportPacket_Report", "Report")]
         public Report Report
         {
@@ -3067,6 +2917,110 @@ namespace Ugoria.URBD.WebControl.Models
                 if ((value != null))
                 {
                     ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedReference<Report>("DataContext.FK_ReportPacket_Report", "Report", value);
+                }
+            }
+        }
+
+        #endregion
+    }
+    
+    /// <summary>
+    /// No Metadata Documentation available.
+    /// </summary>
+    [EdmEntityTypeAttribute(NamespaceName="DataContext", Name="ReportStatus")]
+    [Serializable()]
+    [DataContractAttribute(IsReference=true)]
+    public partial class ReportStatus : EntityObject
+    {
+        #region Factory Method
+    
+        /// <summary>
+        /// Create a new ReportStatus object.
+        /// </summary>
+        /// <param name="status_id">Initial value of the status_id property.</param>
+        public static ReportStatus CreateReportStatus(global::System.Int32 status_id)
+        {
+            ReportStatus reportStatus = new ReportStatus();
+            reportStatus.status_id = status_id;
+            return reportStatus;
+        }
+
+        #endregion
+        #region Primitive Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
+        [DataMemberAttribute()]
+        public global::System.Int32 status_id
+        {
+            get
+            {
+                return _status_id;
+            }
+            set
+            {
+                if (_status_id != value)
+                {
+                    Onstatus_idChanging(value);
+                    ReportPropertyChanging("status_id");
+                    _status_id = StructuralObject.SetValidValue(value);
+                    ReportPropertyChanged("status_id");
+                    Onstatus_idChanged();
+                }
+            }
+        }
+        private global::System.Int32 _status_id;
+        partial void Onstatus_idChanging(global::System.Int32 value);
+        partial void Onstatus_idChanged();
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
+        [DataMemberAttribute()]
+        public global::System.String name
+        {
+            get
+            {
+                return _name;
+            }
+            set
+            {
+                OnnameChanging(value);
+                ReportPropertyChanging("name");
+                _name = StructuralObject.SetValidValue(value, true);
+                ReportPropertyChanged("name");
+                OnnameChanged();
+            }
+        }
+        private global::System.String _name;
+        partial void OnnameChanging(global::System.String value);
+        partial void OnnameChanged();
+
+        #endregion
+    
+        #region Navigation Properties
+    
+        /// <summary>
+        /// No Metadata Documentation available.
+        /// </summary>
+        [XmlIgnoreAttribute()]
+        [SoapIgnoreAttribute()]
+        [DataMemberAttribute()]
+        [EdmRelationshipNavigationPropertyAttribute("DataContext", "FK_Report_ReportStatus", "Report")]
+        public EntityCollection<Report> Report
+        {
+            get
+            {
+                return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedCollection<Report>("DataContext.FK_Report_ReportStatus", "Report");
+            }
+            set
+            {
+                if ((value != null))
+                {
+                    ((IEntityWithRelationships)this).RelationshipManager.InitializeRelatedCollection<Report>("DataContext.FK_Report_ReportStatus", "Report", value);
                 }
             }
         }

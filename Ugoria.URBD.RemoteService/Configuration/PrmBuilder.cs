@@ -23,9 +23,7 @@ namespace Ugoria.URBD.RemoteService
             set { fileName = value; }
         }
 
-        private PrmBuilder()
-        {
-        }        
+        private PrmBuilder() { }
 
         public FileInfo Build()
         {

@@ -5,17 +5,20 @@ using System.ServiceModel.Channels;
 using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.Contracts.Data.Reports;
 using Ugoria.URBD.Contracts.Data;
-using Ugoria.URBD.Logging;
+using Ugoria.URBD.RemoteService.Services;
+using Ugoria.URBD.Shared;
+using Ugoria.URBD.Contracts.Data.Commands;
 
 namespace Ugoria.URBD.RemoteService
 {
     public class URBDRemoteWorker
     {
-        private RemoteService service;
+        private Ugoria.URBD.RemoteService.Services.RemoteService service;
         private ServiceHost serviceHost;
         private QueueExecuteManager queueManager;
         private RemoteConfigurationManager remoteConfigurationManager;
         private ChannelFactory<ICentralService> channelFactory;
+        private DateTime configurationChangeDate = DateTime.MinValue;
 
         public URBDRemoteWorker()
         {
@@ -30,8 +33,7 @@ namespace Ugoria.URBD.RemoteService
             remoteConfigurationManager = new RemoteConfigurationManager();
             queueManager = new QueueExecuteManager(remoteConfigurationManager);
 
-            service = new RemoteService();
-            service.Configured += ResetConfiguration;
+            service = new Ugoria.URBD.RemoteService.Services.RemoteService();
             service.CommandSended += ServiceCommandSender;
             service.ProcessChecked += ServiceProcessCheck;
             service.Interrupted += ServiceInterrupt;
@@ -42,7 +44,7 @@ namespace Ugoria.URBD.RemoteService
 
         public void ServiceInterrupt(IRemoteService service, InterruptEventArgs e)
         {
-            RequireConfiguration();
+            //RequireConfiguration(e);
 
             LogHelper.Write2Log("Запрос на снятие задачи " + e.CommandGuid, LogLevel.Information);
             try
@@ -62,20 +64,11 @@ namespace Ugoria.URBD.RemoteService
             remoteConfigurationManager.RemoteConfiguration = null;
         }
 
-        private void Configure(RemoteConfiguration configuration)
-        {
-            remoteConfigurationManager.RemoteConfiguration = configuration;
-            lock (queueManager)
-            {
-                remoteConfigurationManager.CreateFileAndRegistryKeys();
-                queueManager.ConfigurationManager = remoteConfigurationManager;
-            }
-        }
-
-        public void RequireConfiguration()
+        public void RequireConfiguration(Command command)
         {
             // конфигурирование только при отсутствующих процессах 1С - предусмотреть
-            if (remoteConfigurationManager.RemoteConfiguration != null)
+            // проверка даты конфигурации, устарела ли
+            if ((command.configurationChangeDate - configurationChangeDate).TotalSeconds < 1)
                 return;
             LogHelper.Write2Log("Конфигурирование сервиса", LogLevel.Information);
 
@@ -90,7 +83,10 @@ namespace Ugoria.URBD.RemoteService
                     if (!proxy.IsSuccess)
                         LogHelper.Write2Log(proxy.Exception);
                     else
+                    {
+                        configurationChangeDate = command.configurationChangeDate;
                         LogHelper.Write2Log("Сервис сконфигурирован", LogLevel.Information);
+                    }
                 }
             }
             catch (Exception ex)
@@ -101,7 +97,7 @@ namespace Ugoria.URBD.RemoteService
 
         public void ServiceCommandSender(IRemoteService service, CommandEventArgs args)
         {
-            RequireConfiguration();
+            RequireConfiguration(args.Command);
 
             LogHelper.Write2Log("Постановка задачи в очередь", LogLevel.Information);
             queueManager.AddOperation(args.Command, OperationCallback);
@@ -124,7 +120,7 @@ namespace Ugoria.URBD.RemoteService
 
         private RemoteProcessStatus ServiceProcessCheck(IRemoteService service, CheckEventArgs args)
         {
-            RequireConfiguration();
+            RequireConfiguration(args.CheckCommand);
             LogHelper.Write2Log("Проверка работы процесса 1С", LogLevel.Information);
             // гребаная логика
             // если запуск 1С был, известны время старта (startDate) и pid 

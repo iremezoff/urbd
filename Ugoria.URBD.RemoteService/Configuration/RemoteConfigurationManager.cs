@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using Ugoria.URBD.Contracts;
 using System.IO;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
 using System.Collections;
 using Ugoria.URBD.Contracts.Data;
 using System.Security.Principal;
 using Microsoft.Win32;
-using Ugoria.URBD.Logging;
+using Ugoria.URBD.Shared.Configuration;
 
 namespace Ugoria.URBD.RemoteService
 {
@@ -111,6 +111,17 @@ namespace Ugoria.URBD.RemoteService
                 prmBuilder.FileName = String.Format(@"{0}\{1}.prm", prmFolderPath, md5HashBaseName);
                 prmBuilder.LogFile = String.Format(@"{0}\{1}.log", logFolderPath, md5HashBaseName);
                 FileInfo prmFileInfo = prmBuilder.Build();
+
+                if (base1C.packetList != null)
+                {
+                    foreach (Packet packet in base1C.packetList)
+                    {
+                        DirectoryInfo packetFileInfo = new DirectoryInfo(String.Format(@"{0}\{1}", base1C.basePath, packet.filename));
+
+                        if (!packetFileInfo.Parent.Exists)
+                            packetFileInfo.Parent.Create();
+                    }
+                }
 
                 if (WindowsIdentity.GetCurrent().Name.EndsWith("SYSTEM"))
                 {

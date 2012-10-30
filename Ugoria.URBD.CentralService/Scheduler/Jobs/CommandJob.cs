@@ -4,22 +4,24 @@ using System.Linq;
 using System.Text;
 using Quartz;
 using Ugoria.URBD.Contracts.Services;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
+using Ugoria.URBD.Shared.Configuration;
+using Ugoria.URBD.CentralService.CommandBuilding;
 
 namespace Ugoria.URBD.CentralService.Scheduler
 {
-    class CheckJob : IJob
+    class CommandJob : IJob
     {
         public void Execute(IJobExecutionContext context)
         {
             // разобрать входящие параметры, сформировать объект Command и послать его. учитывать разные типы и т.п. параметры брать из context.merged
             JobDataMap dataMap = context.MergedJobDataMap;
 
-            Action<int, CommandType> action = (Action<int, CommandType>)dataMap["action"];
-            IConfiguration cfg = (IConfiguration)dataMap["cfg"];
-
-            action.Invoke(int.Parse((string)dataMap["base_id"]),
-                CommandType.Exchange); // отправка команды
+            Action<CommandBuilder, int> action = (Action<CommandBuilder, int>)dataMap["action"];
+            CommandBuilder builder = (CommandBuilder)dataMap["command_builder"];
+            
+            int userId = (int)dataMap["user_id"];
+            action.Invoke( builder, userId); // отправка команды
         }
     }
 }

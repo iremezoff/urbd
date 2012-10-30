@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
 using System.Data;
 using System.Net.Mail;
 using System.Net;
+using Ugoria.URBD.Shared.Configuration;
+using Ugoria.URBD.CentralService.DataProvider;
+using Ugoria.URBD.CentralService.Logging;
 
 
 namespace Ugoria.URBD.CentralService

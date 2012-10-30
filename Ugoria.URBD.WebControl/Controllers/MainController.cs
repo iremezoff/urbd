@@ -8,63 +8,49 @@ using System.ServiceModel;
 using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.WebControl.Helpers;
 using System.IO;
-using Ugoria.URBD.Core;
-using Ugoria.URBD.Logging;
+using Ugoria.URBD.Shared;
+using Ugoria.URBD.WebControl.ViewModels;
 
 
 namespace Ugoria.URBD.WebControl.Controllers
 {
-
-    [ServiceAccess]
-    [HandleError(ExceptionType=typeof(AccessPermissionDeniedException), View="AccessDenied", Order=1)]
-    [HandleError(ExceptionType = typeof(CommunicationException), View = "CommError", Order = 1)]
     public class MainController : Controller
     {
         // задать параметром
         private ChannelFactory<IControlService> channelFactory = new ChannelFactory<IControlService>(new NetTcpBinding(SecurityMode.None), new EndpointAddress("net.tcp://localhost:8888/URBDControl"));
 
-        
         public ActionResult Index(TableGrouper? sort)
         {
-            try
-            {
-                URBD2Entities dataContext = new URBD2Entities();
+            URBD2Entities dataContext = new URBD2Entities();
 
-                IBaseRepository baseRepo = new BaseRepository(dataContext, SessionStore.GetCurrentUser().UserId);
+            IUser currentUser = SessionStore.GetCurrentUser();
+            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
 
-                TableGrouper grouper = sort ?? TableGrouper.group;
-                ViewData["bases"] = baseRepo.GetBases(grouper);
-                ViewData["sort"] = grouper.ToString();
-            }
-            catch (Exception ex)
-            {
-                LogHelper.Write2Log(URBDComponent.Web, ex);
-            }
+            TableGrouper grouper = sort ?? TableGrouper.group;
+            ViewData["bases"] = baseRepo.GetBases(grouper);
+            ViewData["sort"] = grouper.ToString();
 
             return View();
         }
 
-        [ServiceAccess(typeof(IBase), LimitedAccess=true)]
+        [ServiceAccess(typeof(IBase), LimitedAccess = true)]
         public ActionResult Exchange(ModeType? mode)
         {
             int baseId = -1;
             int.TryParse((string)RouteData.Values["id"], out baseId);
 
             URBD2Entities dataContext = new URBD2Entities();
-            IBaseRepository baseRepo = new BaseRepository(dataContext, SessionStore.GetCurrentUser().UserId);
+            IUser currentUser = SessionStore.GetCurrentUser();
+            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
 
             IBaseReportView baseView = baseRepo.GetBaseById(baseId);
 
             IControlService controlService = channelFactory.CreateChannel();
             ICommunicationObject comm = (ICommunicationObject)controlService;
-            
-                comm.Open();
-                controlService.RunTask(SessionStore.GetCurrentUser().UserId, baseView.BaseId, mode ?? ModeType.Passive);
-                comm.Close();
-            
-            
-            //    LogHelper.Write2Log(URBDComponent.Web, ex);
-            
+
+            comm.Open();
+            controlService.RunTask(SessionStore.GetCurrentUser().UserId, baseView.BaseId, mode ?? ModeType.Passive);
+            comm.Close();
 
             return RedirectToAction("Index");
         }
@@ -76,21 +62,18 @@ namespace Ugoria.URBD.WebControl.Controllers
 
             int.TryParse((string)RouteData.Values["id"], out baseId);
 
+            IUser currentUser = SessionStore.GetCurrentUser();
             URBD2Entities dataContext = new URBD2Entities();
-            IBaseRepository baseRepo = new BaseRepository(dataContext, SessionStore.GetCurrentUser().UserId);
+            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
 
             IBaseReportView baseView = baseRepo.GetBaseById(baseId);
 
             IControlService controlService = channelFactory.CreateChannel();
             ICommunicationObject comm = (ICommunicationObject)controlService;
-            
-                comm.Open();
-                controlService.InterruptTask(baseView.BaseId);
-                comm.Close();
-            
-            
-             //   LogHelper.Write2Log(URBDComponent.Web, ex);
-            
+
+            comm.Open();
+            controlService.InterruptTask(baseView.BaseId);
+            comm.Close();
 
             return RedirectToAction("Index");
         }

@@ -2,7 +2,7 @@
 using Ugoria.URBD.CentralService;
 using System.ServiceModel;
 
-namespace Ugoria.URBD.Core.Services
+namespace Ugoria.URBD.Shared.Services
 {
     public delegate void NoticeHandler(RemoteServiceProxy sender, NoticeEventArgs e);
     public class NoticeEventArgs : EventArgs

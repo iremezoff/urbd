@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Ugoria.URBD.Contracts;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
 using System.Diagnostics;
 using Wintellect.Threading.AsyncProgModel;
 using System.Collections;
@@ -11,7 +11,7 @@ using Ugoria.URBD.Contracts.Data.Reports;
 using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy;
 using Ugoria.URBD.RemoteService.CommandStrategy;
-using Ugoria.URBD.Logging;
+using Ugoria.URBD.Shared.Configuration;
 
 namespace Ugoria.URBD.RemoteService
 {
@@ -53,7 +53,7 @@ namespace Ugoria.URBD.RemoteService
         {
             lock (((ICollection)queueTask).SyncRoot)
             {
-                return queueTask.FirstOrDefault(t => t.Key.guid == reportGuid).Key != null;
+                return queueTask.FirstOrDefault(t => t.Key.reportGuid == reportGuid).Key != null;
             }
         }
 
@@ -62,12 +62,12 @@ namespace Ugoria.URBD.RemoteService
             lock (((ICollection)queueTask).SyncRoot)
             {
                 LogHelper.Write2Log("Поиск в очереди " + reportGuid, LogLevel.Information);
-                Command cmd = queueTask.FirstOrDefault(t => t.Key.guid == reportGuid).Key;
-                if (cmd != null)
+                Command command = queueTask.FirstOrDefault(t => t.Key.reportGuid == reportGuid).Key;
+                if (command != null)
                 {
                     LogHelper.Write2Log("Найдено. Попытка удаления " + reportGuid, LogLevel.Information);
                     ReportBuilder reportBuilder = ReportBuilder.Create();
-                    reportBuilder.CommandDate = cmd.commandDate;
+                    reportBuilder.CommandDate = command.commandDate;
                     reportBuilder.ReportGuid = reportGuid;
                     OperationReportBuilder builder = OperationReportBuilder.Create();
                     builder.CompleteDate = DateTime.Now;
@@ -75,13 +75,13 @@ namespace Ugoria.URBD.RemoteService
                     builder.Message = "Задача исключена из очереди";
                     reportBuilder.ConcreteBuilder = builder;
 
-                    ReportAsyncCallback reportCallback = queueTask[cmd];
+                    ReportAsyncCallback reportCallback = queueTask[command];
                     reportCallback(reportBuilder.Build());
                     ChangeQueue();
                     return;
                 }
                 LogHelper.Write2Log("Поиск в выполняющихся процессах " + reportGuid, LogLevel.Information);
-                TaskExecute task = executedProcess.FirstOrDefault(p => p.Command.guid == reportGuid);
+                TaskExecute task = executedProcess.FirstOrDefault(p => p.Command.reportGuid == reportGuid);
                 if (task != null)
                 {
                     LogHelper.Write2Log(String.Format("Найдено. Попытка снятия задачи {0} и процесса", reportGuid, task.CommandStrategy.LaunchGuid), LogLevel.Information);
@@ -156,13 +156,13 @@ namespace Ugoria.URBD.RemoteService
         private IEnumerator<int> QueuerEnumerator(AsyncEnumerator ae, TaskExecute task, ReportAsyncCallback callback)
         {
             // Запуск процесса
-            LogHelper.Write2Log(String.Format("Запуск процесса {0}. База: {1}. Время команды: {2}. Режим: {3}", task.Command.guid, task.Command.baseId, task.Command.commandDate, task.Command.modeType), LogLevel.Information);
+            LogHelper.Write2Log(String.Format("Запуск процесса {0}. База: {1}. Время команды: {2}. Тип: {3}", task.Command.reportGuid,task.Command.baseId, task.Command.commandDate, task.Command, task.Command.GetType()), LogLevel.Information);
             Action<ReportAsyncCallback> launchFunc = task.CommandStrategy.Launch;
 
             IAsyncResult result = launchFunc.BeginInvoke(callback, ae.End(), null);
             yield return 1;
             launchFunc.EndInvoke(ae.DequeueAsyncResult());
-            LogHelper.Write2Log(String.Format("Процесс {0} завершен", task.Command.guid), LogLevel.Information);
+            LogHelper.Write2Log(String.Format("Процесс {0} завершен", task.Command.reportGuid), LogLevel.Information);
 
             // Удаляем из списка работающих процессов и сообщаем об изменении очереди, если конечно процесс не был прерван
             if (task.CommandStrategy.IsInterrupt)
@@ -176,11 +176,11 @@ namespace Ugoria.URBD.RemoteService
             IConfiguration cfg = configurationManager.GetBaseConfiguration(command.baseId);
 
             ICommandStrategy commandStrategy = null;
-            if (command.commandType == CommandType.Exchange)
+            if (command is ExchangeCommand)
             {
                 Verifier verifier = new Verifier((string)cfg.GetParameter("log_path"));
                 IModeStrategy modeStrategy = null;
-                switch (command.modeType)
+                switch (((ExchangeCommand)command).modeType)
                 {
                     case ModeType.Aggresive: modeStrategy = new AggresiveMode(verifier,
                         (string)cfg.GetParameter("base_path"),
@@ -195,9 +195,9 @@ namespace Ugoria.URBD.RemoteService
                         (int)cfg.GetParameter("wait_time"));
                         break;
                 }
-                commandStrategy = new ExchangeStrategy(cfg, command.guid, modeStrategy, command.releaseUpdate);
+                commandStrategy = new ExchangeStrategy(cfg, command.reportGuid, modeStrategy, ((ExchangeCommand)command).releaseUpdate);
             }
-            else //if (command.commandType == CommandType.ExtForms)
+            else //if (command is ExtFormsCommand)
             {
                 commandStrategy = new ExtFormsStrategy(cfg, command.commandDate);
             }

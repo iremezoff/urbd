@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Data;
 using Ugoria.URBD.Contracts;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
 using Ugoria.URBD.Contracts.Services;
 using System.ServiceModel;
 using Ugoria.URBD.CentralService.Scheduler;
 using System.Collections;
-using Ugoria.URBD.Logging;
+using System.ServiceModel.Description;
+using Ugoria.URBD.Shared.Configuration;
+using Ugoria.URBD.CentralService.DataProvider;
+using Ugoria.URBD.CentralService.Logging;
+using Ugoria.URBD.CentralService.CommandBuilding;
 
 namespace Ugoria.URBD.CentralService
 {
@@ -32,6 +36,7 @@ namespace Ugoria.URBD.CentralService
 
             controlService.SendTask += (sender, args) => AddExchangeTask(args.UserId, args.BaseId, args.ModeType);
             controlService.SendInterruptTask += (sender, args) => InterruptProcess(args.BaseId);
+            controlService.Validate += (sender, args) => CentralConfigurationManager.RemoteValidation(args.RemoteUri, args.Configuration);
             controlHost = new ServiceHost(controlService);
 
             schedulerManager = new SchedulerManager();
@@ -39,7 +44,7 @@ namespace Ugoria.URBD.CentralService
 
             try
             {
-                ConfigurationManager confManager = new ConfigurationManager(dataProvider);
+                CentralConfigurationManager confManager = new CentralConfigurationManager(dataProvider);
                 conf = confManager.GetCentralServiceConfiguration();
 
                 Uri controlUri = new Uri((string)conf.GetParameter("service_control_address"));
@@ -75,10 +80,21 @@ namespace Ugoria.URBD.CentralService
         {
             foreach (DataRow schedExchRow in baseRow.GetChildRows("BaseScheduleExchange"))
             {
-                IConfiguration schedCfg = ConfigurationManager.GetConfiguration(schedExchRow);
+                CommandBuilder builder = CommandBuilder.Create();
+                builder.BaseId = (int)schedExchRow["base_id"];
+                ExchangeCommandBuilder particularBuilder = ExchangeCommandBuilder.Create();
+                ModeType mode = ModeType.Normal;
+                switch ((string)schedExchRow["mode"])
+                {
+                    case "A": mode = ModeType.Aggresive; break;
+                    case "E": mode = ModeType.Extreme; break;
+                    case "P": mode = ModeType.Passive; break;
+                }
+                particularBuilder.ModeType = mode;
+                builder.ParticularBuilder = particularBuilder;
                 schedulerManager.AddScheduleLaunch(remoteServiceManager.SendCommand,
-                    schedCfg,
-                    Ugoria.URBD.Contracts.Services.CommandType.Exchange,
+                    builder,
+                    (string)schedExchRow["time"],
                     remoteServiceManager.CheckProcess,
                     int.Parse(conf.GetParameter("delay_check").ToString()));
             }
@@ -88,10 +104,13 @@ namespace Ugoria.URBD.CentralService
         {
             foreach (DataRow schedEFRow in baseRow.GetChildRows("BaseScheduleExtForms"))
             {
-                IConfiguration schedCfg = ConfigurationManager.GetConfiguration(schedEFRow);
+                CommandBuilder builder = CommandBuilder.Create();
+                builder.BaseId = (int)schedEFRow["base_id"];
+                ExtFormsCommandBuilder particularBuilder = ExtFormsCommandBuilder.Create();
+                builder.ParticularBuilder = particularBuilder;
                 schedulerManager.AddScheduleLaunch(remoteServiceManager.SendCommand,
-                    schedCfg,
-                    Ugoria.URBD.Contracts.Services.CommandType.ExtForms,
+                    builder,
+                    (string)schedEFRow["time"],
                     remoteServiceManager.CheckProcess,
                     int.Parse(conf.GetParameter("delay_check").ToString()));
             }
@@ -101,10 +120,15 @@ namespace Ugoria.URBD.CentralService
         {
             LogHelper.Write2Log(String.Format("Пришел запрос на команду от userId {0}, ИБ ID: {1}, Mode {2}", userId, baseId, modeType), LogLevel.Information);
 
-            remoteServiceManager.SendCommand(baseId, Ugoria.URBD.Contracts.Services.CommandType.Exchange, modeType, userId);
+            CommandBuilder builder = CommandBuilder.Create();
+            builder.BaseId = baseId;
+            ExchangeCommandBuilder particularBuilder = ExchangeCommandBuilder.Create();
+            particularBuilder.ModeType = modeType;
+            builder.ParticularBuilder = particularBuilder;
+
+            remoteServiceManager.SendCommand(builder, userId);
             schedulerManager.AddScheduleLaunch(remoteServiceManager.CheckProcess,
-                baseId,
-                Contracts.Services.CommandType.Exchange,
+                builder,
                 int.Parse((string)conf.GetParameter("delay_check")));
         }
 

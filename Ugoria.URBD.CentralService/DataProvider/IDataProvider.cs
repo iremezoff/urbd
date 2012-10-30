@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
-namespace Ugoria.URBD.Core
+
+namespace Ugoria.URBD.CentralService.DataProvider
 {
     public interface IDataProvider
     {

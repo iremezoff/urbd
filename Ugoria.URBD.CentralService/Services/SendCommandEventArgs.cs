@@ -9,14 +9,14 @@ namespace Ugoria.URBD.CentralService.Services
     public delegate void CommandSendedHandler(RemoteServiceProxy sender, SendCommandEventArgs e);
     public class SendCommandEventArgs : EventArgs
     {
-        private Command command;
+        private ExchangeCommand command;
 
-        public Command Command
+        public ExchangeCommand Command
         {
             get { return command; }
         }
 
-        internal SendCommandEventArgs(Command command)
+        internal SendCommandEventArgs(ExchangeCommand command)
         {
             this.command = command;
         }

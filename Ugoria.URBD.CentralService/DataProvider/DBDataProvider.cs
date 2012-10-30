@@ -5,9 +5,9 @@ using System.Text;
 using System.Data.SqlClient;
 using System.Data;
 using System.Collections.Concurrent;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
 
-namespace Ugoria.URBD.CentralService
+namespace Ugoria.URBD.CentralService.DataProvider
 {
     class DBDataProvider : IDataProvider
     {
@@ -256,7 +256,6 @@ namespace Ugoria.URBD.CentralService
             cmd.Parameters.AddWithValue("@type", type);
             cmd.Parameters.AddWithValue("@date_file", packetDate);
             cmd.Parameters.AddWithValue("@filesize", filesize);
-            cmd.Parameters.AddWithValue("@filehash", filehash);
 
             ExecuteVoidSqlCommand(cmd, transactionName);
         }

@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
-using Ugoria.URBD.Contracts.Services;
 
 namespace Ugoria.URBD.Contracts.Data.Commands
 {
     [DataContract]
+    [KnownType(typeof(ExchangeCommand))]
+    [KnownType(typeof(ExtFormsCommand))]
+    [KnownType(typeof(CheckCommand))]
     public class Command
     {
         [DataMember]
-        public Guid guid;
+        public Guid reportGuid;
 
         [DataMember]
         public int baseId;
@@ -20,10 +22,7 @@ namespace Ugoria.URBD.Contracts.Data.Commands
         public DateTime commandDate;
 
         [DataMember]
-        public CommandType commandType;
-
-        [DataMember]
-        public ModeType modeType;
+        public DateTime configurationChangeDate;
 
         [DataMember]
         public DateTime releaseUpdate;

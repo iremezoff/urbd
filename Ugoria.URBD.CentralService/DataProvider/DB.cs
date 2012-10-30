@@ -3,17 +3,20 @@ using System.Data.SqlClient;
 using System;
 using System.Configuration;
 
-namespace Ugoria.URBD.CentralService
+namespace Ugoria.URBD.CentralService.DataProvider
 {
     public class DB
     {
         private static SqlConnectionStringBuilder cnStrBldr;
-        public static string connectionString = ConfigurationManager.ConnectionStrings["CentralServiceConnectionString"].ConnectionString;
+        private static string connectionString;
 
-        private DB() { }
+        private DB()
+        {
+            connectionString = ConfigurationManager.ConnectionStrings["CentralServiceConnectionString"].ConnectionString;
+        }
 
         public SqlConnection Connection
-        {            
+        {
             get
             {
                 if (cnStrBldr == null)

@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using Ugoria.URBD.Contracts;
 using System.Data;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
 using Ugoria.URBD.Contracts.Data.Reports;
 using Ugoria.URBD.Contracts.Data;
-using Ugoria.URBD.Core.Reporting;
+using Ugoria.URBD.Shared.Reporting;
 using Ugoria.URBD.Contracts.Data.Commands;
+using Ugoria.URBD.CentralService.DataProvider;
 
 namespace Ugoria.URBD.CentralService
 {
@@ -64,6 +65,7 @@ namespace Ugoria.URBD.CentralService
                 StartDate = lastCommand["date_start"] != DBNull.Value ? (DateTime)lastCommand["date_start"] : DateTime.MinValue,
                 CompleteDate = lastCommand["date_complete"] != DBNull.Value ? (DateTime)lastCommand["date_complete"] : DateTime.MinValue,
                 ReleaseDate = lastCommand["date_release"] != DBNull.Value ? (DateTime)lastCommand["date_release"] : DateTime.MinValue,
+                ConfigurationChangeDate = lastCommand["date_change"] != DBNull.Value ? (DateTime)lastCommand["date_change"] : DateTime.MinValue,
                 Pid = lastCommand["pid"] != DBNull.Value ? (int)lastCommand["pid"] : 0,
                 ReportGuid = (Guid)lastCommand["report_guid"],
                 LaunchGuid = lastCommand["launch_guid"] != DBNull.Value ? (Guid)lastCommand["launch_guid"] : Guid.Empty

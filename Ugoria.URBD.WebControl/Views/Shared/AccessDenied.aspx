@@ -10,7 +10,7 @@
 <h2><%=model.Exception.Message %></h2>
 
 Текущая учетная запись: <b><%=HttpContext.Current.User.Identity.Name %></b><br />
-<br />
-По вопросам обращаться по адресу <a href="mailto:remezovis@ugsk.ru">remezovis@ugsk.ru</a>
+
+По вопросам обращаться на адрес <a href="mailto:remezovis@ugsk.ru">remezovis@ugsk.ru</a>
 
 </asp:Content>

@@ -14,7 +14,10 @@ namespace Ugoria.URBD.WebControl
     {
         public static void RegisterGlobalFilters(GlobalFilterCollection filters)
         {
-            filters.Add(new HandleErrorAttribute());
+            filters.Add(new HandleErrorLoggerAttribute() { ExceptionType = typeof(AccessPermissionDeniedException), View = "AccessDenied", Order = 1 });
+            filters.Add(new HandleErrorLoggerAttribute());
+            filters.Add(new ServiceAccessAttribute());
+            //filters.Add()
         }
 
         public static void RegisterRoutes(RouteCollection routes)
@@ -24,7 +27,7 @@ namespace Ugoria.URBD.WebControl
             routes.MapRoute(
                 "Default", // Route name
                 "{controller}/{action}/{id}", // URL with parameters
-                new { controller = "Main", action = "Index", id = UrlParameter.Optional} // Parameter defaults
+                new { controller = "Main", action = "Index", id = UrlParameter.Optional } // Parameter defaults
             );
 
         }

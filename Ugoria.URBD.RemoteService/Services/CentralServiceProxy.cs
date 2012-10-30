@@ -8,7 +8,7 @@ using System.ServiceModel;
 using Ugoria.URBD.Contracts.Data;
 using System.Threading;
 
-namespace Ugoria.URBD.RemoteService
+namespace Ugoria.URBD.RemoteService.Services
 {
     class CentralServiceProxy : ICentralService, IDisposable
     {

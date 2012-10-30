@@ -38,7 +38,6 @@ namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
         public string Message
         {
             get { return message; }
-            set { message = value; }
         }
 
         protected ModeStrategy(Verifier verifier)
@@ -51,13 +50,13 @@ namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
             verifier.Verification();
             List<string> errMessages = new List<string>();
 
-            foreach (KeyValuePair<FileInfo, PacketInfo> mlgRecord in verifier.MlgReport)
+            foreach (KeyValuePair<string, PacketInfo> mlgRecord in verifier.MlgReport)
             {
                 if (!mlgRecord.Value.isSuccess && string.IsNullOrEmpty(mlgRecord.Value.status))
                 {
                     isAborted = true;
                     isSuccess = false;
-                    errMessages.Add(String.Format("{0} пакета {1} была прервана", mlgRecord.Value.type == Contracts.Services.PacketType.Load ? "Загрузка" : "Выгрузка", mlgRecord.Key.Name));
+                    errMessages.Add(String.Format("{0} пакета {1} была прервана", mlgRecord.Value.type == Contracts.Services.PacketType.Load ? "Загрузка" : "Выгрузка", mlgRecord.Key));
                 }
                 else if (!mlgRecord.Value.isSuccess && !string.IsNullOrEmpty(mlgRecord.Value.status))
                 {
@@ -75,7 +74,7 @@ namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
             {
                 isAborted = true;
                 isSuccess = false;
-                errMessages.Add("Сеанс 1С был аварийно завершен");
+                errMessages.Add("Ошибка доступа к метаданным (открыт конфигуратор) или иная причина");
             }
             message = string.Join(". ", errMessages).Replace("..", ".");
             if (errMessages.Count == 0)

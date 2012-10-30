@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
+using Ugoria.URBD.Shared.Configuration;
 
 namespace Ugoria.URBD.RemoteService
 {

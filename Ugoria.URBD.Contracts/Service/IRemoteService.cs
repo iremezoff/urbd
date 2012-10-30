@@ -12,9 +12,6 @@ namespace Ugoria.URBD.Contracts.Services
     public interface IRemoteService
     {
         [OperationContract(IsOneWay = true)]
-        void ResetConfiguration ();
-
-        [OperationContract(IsOneWay = true)]
         void CommandExecute (Command command);
 
         [OperationContract]

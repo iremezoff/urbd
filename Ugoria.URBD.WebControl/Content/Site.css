@@ -9,23 +9,22 @@ body
     font-family: "Trebuchet MS" , Verdana, Helvetica, Sans-Serif;
     margin: 0;
     padding: 0;
-    
 }
 
-p, ul
+p
 {
-    margin-bottom: 20px;
+    margin-bottom: 20ux;
     line-height: 1.6em;
 }
 
 header, footer, nav, section
 {
-    display: block;
+  
 }
 
 /* HEADINGS   
 ----------------------------------------------------------*/
-d, h2, h3, h4, h5, h6
+h1, h2, h3, h4, h5, h6
 {
     font-size: 1.5em;
     color: #000;
@@ -71,17 +70,17 @@ page width. Or, you can specify an exact pixel width. */
 
 header, #header
 {
-    padding: 00px 10px 0px 10px;
+    padding: 00px 30px 0px 30px;
     position: relative;
     margin-bottom: 0px;
     color: #000;
-    width: 98%;
+    width: 100%;
 }
 
 
 #main
 {
-    padding: 10px 10px 15px 10px;
+    padding: 10px;
     background-color: #fff;
     border-radius: 4px 0 0 0;
     -webkit-border-radius: 4px 0 0 0;
@@ -184,13 +183,14 @@ input[type="text"], input[type="password"]
 {
     border: 1px solid #ccc;
     padding: 2px;
+    font-size: 1.2em;
     color: #444;
     width: 350px;
 }
 
-button 
+input.date 
 {
-    font-size: 1em;
+    width:100px;
 }
 
 select
@@ -209,7 +209,7 @@ input[type="submit"]
 /* TABLE
 ----------------------------------------------------------*/
 
-table.configuration 
+table.configuration
 {
     border: 0px;
     border-collapse: collapse;
@@ -260,42 +260,37 @@ table th
 table td.success
 {
     background-color: #6DBC45;
-    font-weight: bold;
-    color: #ffffff;
+    color: #6DBC45;
 }
 
 table td.blank
 {
     background-color: #ffffff;
-    font-size: 1.2em;
+    color: #ffffff;
 }
 
 table td.fail
 {
     background-color: #ED5226;
-    font-weight: bold;
-    color: #ffffff;
+    color: #ED5226;
 }
 
 table td.warning
 {
     background-color: #F2B979;
-    font-weight: bold;
-    color: #ffffff;
+    color: #F2B979;
 }
 
 table td.busy
 {
     background-color: #3AA8E9;
-    font-weight: bold;
-    color: #ffffff;
+    color: #3AA8E9;
 }
 
 table td.interrupt
 {
     background-color: #666633;
-    font-weight: bold;
-    color: #ffffff;
+    color: #666633;
 }
 
 /* MISC  
@@ -315,6 +310,11 @@ nav, #menucontainer
     margin-top: 40px;
 }
 
+div#date_period 
+{
+    height: 40px;
+}
+
 div#title
 {
     display: block;
@@ -322,25 +322,25 @@ div#title
     text-align: left;
 }
 
-div#exchange_dialog 
+div#exchange_dialog
 {
     /*text-align: center;*/
-    width:auto;
+    width: auto;
 }
 div#exchange_dialog div
 {
     padding: 5px;
-    width:auto;
+    width: auto;
 }
 
 div.content
 {
-    margin: 20px 0 0 250px;
+    margin: 20px 0 0 220px;
     min-height: 360px;
     display: block;
 }
 
-div.content-empty 
+div.content-empty
 {
     display: none;
 }
@@ -354,20 +354,22 @@ div.content-empty
     color: White;
 }
 
-#sidebar 
+#sidebar
 {
-    margin: 0;
+    margin: 20px 0 0 0;
     position: absolute;
-    width: 230px;    
+    width: 200px;
 }
 
-#sidebar ul li {
+#sidebar ul li
+{
     line-height: 28px;
     margin: 0;
     min-height: 28px;
     position: relative;
 }
-#sidebar ul {
+#sidebar ul
+{
     border-top: 1px solid #DDDDDD;
     font-size: 13px;
     margin: 0;
@@ -376,21 +378,23 @@ div.content-empty
     counter-reset: ordered-list-item;
 }
 
-#sidebar ul a:hover, #sidebar ul a.selected {
+#sidebar ul a:hover, #sidebar ul a.selected
+{
     background: none repeat scroll 0 0 #FFFFFF;
     color: #000000;
     text-decoration: none;
     z-index: 1;
 }
 
-#sidebar ul a.empty 
+#sidebar ul a.empty
 {
     background: none repeat scroll 0 0 #F7F7F7;
-    font-weight:bold;
+    font-weight: bold;
     color: #666666;
 }
 
-#sidebar ul a:before {
+#sidebar ul a:before
+{
     background: none repeat scroll 0 0 #FFFFFF;
     content: "";
     display: block;
@@ -399,10 +403,11 @@ div.content-empty
     position: absolute;
     right: 1px;
     bottom: 1px;
-    top:1px;
+    top: 1px;
 }
 
-#sidebar ul a {
+#sidebar ul a
+{
     -moz-border-bottom-colors: none;
     -moz-border-left-colors: none;
     -moz-border-right-colors: none;

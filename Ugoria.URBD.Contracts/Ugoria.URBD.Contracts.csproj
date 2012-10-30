@@ -78,8 +78,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\Base.cs" />
-    <Compile Include="Data\Commands\CheckCommand.cs" />
     <Compile Include="Data\Commands\Command.cs" />
+    <Compile Include="Data\Commands\CheckCommand.cs" />
+    <Compile Include="Data\Commands\ExchangeCommand.cs" />
+    <Compile Include="Data\Commands\ExtFormsCommand.cs" />
     <Compile Include="Data\MLGMessage.cs" />
     <Compile Include="Data\Packet.cs" />
     <Compile Include="Data\RemoteConfiguration.cs" />

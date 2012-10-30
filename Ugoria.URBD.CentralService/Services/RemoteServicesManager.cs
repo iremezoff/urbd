@@ -2,14 +2,16 @@
 using System.Collections.Generic;
 using System.ServiceModel;
 using System.Threading;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
 using System.Collections.Concurrent;
 using Ugoria.URBD.Contracts.Data.Commands;
 using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.Contracts.Data.Reports;
 using Ugoria.URBD.Contracts.Data;
-using Ugoria.URBD.Core.Reporting;
-using Ugoria.URBD.Logging;
+using Ugoria.URBD.Shared.Reporting;
+using Ugoria.URBD.Shared.Configuration;
+using Ugoria.URBD.CentralService.Logging;
+using Ugoria.URBD.CentralService.CommandBuilding;
 
 namespace Ugoria.URBD.CentralService
 {
@@ -23,11 +25,11 @@ namespace Ugoria.URBD.CentralService
         private ILogger logger = null;
         private IReporter reporter = null;
         private IAlarmer alarmer = null;
-        private ConfigurationManager configurationManager;
+        private CentralConfigurationManager configurationManager;
         private IConfiguration centralServiceConguration;
         private ConcurrentDictionary<int, EndpointAddress> serviceBases = new ConcurrentDictionary<int, EndpointAddress>();
 
-        public ConfigurationManager ConfigurationManager
+        public CentralConfigurationManager ConfigurationManager
         {
             get { return configurationManager; }
         }
@@ -50,7 +52,7 @@ namespace Ugoria.URBD.CentralService
             set { alarmer = value; }
         }
 
-        public RemoteServicesManager(ConfigurationManager configurationManager = null)
+        public RemoteServicesManager(CentralConfigurationManager configurationManager = null)
         {
             this.configurationManager = configurationManager;
             Init();
@@ -192,51 +194,46 @@ namespace Ugoria.URBD.CentralService
             serviceBases.AddOrUpdate(baseId, endpoint, (key, oVal) => endpoint);
         }
 
-        public void SendCommand(int baseId, CommandType commandType, ModeType mode, int userId)
+        public void SendCommand(CommandBuilder commandBuilder, int userId)
         {
-            ReportInfo reportInfo = reporter.GetLastCommand(baseId);
-            if (!serviceBases.ContainsKey(baseId))
+            ReportInfo reportInfo = reporter.GetLastCommand(commandBuilder.BaseId);
+            if (!serviceBases.ContainsKey(commandBuilder.BaseId))
             {
                 LogHelper.Write2Log("Не удалось найти сервис для ИБ " + reportInfo.BaseName, LogLevel.Error);
                 return;
             }
 
-            EndpointAddress remoteServiceEndpoint = serviceBases[baseId];
+            EndpointAddress remoteServiceEndpoint = serviceBases[commandBuilder.BaseId];
 
             // предыдущая задача не завершена
-            if (reportInfo.CompleteDate == DateTime.MinValue)
+            if (reportInfo != null && reportInfo.CompleteDate == DateTime.MinValue)
             {
-                logger.Fail(remoteServiceEndpoint.Uri, String.Format("Запрос на {0} для ИБ {1} отклонен, т.к. предыдущий процесс не завершен",
-                    commandType == CommandType.Exchange ? "обмен пакетами" : "обновление ExtForms",
+                logger.Fail(remoteServiceEndpoint.Uri, String.Format("Запрос для ИБ {1} отклонен, т.к. предыдущий процесс не завершен",
+                    commandBuilder.Description,
                     reportInfo.BaseName));
                 return;
             }
 
-            Command command = new Command
-            {
-                baseId = baseId,
-                commandType = commandType,
-                commandDate = DateTime.Now,
-                guid = Guid.NewGuid(),
-                modeType = mode,
-                releaseUpdate = reportInfo.ReleaseDate
-            };
+            commandBuilder.ReleaseUpdate = reportInfo.ReleaseDate;
+            commandBuilder.ConfigurationChangeDate = reportInfo.ConfigurationChangeDate;
+
+            Command command = commandBuilder.Build();
 
             using (RemoteServiceProxy proxy = new RemoteServiceProxy(channelFactory, remoteServiceEndpoint))
             {
                 proxy.CommandExecute(command);
-                string message = String.Format("Запрос на {0}.\nИБ: {1}.\nРежим: {2}.",
-                    command.commandType == CommandType.Exchange ? "обмен пакетами" : "обновление ExtForms",
-                    command.baseId,
-                    mode);
+                string message = String.Format("Запрос на {0}.\nИБ: {1}.",
+                    commandBuilder.Description,
+                    command.baseId);
                 if (proxy.IsSuccess)
                 {
-                    reporter.SetCommandReport(new Report { baseId = baseId, dateCommand = command.commandDate, reportGuid = command.guid }, userId);
+                    reporter.SetCommandReport(new Report { baseId = commandBuilder.BaseId, dateCommand = command.commandDate, reportGuid = command.reportGuid }, userId);
                     logger.Information(remoteServiceEndpoint.Uri, message);
                 }
                 else
                 {
                     RemoteServiceError(remoteServiceEndpoint, proxy.Exception);
+                    LogHelper.Write2Log(proxy.Exception);
                     // в случае сбоя сервиса следующий код не нужен, отчеты только для БД
                     /*RemoteNoticeReport(null, new NoticeReportArgs(new OperationReport
                     {
@@ -249,8 +246,6 @@ namespace Ugoria.URBD.CentralService
                     },
             remoteServiceEndpoint.Uri));*/
                 }
-                if (!proxy.IsSuccess)
-                    RemoteServiceError(remoteServiceEndpoint, proxy.Exception);
             }
         }
 
@@ -301,10 +296,10 @@ namespace Ugoria.URBD.CentralService
             }
         }
 
-        public void CheckProcess(int baseId, CommandType commandType)
+        public void CheckProcess(CommandBuilder commandBuilder)
         {
             // запрос процессов неотработавших задач
-            ReportInfo reportInfo = reporter.GetLastCommand(baseId);
+            ReportInfo reportInfo = reporter.GetLastCommand(commandBuilder.BaseId);
 
             // Не проверяем завершенные задачи
             if (reportInfo.CompleteDate != DateTime.MinValue)
@@ -318,13 +313,13 @@ namespace Ugoria.URBD.CentralService
 
             string alarmMessage = "";
 
-            if (!serviceBases.ContainsKey(baseId))
+            if (!serviceBases.ContainsKey(commandBuilder.BaseId))
             {
                 LogHelper.Write2Log("Не удалось найти сервис для ИБ " + reportInfo.BaseName, LogLevel.Error);
                 return;
             }
 
-            EndpointAddress endpointAddr = serviceBases[baseId];
+            EndpointAddress endpointAddr = serviceBases[commandBuilder.BaseId];
             if (reportInfo.StartDate != DateTime.MinValue)
             {
                 int wait = (int)(reportInfo.StartDate - DateTime.Now).Add(new TimeSpan(0, int.Parse(centralServiceConguration.GetParameter("delay_check").ToString()), 0)).TotalMilliseconds;
@@ -343,12 +338,13 @@ namespace Ugoria.URBD.CentralService
                     if (!string.IsNullOrEmpty(alarmMessage))
                     {
                         alarmMessage = String.Format(alarmMessage,
-                            commandType == CommandType.Exchange ? "обмена пакетами" : "загрузки ExtForms",
+                            commandBuilder.Description,
                             reportInfo.BaseName,
                             reportInfo.StartDate);
                     }
                     if (!proxy.IsSuccess)
                         RemoteServiceError(endpointAddr, proxy.Exception);
+                    LogHelper.Write2Log("Проверка работы процесса 1С " + reportInfo.ReportGuid + ": " + status, LogLevel.Information);
                 }
             }
             else if (reportInfo.StartDate == null)
@@ -364,11 +360,12 @@ namespace Ugoria.URBD.CentralService
                     if (!string.IsNullOrEmpty(alarmMessage))
                     {
                         alarmMessage = String.Format(alarmMessage,
-                            commandType == CommandType.Exchange ? "обмен пакетами" : "загрузку ExtForms",
+                            commandBuilder.Description,
                             reportInfo.BaseName);
                     }
                     if (!proxy.IsSuccess)
                         RemoteServiceError(endpointAddr, proxy.Exception);
+                    LogHelper.Write2Log("Проверка работы процесса 1С " + reportInfo.ReportGuid + ": " + status, LogLevel.Information);
                 }
             }
             if (alarmer != null && !string.IsNullOrEmpty(alarmMessage))

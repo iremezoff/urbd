@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading;
-using Ugoria.URBD.Logging;
+using Ugoria.URBD.Shared;
 
 namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
 {

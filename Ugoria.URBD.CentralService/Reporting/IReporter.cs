@@ -6,7 +6,7 @@ using Ugoria.URBD.CentralService;
 using Ugoria.URBD.Contracts.Data.Reports;
 using Ugoria.URBD.Contracts.Data.Commands;
 
-namespace Ugoria.URBD.Core.Reporting
+namespace Ugoria.URBD.Shared.Reporting
 {
     interface IReporter
     {

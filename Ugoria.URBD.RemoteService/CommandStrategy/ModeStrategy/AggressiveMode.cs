@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Threading;
-using Ugoria.URBD.Logging;
+using Ugoria.URBD.Shared;
 
 namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
 {
@@ -27,8 +27,9 @@ namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
             if (base.CompleteExchange() || attention)
             {
                 // Удаление файла с просьбой для обмена
-                if (File.Exists(String.Format(@"{0}\ExtForms\!md_message_urbd.txt", basepath)))
-                    File.Delete(String.Format(@"{0}\ExtForms\!md_message_urbd.txt", basepath));
+                FileInfo fi = new FileInfo(String.Format(@"{0}\ExtForms\!md_message_urbd.txt", basepath));
+                if (fi.Exists)
+                    fi.Delete();
                 return true;
             }
 
@@ -38,7 +39,7 @@ namespace Ugoria.URBD.RemoteService.CommandStrategy.ModeStrategy
             {
                 sw.WriteLine("Требуется выполнить автообмен, закройте программу 1С");
             }
-            attention = true; // попытка с оповещением было
+            attention = true; // попытка с оповещением была
             Thread.Sleep(new TimeSpan(0, waitTime, 0)); // спать до следующей попытки
             return false; // верификация не пройдена
         }

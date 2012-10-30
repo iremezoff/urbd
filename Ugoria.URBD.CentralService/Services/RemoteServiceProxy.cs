@@ -57,24 +57,6 @@ namespace Ugoria.URBD.CentralService
             exception = ex;
         }
 
-        public void ResetConfiguration ()
-        {
-            while (attempts > 0)
-            {
-                try
-                {
-                    //commObj.Open();
-                    remoteService.ResetConfiguration();
-                    isSuccess = true;
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    RebuildService(ex);
-                }
-            }
-        }
-
         public void CommandExecute (Command command)
         {
             while (attempts > 0)

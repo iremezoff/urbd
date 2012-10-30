@@ -7,11 +7,8 @@ using System.Runtime.Serialization;
 namespace Ugoria.URBD.Contracts.Data.Commands
 {
     [DataContract]
-    public class CheckCommand
+    public class CheckCommand : Command
     {
-        [DataMember]
-        public Guid reportGuid;
-
         [DataMember]
         public Guid launchGuid;
     }

@@ -8,7 +8,9 @@ using Ugoria.URBD.Contracts;
 using Quartz.Impl.Matchers;
 using Ugoria.URBD.Contracts.Data.Commands;
 using Ugoria.URBD.Contracts.Services;
-using Ugoria.URBD.Core;
+using Ugoria.URBD.Shared;
+using Ugoria.URBD.Shared.Configuration;
+using Ugoria.URBD.CentralService.CommandBuilding;
 
 namespace Ugoria.URBD.CentralService.Scheduler
 {
@@ -28,31 +30,19 @@ namespace Ugoria.URBD.CentralService.Scheduler
         }
 
         // для установки запуска
-        public void AddScheduleLaunch(Action<int, CommandType, ModeType, int> commanAction,
-            IConfiguration schedCfg,
-            CommandType commandType,
-            Action<int, CommandType> checkAction,
-            int delayCheck)
+        public void AddScheduleLaunch(Action<CommandBuilder, int> commanAction, CommandBuilder builder, string time, Action<CommandBuilder> checkAction, int delayCheck)
         {
-            IJobDetail jobDetail = GetJobDetail(schedCfg.GetParameter("base_id").ToString(), commandType);
+            IJobDetail jobDetail = GetJobDetail(builder.BaseId.ToString(), builder.Description);
 
-            string triggerName = "";
-            if (commandType == CommandType.Exchange)
-                triggerName = String.Format("{0}_{1}_{2}",
-                    schedCfg.GetParameter("base_id"),
-                    schedCfg.GetParameter("time"),
-                    schedCfg.GetParameter("mode"));
-            else
-                triggerName = String.Format("{0}_{1}", schedCfg.GetParameter("base_id"), schedCfg.GetParameter("time"));
+            string triggerName = String.Format("{0}_{1}", builder.BaseId, time);
 
             ITrigger trigger = (ICronTrigger)TriggerBuilder.Create()
-                                                      .WithIdentity(triggerName, commandType.ToString())
-                                                      .WithCronSchedule(SchedulerUtil.CronExpressionBuild((string)schedCfg.GetParameter("time")))
+                                                      .WithIdentity(triggerName, builder.Description)
+                                                      .WithCronSchedule(SchedulerUtil.CronExpressionBuild(time))
                                                       .ForJob(jobDetail)
                                                       .Build();
 
-            trigger.JobDataMap["command_type"] = commandType;
-            trigger.JobDataMap["cfg"] = schedCfg;
+            trigger.JobDataMap["command_builder"] = builder;
             trigger.JobDataMap["user_id"] = 1;
             trigger.JobDataMap["action"] = commanAction;
             trigger.JobDataMap["check_action"] = checkAction;
@@ -70,19 +60,17 @@ namespace Ugoria.URBD.CentralService.Scheduler
         // для запуска проверок
         public void TriggerComplete(ITrigger sender, EventArgs args)
         {
-            IConfiguration cfg = (IConfiguration)sender.JobDataMap["cfg"];
-            AddScheduleLaunch((Action<int, CommandType>)sender.JobDataMap["check_action"],
-                (int)cfg.GetParameter("base_id"),
-                (CommandType)sender.JobDataMap["command_type"],
+            AddScheduleLaunch((Action<CommandBuilder>)sender.JobDataMap["check_action"],
+                (CommandBuilder)sender.JobDataMap["command_builder"],
                 (int)sender.JobDataMap["delay_check"]);
         }
 
         // для запусков заданий проверок (единовременные запуски)
-        public void AddScheduleLaunch(Action<int, CommandType> checkAction, int baseId, CommandType commandType, int delayCheck)
+        public void AddScheduleLaunch(Action<CommandBuilder> checkAction, CommandBuilder builder, int delayCheck)
         {
-            IJobDetail jobDetail = GetJobDetail(baseId.ToString(), CommandType.Checker);
+            IJobDetail jobDetail = GetJobDetail(builder.BaseId.ToString());
 
-            string triggerName = String.Format("{0}_checker_{1:yyyy-MM-dd_HHmmss-ffffff}", baseId, DateTime.Now);
+            string triggerName = String.Format("{0}_checker_{1:yyyy-MM-dd_HHmmss-ffffff}", builder.BaseId, DateTime.Now);
 
             ITrigger trigger = (ISimpleTrigger)TriggerBuilder.Create()
                                                       .WithIdentity(triggerName, CommandType.Checker.ToString())
@@ -92,31 +80,20 @@ namespace Ugoria.URBD.CentralService.Scheduler
                                                       .Build();
 
             trigger.JobDataMap["action"] = checkAction;
-            trigger.JobDataMap["command_type"] = commandType;
+            trigger.JobDataMap["command_builder"] = builder;
 
             scheduler.ScheduleJob(trigger);
         }
 
-        private IJobDetail GetJobDetail(string jobName, CommandType type)
+        private IJobDetail GetJobDetail(string jobName, string description = null)
         {
-            JobKey jobKey = new JobKey(type.ToString(), jobName);
+            JobKey jobKey = new JobKey(description ?? "checked", jobName);
             IJobDetail jobDetail = null;
             if (!scheduler.CheckExists(jobKey)) // проверка на наличие у шедулера текущего задания
             {
-                JobBuilder builder = null;// jobDetail = JobBuilder.Create<ExchangeJob>();
-                switch (type)
-                {
-                    case CommandType.Exchange:
-                        builder = JobBuilder.Create<ExchangeJob>();
-                        break;
-                    case CommandType.ExtForms:
-                        builder = JobBuilder.Create<ExtFormsJob>();
-                        break;
-                    case CommandType.Checker:
-                        builder = JobBuilder.Create<CheckJob>();
-                        break;
-                }
-                jobDetail = builder.WithIdentity(jobKey).Build();
+                JobBuilder builder = string.IsNullOrEmpty(description) ? JobBuilder.Create<CheckJob>() : JobBuilder.Create<CommandJob>();
+                jobDetail = builder.WithIdentity(jobKey)
+                    .Build();
                 jobDetail.JobDataMap["base_id"] = jobName;
                 scheduler.AddJob(jobDetail, true);
             }
@@ -151,5 +128,5 @@ namespace Ugoria.URBD.CentralService.Scheduler
         }
     }
 
-    
+
 }

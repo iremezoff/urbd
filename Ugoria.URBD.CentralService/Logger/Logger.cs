@@ -2,23 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Ugoria.URBD.CentralService.DataProvider;
 
-namespace Ugoria.URBD.Core
+namespace Ugoria.URBD.CentralService.Logging
 {
-    public interface ILogger
-    {
-        bool IsFailEnabled { get; set; }
-        bool IsInformationEnabled { get; set; }
-        bool IsWarningEnabled { get; set; }
-
-        void Fail(Uri uri, string message);
-        void Fail(string address, string message);
-        void Information(Uri uri, string message);
-        void Information(string address, string message);
-        void Warning(Uri uri, string message);
-        void Warning(string address, string message);
-    }
-
     public class Logger : ILogger
     {
         private IDataProvider dataProvider = null;
@@ -86,7 +73,8 @@ namespace Ugoria.URBD.Core
             this.dataProvider = dataProvider;
         }
 
-        private static string Uri2AddressString(Uri uri) {
+        private static string Uri2AddressString(Uri uri)
+        {
             return String.Format("{0}:{1}", uri.Host, uri.Port);
         }
     }

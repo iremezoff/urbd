@@ -4,16 +4,19 @@ using System.Linq;
 using System.Text;
 using System.ServiceModel;
 using Ugoria.URBD.Contracts.Services;
+using Ugoria.URBD.Contracts.Data;
 
 namespace Ugoria.URBD.CentralService
 {
     public delegate void RunTaskHandler(object sender, TaskEventArgs args);
     public delegate void InterruptTaskHandler(object sender, InterruptTaskEventArgs args);
-    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Multiple)]
+    public delegate IDictionary<string, string> ValidateConfigurationHandler(object sender, ValidateConfigurationEventArgs args);
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Multiple, IncludeExceptionDetailInFaults = true)]
     class ControlService : IControlService
     {
         public event RunTaskHandler SendTask;
         public event InterruptTaskHandler SendInterruptTask;
+        public event ValidateConfigurationHandler Validate;
 
         public void RunTask(int userId, int baseId, ModeType modeType)
         {
@@ -25,6 +28,13 @@ namespace Ugoria.URBD.CentralService
         {
             if (SendInterruptTask != null)
                 SendInterruptTask(this, new InterruptTaskEventArgs(baseId));
+        }
+
+        public IDictionary<string, string> ValidateConfiguration(Uri remoteUri, RemoteConfiguration configuration)
+        {
+            if (Validate != null)
+                return Validate(this, new ValidateConfigurationEventArgs(remoteUri, configuration));
+            return null;
         }
     }
 
@@ -70,6 +80,28 @@ namespace Ugoria.URBD.CentralService
         internal InterruptTaskEventArgs(int baseId)
         {
             this.baseId = baseId;
+        }
+    }
+
+    public class ValidateConfigurationEventArgs : EventArgs
+    {
+        private Uri remoteUri;
+
+        public Uri RemoteUri
+        {
+            get { return remoteUri; }
+        }
+        private RemoteConfiguration configuration;
+
+        public RemoteConfiguration Configuration
+        {
+            get { return configuration; }
+        }
+
+        internal ValidateConfigurationEventArgs(Uri remoteUri, RemoteConfiguration configuration)
+        {
+            this.remoteUri = remoteUri;
+            this.configuration = configuration;
         }
     }
 }

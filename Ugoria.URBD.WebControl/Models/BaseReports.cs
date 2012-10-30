@@ -424,6 +424,7 @@ namespace Ugoria.URBD.WebControl.Models
     {
         private readonly URBD2Entities dataContext;
         private int userId;
+        private bool isAdminAccess = false;
 
         private IEnumerable<IReportPacketView> ParsePackets(string xmlSource)
         {
@@ -468,24 +469,29 @@ namespace Ugoria.URBD.WebControl.Models
 
         public IBaseReportView GetBaseById(int baseId)
         {
-            return dataContext.BaseReportList.Where(b => b.base_id == baseId && b.user_id == userId).Select<BaseReportList, IBaseReportView>(new Func<BaseReportList, IBaseReportView>(x =>
-            {
-                return ParseBaseReport(x);
-            })).Single();
+            var query = (isAdminAccess
+                ? dataContext.BaseReportList
+                : dataContext.UserServicesPermission.Where(p => p.user_id == userId).Join(dataContext.BaseReportList.Select(b => b), p => p.service_id, b => b.service_id, (p, b) => b))
+                .Where(b => b.base_id == baseId).Select<BaseReportList, IBaseReportView>(new Func<BaseReportList, IBaseReportView>(x => ParseBaseReport(x)));
+            if (query.Count() == 0)
+                return null;
+            return query.Single();
         }
 
         public IEnumerable<IBaseReportView> GetBases(TableGrouper grouper)
         {
-            return dataContext.BaseReportList.Where(x => x.user_id == userId).OrderBy(x => grouper == TableGrouper.group ? x.group_id : x.service_id).ThenBy(x=>x.base_id).Select<BaseReportList, IBaseReportView>(new Func<BaseReportList, IBaseReportView>(x =>
-            {
-                return ParseBaseReport(x);
-            }));
+            var query = isAdminAccess
+                ? dataContext.BaseReportList
+                : dataContext.UserServicesPermission.Where(x => x.user_id == userId).Join(dataContext.BaseReportList.Select(b => b), p => p.service_id, b => b.service_id, (p, b) => b);
+            System.Diagnostics.Trace.Write(((ObjectQuery)query).ToTraceString());
+            return query.OrderBy(x => grouper == TableGrouper.group ? x.group_id : x.service_id).ThenBy(x => x.base_id).Select(new Func<BaseReportList, IBaseReportView>(x => ParseBaseReport(x)));
         }
 
-        public BaseRepository(URBD2Entities dataContext, int userId)
+        public BaseRepository(URBD2Entities dataContext, int userId, bool isAdminAccess = false)
         {
             this.userId = userId;
             this.dataContext = dataContext;
+            this.isAdminAccess = isAdminAccess;
         }
     }
 }

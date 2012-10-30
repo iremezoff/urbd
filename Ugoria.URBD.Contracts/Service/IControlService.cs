@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.ServiceModel;
+using Ugoria.URBD.Contracts.Data;
 
 namespace Ugoria.URBD.Contracts.Services
 {
@@ -14,5 +15,8 @@ namespace Ugoria.URBD.Contracts.Services
 
         [OperationContract]
         void InterruptTask(int baseId);
+
+        [OperationContract]
+        IDictionary<string, string> ValidateConfiguration(Uri remoteUri, RemoteConfiguration configuration);
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using Ugoria.URBD.Contracts.Services;
 using System.Data.Objects;
+using Ugoria.URBD.WebControl.ViewModels;
 
 namespace Ugoria.URBD.WebControl.Models
 {
@@ -53,7 +54,8 @@ namespace Ugoria.URBD.WebControl.Models
         int StatusId { get; set; }
         DateTime? DateCommand { get; set; }
         DateTime? DateComplete { get; set; }
-        string Mesasge { get; set; }
+        string Message { get; set; }
+        int UserId { get; set; }
     }
 
     public interface IReportPacket
@@ -350,7 +352,6 @@ namespace Ugoria.URBD.WebControl.Models
         public string Mode { get { return mode; } }
     }
 
-    /*
     public partial class Report : IReport
     {
         public int ReportId
@@ -382,15 +383,20 @@ namespace Ugoria.URBD.WebControl.Models
             set { date_complete = value; }
         }
 
-
-        public string Mesasge
+        public string Message
         {
             get { return message; }
             set { message = value; }
         }
+
+        public int UserId
+        {
+            get { return user_id; }
+            set { user_id = value; }
+        }
     }
 
-    public partial class ReportPacket : IReportPacket
+    /*public partial class ReportPacket : IReportPacket
     {
         public int ReportPacketId
         {
@@ -452,54 +458,63 @@ namespace Ugoria.URBD.WebControl.Models
     public interface IServiceRepository
     {
         IService GetServiceById(int serviceId);
-        IEnumerable<IBase> GetBasesByServiceId(int serviceId);
-        IEnumerable<IServiceScheduleExchange> GetScheduleByServiceId(int serviceId);
+        IEnumerable<IServiceLog> GetServiceLogs(int serviceId);
+        IEnumerable<BaseViewModel> GetBasesByServiceId(int serviceId);
+        IEnumerable<IServiceScheduleExchange> GetServiceScheduleExchangeByServiceId(int serviceId);
+        IEnumerable<IServiceScheduleExchange> GetServiceScheduleExchangeByBaseId(int baseId);
         IEnumerable<IReferenceSchedule> GetReferenceByBaseId(int baseId);
+        IBase GetBaseById(int baseId);
+        IEnumerable<ReportViewModel> GetReportsByBaseId(int baseId);
     }
 
     public class ServiceRepository : IServiceRepository
     {
         private readonly URBD2Entities dataContext;
-        private Service service;
 
         public IService GetServiceById(int serviceId)
         {
-            service = dataContext.Service.Where<Service>(s => s.service_id == serviceId)
-                .Select(new Func<Service, Service>(s =>
-                {
-                    s.ServiceLog.Load();
-                    return s;
-                })).Single();
-            return service;
+            var query = dataContext.Service.Where(s => s.service_id == serviceId).Select(s => s);
+            if (query.Count() == 0)
+                return null;
+            return query.Select(s => s).Single();
+            //return service;
             //Include("Group").Include("ScheduleExchange").Include("ScheduleExtForms").Include("Packet")
         }
 
-        public IEnumerable<IBase> GetBasesByServiceId(int serviceId)
+        public IEnumerable<IServiceLog> GetServiceLogs(int serviceId)
         {
-            var t = dataContext.Base.Where(b => b.service_id == serviceId).Select<Base, IBase>(new Func<Base, IBase>(b =>
+            return dataContext.ServiceLog.Where(l => l.service_id == serviceId).OrderByDescending(l => l.log_id).Take(10);
+        }
+
+        public IEnumerable<BaseViewModel> GetBasesByServiceId(int serviceId)
+        {
+            var t = dataContext.Base.Include("ScheduleExchange").Include("ScheduleExtForms").Include("Packet").Where(b => b.service_id == serviceId).Select<Base, BaseViewModel>(b => new BaseViewModel
             {
-                b.Packet.Load();
-                b.ScheduleExchange.Load();
-                b.ScheduleExtForms.Load();
-                return b;
-            }));
-            //System.Diagnostics.Trace.WriteLine(((ObjectQuery)t).ToTraceString());
+                BaseId = b.base_id,
+                ServiceId = b.service_id,
+                ServiceAddress = b.Service.address,
+                Name = b.base_name
+            });
+            System.Diagnostics.Trace.WriteLine(((ObjectQuery)t).ToTraceString());
             return t;
+        }
+
+        public IBase GetBaseById(int baseId)
+        {
+            var query = dataContext.Base.Where(b => b.base_id == baseId).Select(b => b);
+            if (query.Count() == 0)
+                return null;
+            return query.Single();
         }
 
         public IEnumerable<IScheduleExchange> GetScheduleExchangeByBaseID(int baseId)
         {
-            return service.Base.Where(b => baseId == b.base_id).Single().ScheduleExchange.Select<ScheduleExchange, IScheduleExchange>(s => s);
+            return dataContext.Base.Where(b => baseId == b.base_id).Single().ScheduleExchange.Select<ScheduleExchange, IScheduleExchange>(s => s);
         }
 
         public IEnumerable<IScheduleExtForms> GetScheduleExtFormsByBaseId(int baseId)
         {
-            return service.Base.Where(b => baseId == b.base_id).Single().ScheduleExtForms.Select<IScheduleExtForms, IScheduleExtForms>(s => s);
-        }
-
-        public IEnumerable<IServiceLog> GetLogsByServuceId(int serviceId)
-        {
-            return service.ServiceLog.Select(s => s);
+            return dataContext.Base.Where(b => baseId == b.base_id).Single().ScheduleExtForms.Select<IScheduleExtForms, IScheduleExtForms>(s => s);
         }
 
         public ServiceRepository(URBD2Entities dataContext)
@@ -507,17 +522,27 @@ namespace Ugoria.URBD.WebControl.Models
             this.dataContext = dataContext;
         }
 
-        public IEnumerable<IServiceScheduleExchange> GetScheduleByServiceId(int serviceId)
+        public IEnumerable<IServiceScheduleExchange> GetServiceScheduleExchangeByServiceId(int serviceId)
         {
             IQueryable<IServiceScheduleExchange> q = dataContext.ScheduleExchangeOfService.Where(s => s.service_id == serviceId).OrderBy(b => b.time);
             System.Diagnostics.Trace.WriteLine(((ObjectQuery)q).ToTraceString());
 
-            return q.Select(new Func<IServiceScheduleExchange, IServiceScheduleExchange>(s => { return s; }));
+            return q.Select(new Func<IServiceScheduleExchange, IServiceScheduleExchange>(s => s));
+        }
+
+        public IEnumerable<IServiceScheduleExchange> GetServiceScheduleExchangeByBaseId(int baseId)
+        {
+            IQueryable<IServiceScheduleExchange> q = dataContext.Base.Where(b => b.base_id == baseId)
+                .Join(dataContext.ScheduleExchangeOfService.Select(s => s), b => b.service_id, s => s.service_id, (b, s) => s)
+                .OrderBy(b => b.time);
+            System.Diagnostics.Trace.WriteLine(((ObjectQuery)q).ToTraceString());
+
+            return q.Select(new Func<IServiceScheduleExchange, IServiceScheduleExchange>(s => s));
         }
 
         public IEnumerable<IReferenceSchedule> GetReferenceByBaseId(int baseId)
         {
-            IQueryable<ReferenceSchedule> q = dataContext.ReferenceSchedule.Where(s => s.current_id == baseId).OrderBy(s => s.time)/*.ThenBy(s => s.base_id)*/.Select(s=>s);
+            IQueryable<ReferenceSchedule> q = dataContext.ReferenceSchedule.Where(s => s.current_id == baseId).OrderBy(s => s.time)/*.ThenBy(s => s.base_id)*/.Select(s => s);
             //System.Diagnostics.Trace.WriteLine(((ObjectQuery)q).ToTraceString());
 
             //q = q.OrderBy(s => s.time).ThenBy(s=>s.base_id);
@@ -525,6 +550,41 @@ namespace Ugoria.URBD.WebControl.Models
             System.Diagnostics.Trace.WriteLine(((ObjectQuery)q).ToTraceString());
 
             return q.Select(new Func<IReferenceSchedule, IReferenceSchedule>(s => { return s; }));
+        }
+
+        public IEnumerable<ReportViewModel> GetReportsByBaseId(int baseId)
+        {
+            var query = dataContext.Report.Where(r => r.base_id == baseId).Where(r => r.date_command == DateTime.Now).OrderByDescending(r => r.date_command).Select<Report, ReportViewModel>(r =>
+                new ReportViewModel
+                {
+                    ReportId = r.report_id,
+                    CommandDate = r.date_command,
+                    CompleteDate = r.date_complete,
+                    Status = r.ReportStatus.name,
+                    Message = r.message,
+                    User = r.User.user_name,
+                    LaunchList = r.Launch1C.Select(l => new LaunchViewModel
+                    {
+                        LaunchId = l.launch_id,
+                        Pid = l.pid,
+                        StartDate = l.date_start
+                    }),
+                    PacketList = r.ReportPacket.Select(p => new ReportPacketViewModel
+                    {
+                        CreatedDate = p.date_created,
+                        ReportPacketId = p.rp_id,
+                        Size = p.size,
+                        Packet = new PacketViewModel
+                        {
+                            FileName = p.Packet.filename,
+                            PacketId = p.Packet.packet_id,
+                            Type = p.Packet.type
+                        }
+                    })
+                });
+            System.Diagnostics.Trace.WriteLine(((ObjectQuery)query).ToTraceString());
+            IEnumerable<ReportViewModel> q= query.Select(new Func<ReportViewModel, ReportViewModel>(r => r));
+            return q;
         }
     }
 }
