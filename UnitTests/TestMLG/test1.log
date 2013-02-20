@@ -1,0 +1,5 @@
+20130114;14:33:29;UrbdUser;C;Distr;DistUplBeg;1;D:\1C\UGSK\CP\PERM_C.zip;;
+20130114;14:33:29;UrbdUser;C;Distr;DistUplErr;5;Загрузка измененной конфигурации не может быть произведена при доступе к Информационной Базе в разделенном режиме!;;
+20130114;14:33:29;UrbdUser;C;Distr;DistUplFail;1;;;
+20130114;14:33:29;UrbdUser;C;Distr;DistDnldBeg;1;Код ИБ: 'ПМ0', Файл: 'D:\1C\UGSK\PC\PERM_P.zip';;
+20130114;14:33:31;UrbdUser;C;Distr;DistDnldSuc;1;;;

@@ -1,43 +1,61 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ServiceModel;
 using System.Threading;
-using Ugoria.URBD.Shared;
-using System.Collections.Concurrent;
-using Ugoria.URBD.Contracts.Data.Commands;
-using Ugoria.URBD.Contracts.Services;
-using Ugoria.URBD.Contracts.Data.Reports;
-using Ugoria.URBD.Contracts.Data;
-using Ugoria.URBD.Shared.Reporting;
-using Ugoria.URBD.Shared.Configuration;
 using Ugoria.URBD.CentralService.Logging;
-using Ugoria.URBD.CentralService.CommandBuilding;
+using Ugoria.URBD.Contracts.Data;
+using Ugoria.URBD.Contracts.Data.Commands;
+using Ugoria.URBD.Contracts.Data.Reports;
+using Ugoria.URBD.Contracts.Services;
+using Ugoria.URBD.Shared;
+using Ugoria.URBD.Shared.Configuration;
+using Ugoria.URBD.Contracts.Handlers;
+using System.Security;
+using System.Collections;
+using System.Reflection;
+using Ugoria.URBD.CentralService.Alarming;
 
 namespace Ugoria.URBD.CentralService
 {
     class RemoteServicesManager
     {
-        private string uriPattern = "net.tcp://{0}/URBDRemoteService";
+        private string uriPattern = "net.tcp://{0}:{1}/URBDRemoteService";
         //private string centralAddr = "net.tcp://localhost:8000/URBDCentralService";
 
         private ChannelFactory<IRemoteService> channelFactory = null;
         private ServiceHost serviceHost;
         private ILogger logger = null;
-        private IReporter reporter = null;
+        //private IReporter reporter = null;
+        private WCFMessageHandler handler;
+
         private IAlarmer alarmer = null;
         private CentralConfigurationManager configurationManager;
-        private IConfiguration centralServiceConguration;
+        private Hashtable centralServiceConguration;
         private ConcurrentDictionary<int, EndpointAddress> serviceBases = new ConcurrentDictionary<int, EndpointAddress>();
+        private object lockConfManager = new object();
+
+        public WCFMessageHandler Handler
+        {
+            get { return handler; }
+            set { handler = value; }
+        }
 
         public CentralConfigurationManager ConfigurationManager
         {
             get { return configurationManager; }
-        }
-
-        public IReporter Reporter
-        {
-            get { return reporter; }
-            set { reporter = value; }
+            set
+            {
+                lock (lockConfManager)
+                {
+                    configurationManager = value;
+                    if (serviceHost != null && serviceHost.State == CommunicationState.Opened)
+                        serviceHost.Close();
+                    Stop();
+                    Init();
+                    Start();
+                }
+            }
         }
 
         public ILogger Logger
@@ -52,7 +70,7 @@ namespace Ugoria.URBD.CentralService
             set { alarmer = value; }
         }
 
-        public RemoteServicesManager(CentralConfigurationManager configurationManager = null)
+        public RemoteServicesManager(CentralConfigurationManager configurationManager)
         {
             this.configurationManager = configurationManager;
             Init();
@@ -71,16 +89,10 @@ namespace Ugoria.URBD.CentralService
 
             serviceHost = new ServiceHost(centralService);
 
-
-            if (configurationManager != null)
-            {
-                IConfiguration centralConguration = configurationManager.GetCentralServiceConfiguration();
-
-                Uri centralUri = new Uri((string)centralConguration.GetParameter("service_central_address"));
-                serviceHost.AddServiceEndpoint(typeof(ICentralService),
-                    new NetTcpBinding(SecurityMode.None),
-                    centralUri);
-            }
+            Uri centralUri = new Uri((string)centralServiceConguration["main.service_central_address"]);
+            serviceHost.AddServiceEndpoint(typeof(ICentralService),
+                new NetTcpBinding(SecurityMode.None),
+                centralUri);
         }
 
         private RemoteConfiguration RemoteRequestConfiguartion(ICentralService sender, RequestConfigureEventArgs args)
@@ -90,149 +102,126 @@ namespace Ugoria.URBD.CentralService
             // получить конфигурацию для удаленного сервиса (ftp, путь до 1с, список баз)
             string remoteAddress = String.Format("{0}:{1}", args.Uri.Host, args.Uri.Port);
 
-            IConfiguration remoteServiceConfiguration = configurationManager.GetRemoteServiceConfiguration(remoteAddress);
-            //IConfiguration centralServiceConguration = configurationManager.GetCentralServiceConfiguration();
-
-            RemoteConfiguration remoteConfiguration = new RemoteConfiguration
+            Hashtable remoteServiceConfiguration = null;
+            lock (lockConfManager)
             {
-                ftpAddress = (string)centralServiceConguration.GetParameter("ftp_address"),
-                ftpUsername = (string)centralServiceConguration.GetParameter("ftp_username"),
-                ftpPassword = (string)centralServiceConguration.GetParameter("ftp_password"),
-                threadsCount = int.Parse((string)centralServiceConguration.GetParameter("max_threads")),
-                extFormsPath = (string)centralServiceConguration.GetParameter("extforms_path"),
-                file1CPath = (string)remoteServiceConfiguration.GetParameter("1c_path"),
-                ftpCP = (string)centralServiceConguration.GetParameter("ftp_cp"),
-                ftpPC = (string)centralServiceConguration.GetParameter("ftp_pc"),
-                waitTime = int.Parse(centralServiceConguration.GetParameter("wait_time").ToString()),
-                packetExchangeAttempts = int.Parse(centralServiceConguration.GetParameter("packet_exchange_attempts").ToString()),
-                packetExchangeWaitTime = int.Parse(centralServiceConguration.GetParameter("packet_exchange_wait_time").ToString())
-            };
-
-            foreach (IConfiguration baseConfiguration in (List<IConfiguration>)remoteServiceConfiguration.GetParameter("bases"))
-            {
-                Base base1c = new Base();
-                base1c.baseId = (int)baseConfiguration.GetParameter("base_id");
-                base1c.baseName = (string)baseConfiguration.GetParameter("base_name");
-                base1c.basePath = (string)baseConfiguration.GetParameter("1c_database");
-                base1c.username = (string)baseConfiguration.GetParameter("1c_username");
-                base1c.password = (string)baseConfiguration.GetParameter("1c_password");
-
-                foreach (IConfiguration packetConfiguration in (List<IConfiguration>)baseConfiguration.GetParameter("packets"))
-                {
-                    base1c.packetList.Add(new Packet
-                    {
-                        filename = (string)packetConfiguration.GetParameter("filename"),
-                        type = "L".Equals((string)packetConfiguration.GetParameter("type")) ? PacketType.Load : PacketType.Unload
-                    });
-                }
-                remoteConfiguration.baseList.Add(base1c);
+                remoteServiceConfiguration = configurationManager.GetRemoteServiceConfiguration(remoteAddress);
+                //IConfiguration centralServiceConguration = configurationManager.GetCentralServiceConfiguration();
             }
+            RemoteConfiguration remoteConfiguration = new RemoteConfiguration { configuration = new Hashtable(centralServiceConguration), bases = new Dictionary<int, Hashtable>() };
+            remoteConfiguration.configuration.Add("service.1c_path", remoteServiceConfiguration["service.1c_path"]);
 
+            foreach (Hashtable baseHash in (List<Hashtable>)remoteServiceConfiguration["base_list"])
+            {
+                remoteConfiguration.bases.Add((int)baseHash["base.base_id"], baseHash);
+            }
             return remoteConfiguration;
         }
 
         private void RemoteNoticePID1C(ICentralService sender, NoticePID1CArgs args)
         {
-            if (reporter == null)
-                return;
+            LogHelper.Write2Log(String.Format("На сервисе {0} запущен автообмен процессом 1С pid: {1}", args.Uri, args.LaunchReport.pid), LogLevel.Information);
 
-            LogHelper.Write2Log(String.Format("Запущен автообмен процессом 1С pid: {0}", args.LaunchReport.pid), LogLevel.Information);
-
-            reporter.SetPID1C(args.LaunchReport);
-
+            if (handler != null)
+                handler.HandleReport(args.LaunchReport);
             if (logger != null)
                 logger.Information(args.Uri, String.Format("Запущен автообмен процессом 1С pid: {0}", args.LaunchReport.pid));
         }
 
         private void RemoteNoticeReport(ICentralService sender, NoticeReportArgs args)
         {
-            if (reporter == null)
+            LogHelper.Write2Log(String.Format("Пришел отчет {0} с сервиса {1}", args.Report.GetType().Name, args.Uri), LogLevel.Information);
+
+            if (handler == null)
                 return;
+            ReportStatus status = handler.HandleReport(args.Report);
 
-            LogHelper.Write2Log(String.Format("Пришел отчет с сервиса {0}", args.Uri), LogLevel.Information);
+            string alarmMesage = "Получен отчет о выполнении операции<br/><br/><b>Тип отчета:</b> {0}<br/><b>ИБ:</b> {1}<br/><b>Статус:</b> {2}<br/><b>Время завершения:</b> {3:HH:mm:ss dd.MM.yyyy}";
 
-            OperationReport report = args.Report;
-
-            reporter.SetReport(args.Report);
-
-            switch (report.status)
+            try
             {
-                case ReportStatus.Interrupt:
-                    if (logger != null)
-                        logger.Information(args.Uri, "Задача для ИБ " + report.baseName + " была прервана");
-                    break;
-                case ReportStatus.ExchangeSuccess:
-                    if (logger != null)
-                        logger.Information(args.Uri, "Обмен пакетами базы " + report.baseName + " прошел успешно");
-                    break;
-                case ReportStatus.ExchangeFail:
-                    if (logger != null)
-                        logger.Warning(args.Uri, "При обмене пакетами базы " + report.baseName + " возникла ошибка: " + report.message);
-                    if (alarmer != null)
-                        alarmer.Alarm(args.Uri, "Обмен не прошел. База: " + report.baseName);
-                    break;
-                case ReportStatus.ExchangeWarning:
-                    if (logger != null)
-                        logger.Warning(args.Uri, "При попытке обмена пакетами" + report.baseName + " получено предупржедение: " + report.message);
-                    break;
-                case ReportStatus.ExtFormsSuccess:
-                    if (logger != null)
-                        logger.Information(args.Uri, "Загрузка ExtForms для базы " + report.baseName + " прошла успешно");
-                    break;
-                case ReportStatus.ExtFormsFail:
-                    if (logger != null)
-                        logger.Warning(args.Uri, "При загрузке ExtForms для базы " + report.baseName + " возникла ошибка: " + report.message);
-                    if (alarmer != null)
-                        alarmer.Alarm(args.Uri, "Загрузка ExtForms не прошла. База: " + report.baseName);
-                    break;
+                switch (status)
+                {
+                    case ReportStatus.Information:
+                        if (logger != null)
+                            logger.Information(args.Uri, String.Format("Получен отчет {0} об успешном выполнении операции на ИБ {1}", args.Report.GetType().Name, args.Report.baseName));
+                        if (alarmer != null)
+                            alarmer.Alarm(args.Report.reportGuid, String.Format(alarmMesage, args.Report.GetType().Name, args.Report.baseName, "успешно", args.Report.dateComplete));
+                        break;
+                    case ReportStatus.Warning:
+                        if (logger != null)
+                            logger.Warning(args.Uri, String.Format("Получен отчет {0} с предупреждением во время выполнения операции на ИБ {1}", args.Report.GetType().Name, args.Report.baseName));
+                        if (alarmer != null)
+                            alarmer.Alarm(args.Report.reportGuid, String.Format(alarmMesage, args.Report.GetType().Name, args.Report.baseName, "есть предупреждения", args.Report.dateComplete));
+                        break;
+                    case ReportStatus.Fail:
+                        if (logger != null)
+                            logger.Warning(args.Uri, String.Format("Получен отчет {0} с ошибкой во время выполнения операции на ИБ {1}", args.Report.GetType().Name, args.Report.baseName));
+                        if (alarmer != null)
+                            alarmer.Alarm(args.Report.reportGuid, String.Format(alarmMesage, args.Report.GetType().Name, args.Report.baseName, "есть ошибки", args.Report.dateComplete));
+                        break;
+                    case ReportStatus.Critical:
+                        if (logger != null)
+                            logger.Warning(args.Uri, String.Format("Получен отчет {0} с серьезным сбоем во время выполнения операции на ИБ {1}", args.Report.GetType().Name, args.Report.baseName));
+                        if (alarmer != null)
+                            alarmer.Alarm(args.Report.reportGuid, String.Format(alarmMesage, args.Report.GetType().Name, args.Report.baseName, "серьезный сбой", args.Report.dateComplete));
+                        break;
+                }
+            }
+            catch (AlarmException ex)
+            {
+                if (logger != null)
+                    logger.Fail(args.Uri, ex.Message);
             }
         }
 
         public void AddBaseService(string addr, int baseId)
         {
-            EndpointAddress endpoint = new EndpointAddress(new Uri(String.Format(uriPattern, addr)));
+            string[] addrArr = addr.Split(new char[] { ':' }, 2, StringSplitOptions.RemoveEmptyEntries);
+            EndpointAddress endpoint = new EndpointAddress(new Uri(
+                String.Format(uriPattern,
+                    addrArr[0],
+                    string.IsNullOrEmpty(addrArr[1]) ? "7000" : addrArr[1])));
             serviceBases.AddOrUpdate(baseId, endpoint, (key, oVal) => endpoint);
         }
 
-        public void SendCommand(CommandBuilder commandBuilder, int userId)
+        public void SendCommand(ExecuteCommand command)
         {
-            ReportInfo reportInfo = reporter.GetLastCommand(commandBuilder.BaseId);
-            if (!serviceBases.ContainsKey(commandBuilder.BaseId))
+            SendCommand(command, 1); // cron
+        }
+
+        public void SendCommand(ExecuteCommand command, int userId)
+        {
+            ExecuteCommand preparedCommand = handler.PrepareCommand(command);
+
+            if (!serviceBases.ContainsKey(command.baseId))
             {
-                LogHelper.Write2Log("Не удалось найти сервис для ИБ " + reportInfo.BaseName, LogLevel.Error);
+                LogHelper.Write2Log("Не удалось найти сервис для ИБ " + command.baseName, LogLevel.Error);
                 return;
             }
 
-            EndpointAddress remoteServiceEndpoint = serviceBases[commandBuilder.BaseId];
+            EndpointAddress remoteServiceEndpoint = serviceBases[command.baseId];
 
             // предыдущая задача не завершена
-            if (reportInfo != null && reportInfo.CompleteDate == DateTime.MinValue)
+            if (preparedCommand.commandDate == DateTime.MinValue)
             {
-                logger.Fail(remoteServiceEndpoint.Uri, String.Format("Запрос для ИБ {1} отклонен, т.к. предыдущий процесс не завершен",
-                    commandBuilder.Description,
-                    reportInfo.BaseName));
+                logger.Fail(remoteServiceEndpoint.Uri, String.Format("Команда {0} для ИБ {1} отклонена, т.к. предыдущий процесс не завершен", command.GetType(), command.baseName));
                 return;
             }
-
-            commandBuilder.ReleaseUpdate = reportInfo.ReleaseDate;
-            commandBuilder.ConfigurationChangeDate = reportInfo.ConfigurationChangeDate;
-
-            Command command = commandBuilder.Build();
 
             using (RemoteServiceProxy proxy = new RemoteServiceProxy(channelFactory, remoteServiceEndpoint))
             {
-                proxy.CommandExecute(command);
-                string message = String.Format("Запрос на {0}.\nИБ: {1}.",
-                    commandBuilder.Description,
-                    command.baseId);
+                proxy.CommandExecute(preparedCommand);
+                string message = String.Format("Отправка команды {0}.\nИБ: {1}", command.GetType(), command.baseName);
                 if (proxy.IsSuccess)
                 {
-                    reporter.SetCommandReport(new Report { baseId = commandBuilder.BaseId, dateCommand = command.commandDate, reportGuid = command.reportGuid }, userId);
-                    logger.Information(remoteServiceEndpoint.Uri, message);
+                    handler.SetCommandReport(preparedCommand, userId);
+                    if (logger != null)
+                        logger.Information(remoteServiceEndpoint.Uri, message);
                 }
                 else
                 {
-                    RemoteServiceError(remoteServiceEndpoint, proxy.Exception);
+                    RemoteServiceError(command, proxy.Exception);
                     LogHelper.Write2Log(proxy.Exception);
                     // в случае сбоя сервиса следующий код не нужен, отчеты только для БД
                     /*RemoteNoticeReport(null, new NoticeReportArgs(new OperationReport
@@ -267,16 +256,16 @@ namespace Ugoria.URBD.CentralService
             return GetChannel(uri);
         }
 
-        private void RemoteServiceError(EndpointAddress endpointAddr, Exception exp)
+        private void RemoteServiceError(Command command, Exception exp)
         {
-            Uri address = endpointAddr.Uri;
+            Uri address = serviceBases[command.baseId].Uri;
 
             if (exp is FaultException)
             {
                 if (logger != null)
                     logger.Warning(address, "Произошла ошибка на стороне удаленного сервиса: " + exp.Message);
                 if (alarmer != null)
-                    alarmer.Alarm(address, exp.Message);
+                    alarmer.Alarm(command.reportGuid, exp.Message);
             }
             else if (exp is CommunicationException)
             {
@@ -284,7 +273,7 @@ namespace Ugoria.URBD.CentralService
                     logger.Fail(address, "Соединение с сервисом потеряно: " + exp.Message);
                 // оповещение о неработе сервиса
                 if (alarmer != null)
-                    alarmer.Alarm(address, "Проблема в работе сервиса " + address);
+                    alarmer.Alarm(command.reportGuid, "Проблема в работе сервиса " + address);
             }
             else
             {
@@ -292,37 +281,41 @@ namespace Ugoria.URBD.CentralService
                     logger.Fail(address, "Прочие ошибки: " + exp.Message);
                 // оповещение о неработе сервиса
                 if (alarmer != null)
-                    alarmer.Alarm(address, "Проблема в работе сервиса " + address);
+                    alarmer.Alarm(command.reportGuid, "Проблема в работе сервиса " + address);
             }
         }
 
-        public void CheckProcess(CommandBuilder commandBuilder)
+        public void CheckProcess(ExecuteCommand command)
         {
             // запрос процессов неотработавших задач
-            ReportInfo reportInfo = reporter.GetLastCommand(commandBuilder.BaseId);
+            LaunchReport launchReport = handler.GetLaunchReport(command);
 
             // Не проверяем завершенные задачи
-            if (reportInfo.CompleteDate != DateTime.MinValue)
+            if (launchReport == null)
                 return;
 
             CheckCommand checkCommand = new CheckCommand
             {
-                launchGuid = reportInfo.LaunchGuid,
-                reportGuid = reportInfo.ReportGuid
+                reportGuid = launchReport.reportGuid,
+                launchGuid = launchReport.launchGuid,
+                baseId = command.baseId,
+                baseName = command.baseName,
+                commandDate = launchReport.commandDate,
+                configurationChangeDate = handler.PrepareCommand(command).configurationChangeDate
             };
 
-            string alarmMessage = "";
+            string alarmMessage = string.Empty;
 
-            if (!serviceBases.ContainsKey(commandBuilder.BaseId))
+            if (!serviceBases.ContainsKey(command.baseId))
             {
-                LogHelper.Write2Log("Не удалось найти сервис для ИБ " + reportInfo.BaseName, LogLevel.Error);
+                LogHelper.Write2Log("Не удалось найти сервис для ИБ " + launchReport.baseName, LogLevel.Error);
                 return;
             }
 
-            EndpointAddress endpointAddr = serviceBases[commandBuilder.BaseId];
-            if (reportInfo.StartDate != DateTime.MinValue)
+            EndpointAddress endpointAddr = serviceBases[launchReport.baseId];
+            if (launchReport.startDate != DateTime.MinValue)
             {
-                int wait = (int)(reportInfo.StartDate - DateTime.Now).Add(new TimeSpan(0, int.Parse(centralServiceConguration.GetParameter("delay_check").ToString()), 0)).TotalMilliseconds;
+                int wait = (int)(launchReport.startDate - DateTime.Now).Add(new TimeSpan(0, int.Parse((string)centralServiceConguration["main.delay_check"]), 0)).TotalMilliseconds;
                 Thread.Sleep(wait < 0 ? 0 : wait);
                 using (RemoteServiceProxy proxy = new RemoteServiceProxy(channelFactory, endpointAddr))
                 {
@@ -330,48 +323,54 @@ namespace Ugoria.URBD.CentralService
 
                     switch (status)
                     {
-                        case RemoteProcessStatus.Miss: alarmMessage = "Процесс {0} для ИБ \"{1}\" был утерян. Время запуска процесса: {2:dd.MM.yyyy hh:mm:ss}"; break;
-                        case RemoteProcessStatus.LongProcess: alarmMessage = "Процесс {0} для ИБ \"{1}\" выполняется свыше установленного периода ожидания. Время запуска процесса: {2:dd.MM.yyyy hh:mm:ss}"; break;
-                        case RemoteProcessStatus.ServiceFail: alarmMessage = "Служба УРБД после запуска {0} для ИБ \"{1}\" была аварийно завершена и потеряла связь с процессом. Время запуска процесса: {2:dd.MM.yyyy hh:mm:ss}"; break;
-                        case RemoteProcessStatus.UnknownFail: alarmMessage = "Неизестный сбой процесса {0} для ИБ \"{1}\". Время запуска процесса: {2:dd.MM.yyyy hh:mm:ss}"; break;
+                        case RemoteProcessStatus.Miss: alarmMessage = "Процесс {0} для ИБ \"{1}\" был утерян. Время запуска процесса: {2:HH:mm:ss dd.MM.yyyy}"; break;
+                        case RemoteProcessStatus.LongProcess: alarmMessage = "Процесс {0} для ИБ \"{1}\" выполняется свыше установленного периода ожидания. Время запуска процесса: {2:HH:mm:ss dd.MM.yyyy}"; break;
+                        case RemoteProcessStatus.ServiceFail: alarmMessage = "Служба УРБД после запуска {0} для ИБ \"{1}\" была аварийно завершена и потеряла связь с процессом. Время запуска процесса: {2:HH:mm:ss dd.MM.yyyy}"; break;
+                        case RemoteProcessStatus.UnknownFail: alarmMessage = "Неизестный сбой процесса {0} для ИБ \"{1}\". Время запуска процесса: {2:HH:mm:ss dd.MM.yyyy}"; break;
                     }
                     if (!string.IsNullOrEmpty(alarmMessage))
                     {
-                        alarmMessage = String.Format(alarmMessage,
-                            commandBuilder.Description,
-                            reportInfo.BaseName,
-                            reportInfo.StartDate);
+                        alarmMessage = String.Format(alarmMessage, command.GetType().Name, launchReport.baseName, launchReport.startDate);
                     }
                     if (!proxy.IsSuccess)
-                        RemoteServiceError(endpointAddr, proxy.Exception);
-                    LogHelper.Write2Log("Проверка работы процесса 1С " + reportInfo.ReportGuid + ": " + status, LogLevel.Information);
+                        RemoteServiceError(command, proxy.Exception);
+                    LogHelper.Write2Log(String.Format("Проверка работы процесса 1С {0}: {1}", launchReport.reportGuid, status), LogLevel.Information);
                 }
             }
-            else if (reportInfo.StartDate == null)
+            else if (launchReport.startDate == null)
             {
                 using (RemoteServiceProxy proxy = new RemoteServiceProxy(channelFactory, endpointAddr))
                 {
                     RemoteProcessStatus status = proxy.CheckProcess(checkCommand);
                     switch (status)
                     {
-                        case RemoteProcessStatus.LongStart: alarmMessage = "Процесс на {0} для ИБ \"{1}\" не был запущен в течение установленного периода ожидания."; break;
-                        case RemoteProcessStatus.ServiceFail: alarmMessage = "Служба УРБД после запуска на {0} для ИБ \"{1}\" была аварийно завершена и процесс не был запущен."; break;
+                        case RemoteProcessStatus.LongStart: alarmMessage = "Процесс для запроса {0} для ИБ \"{1}\" не был запущен в течение установленного периода ожидания."; break;
+                        case RemoteProcessStatus.ServiceFail: alarmMessage = "Служба УРБД после запуска запроса {0} для ИБ \"{1}\" была аварийно завершена и процесс не был запущен."; break;
+                        case RemoteProcessStatus.UpdateRequired: alarmMessage = "Службе УРБД требуется обновление."; break;
                     }
                     if (!string.IsNullOrEmpty(alarmMessage))
                     {
-                        alarmMessage = String.Format(alarmMessage,
-                            commandBuilder.Description,
-                            reportInfo.BaseName);
+                        alarmMessage = String.Format(alarmMessage, command.GetType().Name, launchReport.baseName);
                     }
                     if (!proxy.IsSuccess)
-                        RemoteServiceError(endpointAddr, proxy.Exception);
-                    LogHelper.Write2Log("Проверка работы процесса 1С " + reportInfo.ReportGuid + ": " + status, LogLevel.Information);
+                    {
+                        RemoteServiceError(command, proxy.Exception);
+                    }
+                    LogHelper.Write2Log(String.Format("Проверка работы процесса 1С {0}: {1}", launchReport.reportGuid, status), LogLevel.Information);
                 }
             }
-            if (alarmer != null && !string.IsNullOrEmpty(alarmMessage))
-                alarmer.Alarm(reportInfo.ServiceAddress, alarmMessage);
+            try
+            {
+                if (alarmer != null && !string.IsNullOrEmpty(alarmMessage))
+                    alarmer.Alarm(checkCommand.reportGuid, alarmMessage);
+            }
+            catch (AlarmException ex)
+            {
+                if (logger != null)
+                    logger.Fail(endpointAddr.Uri, ex.Message);
+            }
             if (logger != null && !string.IsNullOrEmpty(alarmMessage))
-                logger.Warning(reportInfo.ServiceAddress, alarmMessage);
+                logger.Warning(endpointAddr.Uri, alarmMessage);
         }
 
         public void Start()
@@ -384,20 +383,22 @@ namespace Ugoria.URBD.CentralService
             serviceHost.Close();
         }
 
-        public void InterruptCommand(int baseId)
+        public void InterruptCommand(ExecuteCommand command)
         {
-            ReportInfo reportInfo = reporter.GetLastCommand(baseId);
+            LaunchReport launchReport = handler.GetLaunchReport(command);
 
             // нельзя снять отработанную задачу
-            if (reportInfo.CompleteDate != DateTime.MinValue)
+            if (launchReport == null)
                 return;
-            EndpointAddress remoteServiceEndpoint = serviceBases[baseId];
+            EndpointAddress remoteServiceEndpoint = serviceBases[command.baseId];
+
+            ExecuteCommand preparedCommand = handler.PrepareCommand(command);
+
             using (RemoteServiceProxy proxy = new RemoteServiceProxy(channelFactory, remoteServiceEndpoint))
             {
-                proxy.InterruptProcess(reportInfo.ReportGuid);
-
+                proxy.InterruptProcess(preparedCommand);
                 if (!proxy.IsSuccess)
-                    RemoteServiceError(remoteServiceEndpoint, proxy.Exception);
+                    RemoteServiceError(command, proxy.Exception);
             }
         }
     }

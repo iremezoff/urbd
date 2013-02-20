@@ -71,7 +71,14 @@
   <PropertyGroup>
     <StartupObject />
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Updater|x86'">
+    <OutputPath>bin\x86\Updater\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Ionic.Zip, Version=1.9.1.8, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Downloads\DotNetZipLib-DevKit-v1.9\zip-v1.9\Release\Ionic.Zip.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.ServiceModel" />
@@ -80,37 +87,36 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Wintellect.Threading">
-      <HintPath>..\..\..\..\..\..\..\..\sandbox\Wintellect.Threading.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Kit\FtpEntry.cs" />
+    <Compile Include="Kit\FtpKit.cs" />
+    <Compile Include="Kit\NetworkConnectionKit.cs" />
+    <Compile Include="Kit\ProcessLauncherKit.cs" />
+    <Compile Include="MessageHandler.cs" />
     <Compile Include="Services\CentralServiceProxy.cs" />
-    <Compile Include="CommandStrategy\ModeStrategy\AggressiveMode.cs" />
-    <Compile Include="CommandStrategy\ModeStrategy\ExtremeMode.cs" />
-    <Compile Include="CommandStrategy\ModeStrategy\ModeStrategy.cs" />
     <Compile Include="Services\CheckEventArgs.cs" />
     <Compile Include="Services\CommandEventArgs.cs" />
     <Compile Include="Services\InterruptEventArgs.cs" />
     <Compile Include="Services\RegisteredEventArgs.cs" />
-    <Compile Include="Verifier.cs" />
-    <Compile Include="CommandStrategy\ModeStrategy\NormalMode.cs" />
-    <Compile Include="CommandStrategy\ModeStrategy\PassiveMode.cs" />
-    <Compile Include="CommandStrategy\ExchangeStrategy.cs" />
-    <Compile Include="CommandStrategy\ExtFormsStrategy.cs" />
-    <Compile Include="CommandStrategy\ModeStrategy\IModeStrategy.cs" />
-    <Compile Include="CommandStrategy\ICommandStrategy.cs" />
-    <Compile Include="Reports\LaunchReportBuilder.cs" />
-    <Compile Include="Reports\OperationReportBuilder.cs" />
-    <Compile Include="CommandStrategy\PacketPathBuilder.cs" />
+    <Compile Include="Services\ValidationEventArgs.cs" />
     <Compile Include="Configuration\PrmBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueueManager.cs" />
     <Compile Include="Configuration\RemoteConfigurationManager.cs" />
-    <Compile Include="Reports\ReportBuilder.cs" />
-    <Compile Include="ServiceUtil.cs" />
-    <Compile Include="Reports\IReportBuilder.cs" />
+    <Compile Include="Kit\ServiceUtil.cs" />
     <Compile Include="Services\RemoteService.cs" />
+    <Compile Include="Strategy\Builders\ExtDirectoriesStrategyBuilder.cs" />
+    <Compile Include="Strategy\ExchangeContext.cs" />
+    <Compile Include="Strategy\ExchangeStrategy.cs" />
+    <Compile Include="Strategy\Builders\ExchangeStrategyBuilder.cs" />
+    <Compile Include="Strategy\Exchange\Mode\DefaultMode.cs" />
+    <Compile Include="Strategy\Exchange\Mode\NormalMode.cs" />
+    <Compile Include="Strategy\Exchange\Mode\PassiveMode.cs" />
+    <Compile Include="Strategy\Exchange\PacketPathBuilder.cs" />
+    <Compile Include="Strategy\Exchange\Verifier.cs" />
+    <Compile Include="Strategy\ExtDirectoriesContext.cs" />
+    <Compile Include="Strategy\ExtDirectoriesStrategy.cs" />
     <Compile Include="URBDRemoteWorker.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -121,10 +127,6 @@
     <ProjectReference Include="..\Ugoria.URBD.Shared\Ugoria.URBD.Shared.csproj">
       <Project>{AF9627CB-EB12-44AC-98DE-7F78CE8D60F8}</Project>
       <Name>Ugoria.URBD.Shared</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Ugoria.URBD.LogHelper\Ugoria.URBD.LogHelper.csproj">
-      <Project>{E83C38B7-D2D7-477E-A726-C7F4E9E0F306}</Project>
-      <Name>Ugoria.URBD.LogHelper</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

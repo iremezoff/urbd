@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TestFiles>
+  <TestFile>
+    <FileName>test1.log</FileName>
+    <HaveMD>false</HaveMD>    
+    
+      <Packet>
+        <Name>PERM_C.zip</Name>
+        <Type>Load</Type>
+        <Success>False</Success>
+      </Packet>
+      <Packet>
+        <Name>PERM_P.zip</Name>
+        <Type>Unload</Type>
+        <Success>True</Success>
+      </Packet>    
+  </TestFile>
+
+  <TestFile>
+    <FileName>test1.log</FileName>
+    <HaveMD>true</HaveMD>
+      <Packet>
+        <Name>PERM_C.zip</Name>
+        <Type>Load</Type>
+        <Success>False</Success>
+      </Packet>
+      <Packet>
+        <Name>PERM_P.zip</Name>
+        <Type>Unload</Type>
+        <Success>True</Success>
+      </Packet>
+  </TestFile>
+</TestFiles>

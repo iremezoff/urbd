@@ -65,7 +65,14 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Updater|AnyCPU'">
+    <OutputPath>bin\Updater\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Ionic.Zip, Version=1.9.1.8, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Downloads\DotNetZipLib-DevKit-v1.9\zip-v1.9\Release\Ionic.Zip.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
@@ -77,18 +84,35 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\Commands\ExecuteCommand.cs" />
+    <Compile Include="Data\ExtDirectoryFile.cs" />
+    <Compile Include="Handlers\IExtDirectoryDataHandler.cs" />
+    <Compile Include="Handlers\IDataHandler.cs" />
+    <Compile Include="Handlers\Strategy\IExtDirectoryStrategyBuilder.cs" />
+    <Compile Include="Handlers\Strategy\IExchangeStrategyBuilder.cs" />
+    <Compile Include="Handlers\Strategy\IStrategyBuilder.cs" />
+    <Compile Include="Handlers\Strategy\ICommandStrategy.cs" />
+    <Compile Include="Handlers\Strategy\Exchange\IMode.cs" />
+    <Compile Include="Context\IContext.cs" />
+    <Compile Include="URBDException.cs" />
+    <Compile Include="Context\StrategyContext.cs" />
     <Compile Include="Data\Base.cs" />
     <Compile Include="Data\Commands\Command.cs" />
     <Compile Include="Data\Commands\CheckCommand.cs" />
     <Compile Include="Data\Commands\ExchangeCommand.cs" />
-    <Compile Include="Data\Commands\ExtFormsCommand.cs" />
+    <Compile Include="Data\Commands\ExtDirectoryCommand.cs" />
     <Compile Include="Data\MLGMessage.cs" />
     <Compile Include="Data\Packet.cs" />
     <Compile Include="Data\RemoteConfiguration.cs" />
+    <Compile Include="Data\Reports\ExtDirectoryReport.cs" />
     <Compile Include="Data\Reports\LaunchReport.cs" />
+    <Compile Include="Data\Reports\ExchangeReport.cs" />
     <Compile Include="Data\Reports\OperationReport.cs" />
     <Compile Include="Data\Reports\Report.cs" />
     <Compile Include="Data\Reports\ReportPacket.cs" />
+    <Compile Include="Handlers\CommandHandlerAttribute.cs" />
+    <Compile Include="Handlers\ReportHandlerAttribute.cs" />
+    <Compile Include="Handlers\IExchangeDataHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\Enums.cs" />
     <Compile Include="Service\ICentralService.cs" />
@@ -116,6 +140,12 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Ugoria.URBD.Shared\Ugoria.URBD.Shared.csproj">
+      <Project>{AF9627CB-EB12-44AC-98DE-7F78CE8D60F8}</Project>
+      <Name>Ugoria.URBD.Shared</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

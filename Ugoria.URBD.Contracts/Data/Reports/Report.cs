@@ -6,9 +6,9 @@ using System.Runtime.Serialization;
 
 namespace Ugoria.URBD.Contracts.Data.Reports
 {
+    [DataContract]
     [KnownType(typeof(OperationReport))]
     [KnownType(typeof(LaunchReport))]
-    [DataContract]
     public class Report
     {
         [DataMember]
@@ -18,9 +18,9 @@ namespace Ugoria.URBD.Contracts.Data.Reports
         public int baseId;
 
         [DataMember]
-        public string baseName="";
+        public string baseName = "";
 
         [DataMember]
-        public DateTime dateCommand;
+        public DateTime commandDate;
     }
 }

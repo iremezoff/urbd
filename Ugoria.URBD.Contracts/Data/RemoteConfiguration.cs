@@ -3,46 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
+using Ugoria.URBD.Shared.Configuration;
+using System.Security;
+using System.Collections;
+using Ugoria.URBD.Contracts.Services;
 
 namespace Ugoria.URBD.Contracts.Data
 {
     [DataContract]
+    [KnownType(typeof(List<Hashtable>))]
+    [KnownType(typeof(PacketType))]
+    [KnownType(typeof(Dictionary<string, string>))]
     public class RemoteConfiguration
     {
         [DataMember]
-        public string ftpAddress = "";
+        public Hashtable configuration;
 
         [DataMember]
-        public string ftpUsername = "";
-
-        [DataMember]
-        public string ftpPassword = "";
-
-        [DataMember]
-        public string file1CPath = "";
-
-        [DataMember]
-        public int threadsCount = 3;
-
-        [DataMember]
-        public string extFormsPath = "";
-
-        [DataMember]
-        public string ftpPC = "";
-
-        [DataMember]
-        public string ftpCP = "";
-
-        [DataMember]
-        public int waitTime = 10;
-
-        [DataMember]
-        public int packetExchangeAttempts = 3;
-
-        [DataMember]
-        public int packetExchangeWaitTime = 10;
-
-        [DataMember]
-        public List<Base> baseList = new List<Base>();
+        public Dictionary<int, Hashtable> bases;
     }
 }

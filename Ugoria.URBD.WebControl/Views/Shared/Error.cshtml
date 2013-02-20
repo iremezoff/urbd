@@ -1,0 +1,9 @@
+﻿@model System.Web.Mvc.HandleErrorInfo
+@{
+    ViewBag.Title = "Error";
+    Layout = "~/Views/Shared/MainLayout.cshtml";
+}
+<h2>
+    Произошла ошибка. Подробности ниже.
+</h2>
+@(Html.TextArea("error", ViewData.Model.Exception.ToString(), new { style = "width: 100%; height: 700" }))

@@ -17,9 +17,6 @@ namespace Ugoria.URBD.Contracts.Data.Reports
         public DateTime datePacket;
 
         [DataMember]
-        public string fileHash;
-
-        [DataMember]
         public long fileSize;
 
         [DataMember]

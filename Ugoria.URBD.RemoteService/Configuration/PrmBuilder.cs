@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Ugoria.URBD.Shared;
 
 namespace Ugoria.URBD.RemoteService
 {
@@ -27,6 +28,20 @@ namespace Ugoria.URBD.RemoteService
 
         public FileInfo Build()
         {
+            if (string.IsNullOrEmpty(fileName))
+                fileName = Path.GetTempFileName();
+
+            FileInfo logFileInfo = new FileInfo(logFile);
+            if (!logFileInfo.Directory.Exists)
+            {
+                logFileInfo.Directory.Create();
+                if (!logFileInfo.Exists)
+                    using (logFileInfo.Create()) { }
+            }
+
+            FileInfo prmFileInfo = new FileInfo(fileName);
+            if (prmFileInfo.Exists)
+                prmFileInfo.Delete();
             StringBuilder prmData = new StringBuilder();
             prmData.AppendLine("[General]");
 
@@ -44,19 +59,11 @@ namespace Ugoria.URBD.RemoteService
             prmData.AppendLine("WriteTo = *");
             prmData.AppendLine("ReadFrom = *");
 
-            if (string.IsNullOrEmpty(fileName))
-                fileName = Path.GetTempFileName();
-
-            if (!File.Exists(logFile))
-                File.Create(logFile);
-
-            using (StreamWriter sw = new StreamWriter(new FileStream(fileName, FileMode.Create),
-                Encoding.GetEncoding(1251)))
+            using (StreamWriter sw = new StreamWriter(prmFileInfo.Create(), Encoding.GetEncoding(1251)))
             {
                 sw.WriteLine(prmData.ToString());
             }
-
-            return new FileInfo(fileName);
+            return prmFileInfo;
         }
 
         public static PrmBuilder Create()

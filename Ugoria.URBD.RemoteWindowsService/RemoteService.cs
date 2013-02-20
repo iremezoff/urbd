@@ -7,6 +7,8 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Text;
 using Ugoria.URBD.RemoteService;
+using Ugoria.URBD.Shared;
+using System.Security.Principal;
 
 namespace URBDRemoteService
 {
@@ -21,8 +23,13 @@ namespace URBDRemoteService
 
         protected override void OnStart(string[] args)
         {
+            System.Diagnostics.Debugger.Launch();
             remoteWorker.Start();
             AddLog("start service");
+            AddLog(SecureHelper.ConvertUserdomainToClassic(WindowsIdentity.GetCurrent().Name));
+            AddLog(WindowsIdentity.GetCurrent().Name);
+            AddLog(LogHelper.LogDir);
+            //AddLog(LogHelper.LogDir);            
         }
 
         protected override void OnStop()

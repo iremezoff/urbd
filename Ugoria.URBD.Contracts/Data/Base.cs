@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
+using Ugoria.URBD.Shared.Configuration;
+using System.Collections;
 
 namespace Ugoria.URBD.Contracts.Data
 {
     [DataContract]
+    [KnownType(typeof(List<Packet>))]
     public class Base
     {
         [DataMember]
@@ -25,6 +28,6 @@ namespace Ugoria.URBD.Contracts.Data
         public string password = "";
 
         [DataMember]
-        public List<Packet> packetList = new List<Packet>();
+        public Hashtable extendedConfiguration;
     }
 }

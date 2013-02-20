@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Ugoria.URBD.CentralService.DataProvider;
+using Ugoria.URBD.Shared.DataProvider;
 
 namespace Ugoria.URBD.CentralService.Logging
 {
     public class Logger : ILogger
     {
-        private IDataProvider dataProvider = null;
-
         private bool isFailEnabled = true;
         private bool isInformationEnabled = true;
         private bool isWarningEnabled = true;
@@ -41,7 +40,7 @@ namespace Ugoria.URBD.CentralService.Logging
         {
             if (!isFailEnabled)
                 return;
-            dataProvider.SetLog(address, DateTime.Now, 'F', message);
+            SetLog(address, 'F', message);
         }
 
         public void Information(Uri uri, string message)
@@ -53,7 +52,7 @@ namespace Ugoria.URBD.CentralService.Logging
         {
             if (!isInformationEnabled)
                 return;
-            dataProvider.SetLog(address, DateTime.Now, 'I', message);
+            SetLog(address, 'I', message);
         }
 
         public void Warning(Uri uri, string message)
@@ -65,12 +64,19 @@ namespace Ugoria.URBD.CentralService.Logging
         {
             if (!isWarningEnabled)
                 return;
-            dataProvider.SetLog(address, DateTime.Now, 'W', message);
+            SetLog(address, 'W', message);
         }
 
-        public Logger(IDataProvider dataProvider)
+        private void SetLog(string address, char type, string message)
         {
-            this.dataProvider = dataProvider;
+            using (DBDataProvider dataProvider = new DBDataProvider())
+            {
+                dataProvider.SetLog(address, DateTime.Now, type, message);
+            }
+        }
+
+        public Logger()
+        {
         }
 
         private static string Uri2AddressString(Uri uri)

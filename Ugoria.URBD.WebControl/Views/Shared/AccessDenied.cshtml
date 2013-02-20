@@ -1,0 +1,9 @@
+﻿@model System.Web.Mvc.HandleErrorInfo
+@{
+    ViewBag.Title = "AccessDenied";
+    Layout = "~/Views/Shared/MainLayout.cshtml";
+}
+<h2>
+    @ViewData.Model.Exception.Message</h2>
+Текущая учетная запись: <b>@HttpContext.Current.User.Identity.Name</b><br />
+По вопросам обращаться на адрес <a href="mailto:remezovis@ugsk.ru">remezovis@ugsk.ru</a>

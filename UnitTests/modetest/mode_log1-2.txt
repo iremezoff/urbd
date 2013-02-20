@@ -1,0 +1,4 @@
+20130114;14:33:29;UrbdUser;C;Distr;DistUplBeg;1;D:\1C\UGSK\CP\PERM_C.zip;;
+20130114;14:33:29;UrbdUser;C;Distr;DistUplSuc;1;;;
+20130114;14:33:29;UrbdUser;C;Distr;DistDnldBeg;1; Ó‰ »¡: 'œÃ0', ‘‡ÈÎ: 'D:\1C\UGSK\PC\PERM_P.zip';;
+20130114;14:33:31;UrbdUser;C;Distr;DistDnldSuc;1;;;

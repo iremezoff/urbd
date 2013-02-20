@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Users>
+  <User>
+    <Input>ugsk\254-svc-urbd</Input>
+    <Output>254-svc-urbd@ugsk</Output>
+  </User>
+  <User>
+    <Input>254-svc-urbd</Input>
+    <Output>254-svc-urbd@localhost</Output>
+  </User>
+  <User>
+    <Input>ugsk\\remezovis</Input>
+    <Output>remezovis@ugsk</Output>
+  </User>
+  <User>
+    <Input>user@domain</Input>
+    <Output>user@domain</Output>
+  </User>
+</Users>

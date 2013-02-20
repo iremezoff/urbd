@@ -40,7 +40,7 @@ namespace Ugoria.URBD.CentralService
             get { return isSuccess; }
         }
 
-        public RemoteServiceProxy (ChannelFactory<IRemoteService> channelFactory, EndpointAddress addr)
+        public RemoteServiceProxy(ChannelFactory<IRemoteService> channelFactory, EndpointAddress addr)
         {
             this.channelFactory = channelFactory;
             this.addr = addr;
@@ -48,16 +48,16 @@ namespace Ugoria.URBD.CentralService
             commObj = (ICommunicationObject)remoteService;
         }
 
-        private void RebuildService (Exception ex)
+        private void RebuildService(Exception ex)
         {
             attempts--;
-            Thread.Sleep(new TimeSpan(0,0,30));
+            Thread.Sleep(new TimeSpan(0, 0, 30));
             remoteService = channelFactory.CreateChannel(addr);
             commObj = (ICommunicationObject)remoteService;
             exception = ex;
         }
 
-        public void CommandExecute (Command command)
+        public void CommandExecute(ExecuteCommand command)
         {
             while (attempts > 0)
             {
@@ -74,7 +74,7 @@ namespace Ugoria.URBD.CentralService
             }
         }
 
-        public RemoteProcessStatus CheckProcess (CheckCommand checkCommand)
+        public RemoteProcessStatus CheckProcess(CheckCommand checkCommand)
         {
             while (attempts > 0)
             {
@@ -93,26 +93,26 @@ namespace Ugoria.URBD.CentralService
             return RemoteProcessStatus.UnknownFail;
         }
 
-        public void Dispose ()
+        public void Dispose()
         {
             try
             {
                 // Определить, односторонняя ли операция и вырубить соединение
-                //if (commObj.State == CommunicationState.Opened)
-                //  commObj.Close();
+                if (commObj.State == CommunicationState.Opened)
+                  commObj.Close();
             }
             catch (Exception)
             {
             }
         }
 
-        public void InterruptProcess(Guid commandGuid)
+        public void InterruptProcess(ExecuteCommand command)
         {
             while (attempts > 0)
             {
                 try
                 {
-                    remoteService.InterruptProcess(commandGuid);
+                    remoteService.InterruptProcess(command);
                     isSuccess = true;
                     return;
                 }
@@ -121,6 +121,24 @@ namespace Ugoria.URBD.CentralService
                     RebuildService(ex);
                 }
             }
+        }
+
+        public IDictionary<string, string> RemoteValidation(RemoteConfiguration configuration)
+        {
+            while (attempts > 0)
+            {
+                try
+                {
+                    IDictionary<string, string> report = remoteService.RemoteValidation(configuration);
+                    isSuccess = true;
+                    return report;
+                }
+                catch (Exception ex)
+                {
+                    RebuildService(ex);
+                }
+            }
+            return null;
         }
     }
 }

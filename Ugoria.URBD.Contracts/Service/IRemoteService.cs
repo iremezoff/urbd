@@ -12,12 +12,15 @@ namespace Ugoria.URBD.Contracts.Services
     public interface IRemoteService
     {
         [OperationContract(IsOneWay = true)]
-        void CommandExecute (Command command);
+        void CommandExecute (ExecuteCommand command);
 
         [OperationContract]
         RemoteProcessStatus CheckProcess (CheckCommand command);
 
         [OperationContract(IsOneWay = true)]
-        void InterruptProcess(Guid commandGuid);
+        void InterruptProcess(ExecuteCommand command);
+
+        [OperationContract]
+        IDictionary<string, string> RemoteValidation(RemoteConfiguration configuration);
     }
 }

@@ -9,10 +9,12 @@ namespace Ugoria.URBD.CentralService.DataProvider
     {
         private static SqlConnectionStringBuilder cnStrBldr;
         private static string connectionString;
+        private static string ozekiConnectionString;
 
         private DB()
         {
             connectionString = ConfigurationManager.ConnectionStrings["CentralServiceConnectionString"].ConnectionString;
+            ozekiConnectionString = ConfigurationManager.ConnectionStrings["OzekiConnectionString"].ConnectionString;
         }
 
         public SqlConnection Connection
@@ -23,9 +25,16 @@ namespace Ugoria.URBD.CentralService.DataProvider
                 {
                     cnStrBldr = new SqlConnectionStringBuilder(connectionString);
                     cnStrBldr.ConnectTimeout = 30;
-                    cnStrBldr.IntegratedSecurity = false;
                 }
                 return new SqlConnection(cnStrBldr.ConnectionString);
+            }
+        }
+
+        public SqlConnection OzekiConnection
+        {
+            get
+            {
+                return new SqlConnection(ozekiConnectionString);
             }
         }
 

@@ -5,52 +5,61 @@ using System.Text;
 using System.ServiceModel;
 using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.Contracts.Data;
+using Ugoria.URBD.Contracts.Data.Commands;
 
 namespace Ugoria.URBD.CentralService
 {
     public delegate void RunTaskHandler(object sender, TaskEventArgs args);
     public delegate void InterruptTaskHandler(object sender, InterruptTaskEventArgs args);
-    public delegate IDictionary<string, string> ValidateConfigurationHandler(object sender, ValidateConfigurationEventArgs args);
+    //public delegate IDictionary<string, string> ValidateConfigurationHandler(object sender, ValidateConfigurationEventArgs args);
+    public delegate void ReconfigureHandler(object sender, ReconfigureEventArgs args);
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Multiple, IncludeExceptionDetailInFaults = true)]
     class ControlService : IControlService
     {
         public event RunTaskHandler SendTask;
         public event InterruptTaskHandler SendInterruptTask;
-        public event ValidateConfigurationHandler Validate;
+        public event ReconfigureHandler BaseReconfigure;
+        public event ReconfigureHandler ServiceReconfigure;
+        public event EventHandler CentralReconfigure;
 
-        public void RunTask(int userId, int baseId, ModeType modeType)
+        public void RunTask(int userId, ExecuteCommand command)
         {
             if (SendTask != null)
-                SendTask(this, new TaskEventArgs(userId, baseId, modeType));
+                SendTask(this, new TaskEventArgs(userId, command));
         }
 
-        public void InterruptTask(int baseId)
+        public void InterruptTask(ExecuteCommand command)
         {
             if (SendInterruptTask != null)
-                SendInterruptTask(this, new InterruptTaskEventArgs(baseId));
+                SendInterruptTask(this, new InterruptTaskEventArgs(command));
+        }
+        
+        public void ReconfigureBaseOfService(int baseId)
+        {
+            if (BaseReconfigure != null)
+                BaseReconfigure(this, new ReconfigureEventArgs(baseId));
         }
 
-        public IDictionary<string, string> ValidateConfiguration(Uri remoteUri, RemoteConfiguration configuration)
+        public void ReconfigureCentralService()
         {
-            if (Validate != null)
-                return Validate(this, new ValidateConfigurationEventArgs(remoteUri, configuration));
-            return null;
+            if (CentralReconfigure != null)
+                CentralReconfigure(this, new EventArgs());
+        }
+
+        public void ReconfigureRemoteService(int serviceId)
+        {
+            if (ServiceReconfigure != null)
+                ServiceReconfigure(this, new ReconfigureEventArgs(serviceId));
         }
     }
 
     public class TaskEventArgs : EventArgs
     {
-        private int baseId;
+        private ExecuteCommand command;
 
-        public int BaseId
+        public ExecuteCommand Command
         {
-            get { return baseId; }
-        }
-        private ModeType modeType;
-
-        public ModeType ModeType
-        {
-            get { return modeType; }
+            get { return command; }
         }
 
         private int userId;
@@ -60,26 +69,40 @@ namespace Ugoria.URBD.CentralService
             get { return userId; }
         }
 
-        internal TaskEventArgs(int userId, int baseId, ModeType modeType)
+        internal TaskEventArgs(int userId, ExecuteCommand command)
         {
             this.userId = userId;
-            this.baseId = baseId;
-            this.modeType = modeType;
+            this.command = command;
+        }
+    }
+
+    public class ReconfigureEventArgs : EventArgs
+    {
+        private int entityId;
+
+        public int EntityId
+        {
+            get { return entityId; }
+        }
+
+        internal ReconfigureEventArgs(int entityId)
+        {
+            this.entityId = entityId;
         }
     }
 
     public class InterruptTaskEventArgs : EventArgs
     {
-        private int baseId;
+        private ExecuteCommand command;
 
-        public int BaseId
+        public ExecuteCommand Command
         {
-            get { return baseId; }
+            get { return command; }
         }
 
-        internal InterruptTaskEventArgs(int baseId)
+        internal InterruptTaskEventArgs(ExecuteCommand command)
         {
-            this.baseId = baseId;
+            this.command = command;
         }
     }
 

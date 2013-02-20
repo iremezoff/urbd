@@ -66,6 +66,9 @@
   <PropertyGroup>
     <SignManifests>true</SignManifests>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Updater|x86'">
+    <OutputPath>bin\x86\Updater\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -83,6 +86,10 @@
     <ProjectReference Include="..\Ugoria.URBD.RemoteService\Ugoria.URBD.RemoteService.csproj">
       <Project>{A621FB4F-02E8-4A84-8E8F-17E2D4FADD4A}</Project>
       <Name>Ugoria.URBD.RemoteService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ugoria.URBD.Updater\Ugoria.URBD.Updater.csproj">
+      <Project>{D3375DBF-64F6-49D8-872F-68D192C7E9E0}</Project>
+      <Name>Ugoria.URBD.Updater</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

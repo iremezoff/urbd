@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Modes>
+  <Mode>
+    <FileName1>mode_log1-1.txt</FileName1>
+    <FileName2>mode_log1-2.txt</FileName2>
+    <Success>False</Success>
+    <HaveMD>True</HaveMD>
+  </Mode>
+  <Mode>
+    <FileName1>mode_log2-1.txt</FileName1>
+    <FileName2>mode_log2-2.txt</FileName2>
+    <Success>True</Success>
+    <HaveMD>False</HaveMD>
+  </Mode>
+  <Mode>
+    <FileName1>mode_log3-1.txt</FileName1>
+    <FileName2>mode_log3-1.txt</FileName2>
+    <Success>False</Success>
+    <HaveMD>True</HaveMD>
+  </Mode>
+  <Mode>
+    <FileName1>mode_log4-1.txt</FileName1>
+    <FileName2>mode_log4-1.txt</FileName2>
+    <Success>False</Success>
+    <HaveMD>False</HaveMD>
+  </Mode>
+</Modes>

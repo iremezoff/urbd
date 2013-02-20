@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
+using Ugoria.URBD.WebControl.Helpers;
 
 namespace Ugoria.URBD.WebControl
 {
@@ -16,7 +17,7 @@ namespace Ugoria.URBD.WebControl
         {
             filters.Add(new HandleErrorLoggerAttribute() { ExceptionType = typeof(AccessPermissionDeniedException), View = "AccessDenied", Order = 1 });
             filters.Add(new HandleErrorLoggerAttribute());
-            filters.Add(new ServiceAccessAttribute());
+            filters.Add(new SecurityAccessAttribute());
             //filters.Add()
         }
 
@@ -38,6 +39,9 @@ namespace Ugoria.URBD.WebControl
 
             RegisterGlobalFilters(GlobalFilters.Filters);
             RegisterRoutes(RouteTable.Routes);
+
+            ModelBinders.Binders.Add(typeof(DateTime), new DateTimeBinder());
+            ModelBinders.Binders.Add(typeof(DateTime?), new DateTimeBinder());
         }
     }
 }

@@ -1,0 +1,170 @@
+﻿@using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Models
+@{
+    ViewBag.Title = "Управление пользователями - УРБД 2.5";
+    Layout = "~/Views/Shared/MainLayout.cshtml";
+    bool? success = (bool?)ViewData["success"];
+}
+<script type="text/javascript" language="javascript">
+    $(document).ready(function () {
+
+        $(":submit").button();
+        $("table#users tbody").on("changerows", function () {
+            var trs = $("tr:not(.new-row)", this);
+            $("input.UserId:hidden", trs).attr("name", function (index) { return "users[" + index + "].UserId" });
+            $("input.IsActive:hidden", trs).attr("name", function (index) { return "users[" + index + "].IsActive" });
+            $("input.UserName:hidden", trs).attr("name", function (index) { return "users[" + index + "].UserName" });
+            $("input.Mail:hidden", trs).attr("name", function (index) { return "users[" + index + "].Mail" });
+            $("input.Phone:hidden", trs).attr("name", function (index) { return "users[" + index + "].Phone" });
+            $("input.IsAdmin:hidden", trs).attr("name", function (index) { return "users[" + index + "].IsAdmin" });
+
+            $(".username, .mail").editable(function (value, settings) {
+                $(this).prev().attr("value", value);
+                return (value);
+            }, {
+                type: 'text',
+                placeholder: 'пусто',
+                width: 200
+            }).css("cursor", "pointer").each(function () { $(this).html($(this).html().trim()); });
+
+            $(".phone").editable(function (value, settings) {
+                $(this).prev().attr("value", value);
+                return (value);
+            }, {
+                type: 'text',
+                placeholder: 'пусто',
+                width: 100
+            }).css("cursor", "pointer").each(function () { $(this).html($(this).html().trim()); }).click(function () { $(":text", this).mask("+79999999999") });
+
+            $(".is_admin").editable(function (value, settings) {
+                $(this).prev().attr("value", value);
+                return (settings.data[value]);
+            }, {
+                type: 'select',
+                placeholder: 'Нажмите для ввода',
+                data: { "False": "Пользователь", "True": "Администратор" },
+                submit: "OK"
+            }).css("cursor", "pointer");
+
+            $(".is_active").editable(function (value, settings) {
+                $(this).prev().attr("value", value);
+                return (settings.data[value]);
+            }, {
+                type: 'select',
+                placeholder: 'Нажмите для ввода',
+                data: { "False": "Отключенный", "True": "Активный" },
+                submit: "OK"
+            }).css("cursor", "pointer").each(function () {
+                if ($(this).prev().val() == "False")
+                    $(this).closest('tr').addClass('unactive');
+            });
+        }).trigger("changerows");
+
+        $("tr.new-row input:hidden").attr("disabled", "");
+
+        $("a.addrow").click(function () {
+            var table = $(this).prev();
+            var newRow = $("tr.new-row", table).clone(false).removeClass("new-row");
+            $(":disabled", newRow).removeAttr("disabled");
+            $("tbody", table).append(newRow).trigger("changerows");
+            return false;
+        }).button({ icons: {
+            primary: "ui-icon-plusthick"
+        },
+            text: false
+        });
+    });
+</script>
+<h2>
+    Управление пользователями</h2>
+<div style="width: 70%">
+    @if (success.HasValue && success.Value)
+    {
+        @Html.Partial("InformationBlock", "Изменения успешно внесены")
+    }
+    @if (success.HasValue && !success.Value)
+    { 
+        @Html.Partial("ErrorBlock", "Ошибки при изменении пользователей")
+    }
+</div>
+@{Html.BeginForm();}
+@Html.ValidationMessage("LoginError")
+<table id="users" style="width: 70%">
+    <thead>
+        <tr>
+            <th class="ui-state-default" width="25%">
+                Логин
+            </th>
+            <th class="ui-state-default" width="20%">
+                E-mail
+            </th>
+            <th class="ui-state-default" width="15%">
+                Телефон
+            </th>
+            <th class="ui-state-default" width="20%">
+                Уровень
+            </th>
+            <th class="ui-state-default" width="20%">
+                Статус
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="new-row">
+            @Html.Hidden("sers[].UserId", 0, new { @class = "UserId", id = "" })
+            @Html.Hidden("sers[].UserName", string.Empty, new { @class = "UserName", id = "" })
+            <td class="username">
+                UGSK\
+            </td>
+            @Html.Hidden("sers[].Mail", string.Empty, new { @class = "Mail", id = "" })
+            <td class="mail">
+                @@ugsk.ru
+            </td>
+            @Html.Hidden("sers[].Phone", string.Empty, new { @class = "Phone", id = "" })
+            <td class="phone">
+                +7
+            </td>
+            @Html.Hidden("sers[].IsAdmin", false, new { @class = "IsAdmin", id = "" })
+            <td class="is_admin">
+                Пользователь
+            </td>
+            @Html.Hidden("sers[].IsActive", true, new { @class = "IsActive", id = "" })
+            <td class="is_active">
+                Активный
+            </td>
+        </tr>
+        @{int r = 0;}
+        @foreach (IUser user in (IEnumerable<IUser>)ViewData["users"])
+        {
+            <tr>
+                @(Html.Hidden(string.Format("users[{0}].UserId", r), @user.UserId, new { @class = "UserId", id = "" }))
+                @(Html.Hidden(string.Format("users[{0}].UserName", r), @user.UserName, new { @class = "UserName", id = "" }))
+                <td class="username">
+                    @user.UserName
+                </td>
+                @Html.Hidden(string.Format("users[{0}].Mail", r), user.Mail, new { @class = "Mail", id = "" })
+                <td class="mail">
+                    @user.Mail
+                </td>
+                @Html.Hidden(string.Format("users[{0}].Phone", r), user.Phone, new { @class = "Phone", id = "" })
+                <td class="phone">
+                    @user.Phone
+                </td>
+                @Html.Hidden(string.Format("users[{0}].IsAdmin", r), user.IsAdmin, new { @class = "IsAdmin", id = "" })
+                <td class="is_admin">
+                    @(user.IsAdmin ? "Администратор" : "Пользователь")
+                </td>
+                @Html.Hidden(string.Format("users[{0}].IsActive", r++), user.IsActive, new { @class = "IsActive", id = "" })
+                <td class="is_active">
+                    @(user.IsActive ? "Активный" : "Отключенный")
+                </td>
+            </tr> 
+        }
+    </tbody>
+</table>
+<a href="#" class="addrow">добавить</a>
+<br />
+<br />
+<input type="submit" value="Сохранить" />
+@{Html.EndForm();}
+<br />

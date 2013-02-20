@@ -29,8 +29,8 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>1</ApplicationRevision>
-    <ApplicationVersion>2.0.0.%2a</ApplicationVersion>
+    <ApplicationRevision>5</ApplicationRevision>
+    <ApplicationVersion>2.0.6.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -66,6 +66,9 @@
   <PropertyGroup>
     <SignManifests>true</SignManifests>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Updater|x86'">
+    <OutputPath>bin\x86\Updater\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration.Install" />
@@ -77,9 +80,6 @@
     <Reference Include="System.Data" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml" />
-    <Reference Include="Wintellect.Threading, Version=5.0.4493.13542, Culture=neutral, PublicKeyToken=167f00fdf109b063, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\..\..\..\sandbox\Wintellect.Threading.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ProjectInstaller.cs">
@@ -96,11 +96,20 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServiceHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ugoria.URBD.RemoteService\Ugoria.URBD.RemoteService.csproj">
       <Project>{A621FB4F-02E8-4A84-8E8F-17E2D4FADD4A}</Project>
       <Name>Ugoria.URBD.RemoteService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ugoria.URBD.Shared\Ugoria.URBD.Shared.csproj">
+      <Project>{AF9627CB-EB12-44AC-98DE-7F78CE8D60F8}</Project>
+      <Name>Ugoria.URBD.Shared</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ugoria.URBD.Updater\Ugoria.URBD.Updater.csproj">
+      <Project>{D3375DBF-64F6-49D8-872F-68D192C7E9E0}</Project>
+      <Name>Ugoria.URBD.Updater</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

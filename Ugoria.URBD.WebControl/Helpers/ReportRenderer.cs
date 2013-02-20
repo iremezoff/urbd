@@ -14,4 +14,12 @@ namespace Ugoria.URBD.WebControl.Helpers
             return true;
         }
     }
+
+    public class LogRenderer : HtmlTableGridRenderer<ServiceLogViewModel>
+    {
+        protected override bool ShouldRenderHeader()
+        {
+            return true;
+        }
+    }
 }

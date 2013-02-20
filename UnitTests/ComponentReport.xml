@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Reports>
+  <Report>
+    <Component>Exchange</Component>
+    <Status>Fail</Status>
+    <IsNotNull>True</IsNotNull>
+  </Report>
+  <Report>
+    <Component>ExtDirectories</Component>
+    <Status>Success</Status>
+    <IsNotNull>True</IsNotNull>
+  </Report>
+  <Report>
+    <Component>Exchange</Component>
+    <Status>Critical</Status>
+    <IsNotNull>True</IsNotNull>
+  </Report>
+  <Report>
+    <Component>ExtDirectories</Component>
+    <Status>Critical</Status>
+    <IsNotNull>False</IsNotNull>
+  </Report>
+</Reports>

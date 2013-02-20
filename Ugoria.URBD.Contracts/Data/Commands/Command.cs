@@ -6,9 +6,9 @@ using System.Runtime.Serialization;
 
 namespace Ugoria.URBD.Contracts.Data.Commands
 {
+    [Serializable]
     [DataContract]
-    [KnownType(typeof(ExchangeCommand))]
-    [KnownType(typeof(ExtFormsCommand))]
+    [KnownType(typeof(ExecuteCommand))]
     [KnownType(typeof(CheckCommand))]
     public class Command
     {
@@ -19,12 +19,12 @@ namespace Ugoria.URBD.Contracts.Data.Commands
         public int baseId;
 
         [DataMember]
+        public string baseName;
+
+        [DataMember]
         public DateTime commandDate;
 
         [DataMember]
         public DateTime configurationChangeDate;
-
-        [DataMember]
-        public DateTime releaseUpdate;
     }
 }

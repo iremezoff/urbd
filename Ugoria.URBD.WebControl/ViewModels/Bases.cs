@@ -14,6 +14,15 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public string Path1C { get; set; }
     }
 
+    public class ServiceLogViewModel
+    {
+        public int LogId { get; set; }
+        public int ServiceId { get; set; }
+        public DateTime? Date { get; set; }
+        public string Status { get; set; }
+        public String Text { get; set; }
+    }
+
     public class BaseViewModel
     {
         public int BaseId { get; set; }
@@ -27,7 +36,23 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public string SqlDatabase { get; set; }
         public IEnumerable<PacketViewModel> PacketList { get; set; }
         public IEnumerable<ScheduleExchangeViewModel> ScheduleExchangeList { get; set; }
-        public IEnumerable<ScheduleExtFormsViewModel> ScheduleExtFormsList { get; set; }
+        public IEnumerable<ScheduleExtDirectoriesViewModel> ScheduleExtDirectoriesList { get; set; }
+        public IEnumerable<ExtDirectoryViewModel> ExtDirectoriesList { get; set; }
+    }
+
+    public class UserPermissionViewModel
+    {
+        public int PermissionId { get; set; }
+        public int BaseId { get; set; }
+        public int UserId { get; set; }
+        public bool AllowConfigure { get; set; }
+    }
+
+    public class ExtDirectoryViewModel
+    {
+        public int ExtDirectoryId { get; set; }
+        public string LocalPath { get; set; }
+        public string FtpPath { get; set; }
     }
 
     public class PacketViewModel
@@ -40,11 +65,14 @@ namespace Ugoria.URBD.WebControl.ViewModels
     public class ScheduleExchangeViewModel
     {
         public int ScheduleId { get; set; }
+        public string Mode { get; set; }
+        public string Time { get; set; }
     }
 
-    public class ScheduleExtFormsViewModel
+    public class ScheduleExtDirectoriesViewModel
     {
         public int ScheduleId { get; set; }
+        public string Time { get; set; }
     }
 
     public class ReportViewModel
@@ -55,8 +83,17 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public string Status { get; set; }
         public string Message { get; set; }
         public string User { get; set; }
-        public IEnumerable<ReportPacketViewModel> PacketList { get; set;}
-        public IEnumerable<LaunchViewModel> LaunchList { get; set;}
+        public IEnumerable<ReportPacketViewModel> PacketList { get; set; }
+        public IEnumerable<LaunchViewModel> LaunchList { get; set; }
+        public IEnumerable<ExtDirectoriesFileViewModel> Files { get; set; }
+    }
+
+    public class ExtDirectoriesFileViewModel
+    {
+        public int FileId { get; set; }
+        public string Filename { get; set; }
+        public DateTime? DateCopied { get; set; }
+        public long? Size { get; set; }
     }
 
     public class ReportPacketViewModel
@@ -72,5 +109,21 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public int LaunchId { get; set; }
         public DateTime? StartDate { get; set; }
         public int? Pid { get; set; }
+    }
+
+    public class BaseTreeSchedule
+    {
+        public int BaseId { get; set; }
+        public int CurrentId { get; set; }
+        public string BaseName { get; set; }
+        public string Time { get; set; }
+    }
+
+    public class ReportNotificationViewModel
+    {
+        public int NotificationId { get; set; }
+        public int ComponentStatusId { get; set; }
+        public bool OnMail { get; set; }
+        public bool OnPhone { get; set; }
     }
 }

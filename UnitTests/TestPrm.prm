@@ -1,0 +1,9 @@
+[General]
+Output = "C:\Users\RemezovIS\AppData\Roaming\URBD\Log\12d84359ae5247875274a87f040d3b5c.log"
+Quit = 1
+AutoExchange = 1
+[AutoExchange]
+SharedMode = 1
+WriteTo = *
+ReadFrom = *
+

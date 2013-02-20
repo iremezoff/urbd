@@ -16,11 +16,6 @@ namespace Ugoria.URBD.CentralService
             URBDCentralWorker worker = new URBDCentralWorker();
             worker.Start();
 
-            /*Thread.Sleep(3000);
-
-            Console.WriteLine("central: Запрос на запуск блокнота");
-            wcfClient.CommandExecute(new Command { baseName = "test", commandType = CommandType.Exchange, modeType = ModeType.Normal });
-            */
             Console.ReadLine();
         }
     }

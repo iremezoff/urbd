@@ -6,23 +6,42 @@ using System.Data.SqlClient;
 using System.Data;
 using System.Collections.Concurrent;
 using Ugoria.URBD.Shared;
+using Ugoria.URBD.Shared.DataProvider;
+using Ugoria.URBD.Contracts;
+using Ugoria.URBD.Contracts.Data.Commands;
 
 namespace Ugoria.URBD.CentralService.DataProvider
 {
-    class DBDataProvider : IDataProvider
+    class DBDataProvider : IDisposable
     {
-        private DB db = DB.Instance;
-        private ConcurrentDictionary<string, SqlTransaction> transactions = new ConcurrentDictionary<string, SqlTransaction>();
-        private object objLock = new object();
+        private SqlTransaction tran;
 
-        public DBDataProvider() { }
+        public SqlConnection Connection
+        {
+            get { return tran.Connection; }
+        }
 
-        public DataRow GetLastCommand(int baseId)
+        public DBDataProvider()
+        {
+            SqlConnection conn = DB.Instance.Connection;
+            conn.Open();
+            tran = conn.BeginTransaction(IsolationLevel.ReadUncommitted, Guid.NewGuid().ToString().Replace("-", ""));
+        }
+
+        public DBDataProvider(bool isOzekiSending)
+        {
+            SqlConnection conn = DB.Instance.OzekiConnection;
+            conn.Open();
+            tran = conn.BeginTransaction("ozeki-send");
+        }
+
+        public DataRow GetLaunchReport(int baseId, string componentName)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandText = "[urbd_SelectLastCommand]";
+            cmd.CommandText = "[urbd_SelectLastLaunchReport]";
             cmd.Parameters.AddWithValue("@base_id", baseId);
+            cmd.Parameters.AddWithValue("@component", componentName);
             DataRow dataRow = null;
             DataSet dataSet = ExecuteDataSqlCommand(cmd);
             if (dataSet.Tables[0].Rows.Count != 0)
@@ -30,12 +49,23 @@ namespace Ugoria.URBD.CentralService.DataProvider
             return dataRow;
         }
 
-        public DataRow GetBase(int baseId)
+        public DataTable GetPreparedCommand(int baseId, string componentName)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "[urbd_SelectPreparedCommand]";
+            cmd.Parameters.AddWithValue("@base_id", baseId);
+            cmd.Parameters.AddWithValue("@component", componentName);
+            DataSet dataSet = ExecuteDataSqlCommand(cmd);
+            return dataSet.Tables[0];
+        }
+
+        public DataRow GetBase(int baseId = 0)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "[urbd_SelectBase]";
-            cmd.Parameters.AddWithValue("@base_id", baseId);
+            cmd.Parameters.AddWithValue("@base_id", baseId == 0 ? null : (object)baseId);
             cmd.Parameters.AddWithValue("@is_get_schedule", false);
             DataRow dataRow = null;
             DataSet dataSet = ExecuteDataSqlCommand(cmd);
@@ -44,13 +74,23 @@ namespace Ugoria.URBD.CentralService.DataProvider
             return dataRow;
         }
 
-        public DataTable GetSettings(string key)
+        public DataTable GetSettings(string key = null)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "[urbd_Settings]";
             cmd.Parameters.AddWithValue("@key", key);
             return ExecuteDataSqlCommand(cmd).Tables[0];
+        }
+
+        public DataTable GetServiceBases(int serviceId)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "[urbd_SelectBases]";
+            cmd.Parameters.AddWithValue("@service_id", serviceId);
+            DataSet dataSet = ExecuteDataSqlCommand(cmd);
+            return dataSet.Tables[0];
         }
 
         public DataSet GetServiceSettings(string address)
@@ -60,50 +100,57 @@ namespace Ugoria.URBD.CentralService.DataProvider
             cmd.CommandText = "[urbd_ServiceSettings]";
             cmd.Parameters.AddWithValue("@address", address);
 
-            DataSet packetData = ExecuteDataSqlCommand(cmd);
-            packetData.Tables[0].TableName = "Base";
-            packetData.Tables[1].TableName = "Packet";
-            packetData.Relations.Add(packetData.Tables["Base"].Columns["base_id"], packetData.Tables["Packet"].Columns["base_id"]).RelationName = "BasePacket";
-            return packetData;
+            DataSet data = ExecuteDataSqlCommand(cmd);
+            data.Tables[0].TableName = "Base";
+            data.Tables[1].TableName = "Packet";
+            data.Tables[2].TableName = "ExtDirectoryBase";
+            data.Relations.Add(data.Tables["Base"].Columns["base_id"], data.Tables["Packet"].Columns["base_id"]).RelationName = "BasePacketRelation";
+            data.Relations.Add(data.Tables["Base"].Columns["base_id"], data.Tables["ExtDirectoryBase"].Columns["base_id"]).RelationName = "ExtDirectoriesBaseRelation";
+            return data;
         }
 
-        public DataSet GetScheduleData(string baseId = null)
+        private DataSet scheduleCache;
+
+        public DataSet GetScheduleData(int baseId = 0)
         {
+            if (scheduleCache != null)
+                return scheduleCache;
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "[urbd_SelectBase]";
-            cmd.Parameters.AddWithValue("@base_id", baseId);
+            cmd.Parameters.AddWithValue("@base_id", baseId == 0 ? null : (object)baseId);
             cmd.Parameters.AddWithValue("@is_get_schedule", true);
             DataSet baseData = ExecuteDataSqlCommand(cmd);
             baseData.Tables[0].TableName = "Base";
-            baseData.Tables[1].TableName = "ScheduleExtForms";
+            baseData.Tables[1].TableName = "ScheduleExtDirectories";
             baseData.Tables[2].TableName = "ScheduleExchange";
 
             baseData.Relations.Add(baseData.Tables["Base"].Columns["base_id"], baseData.Tables["ScheduleExchange"].Columns["base_id"]).RelationName = "BaseScheduleExchange";
-            baseData.Relations.Add(baseData.Tables["Base"].Columns["base_id"], baseData.Tables["ScheduleExtForms"].Columns["base_id"]).RelationName = "BaseScheduleExtForms";
+            baseData.Relations.Add(baseData.Tables["Base"].Columns["base_id"], baseData.Tables["ScheduleExtDirectories"].Columns["base_id"]).RelationName = "BaseScheduleExtDirectories";
+            scheduleCache = baseData;
             return baseData;
         }
 
-        public DataTable GetScheduleExchangeData(string baseName = null)
+        public DataTable GetScheduleExchangeData(int baseId = 0)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "[urbd_SelectScheduleExchange]";
-            cmd.Parameters.AddWithValue("@base_name", baseName);
+            cmd.Parameters.AddWithValue("@base_id", baseId == 0 ? null : (object)baseId);
 
             DataTable schExchData = ExecuteDataSqlCommand(cmd).Tables[0];
             schExchData.TableName = "ScheduleExchange";
             return schExchData;
         }
 
-        public DataTable GetScheduleExtForms(string baseName = null)
+        public DataTable GetScheduleExtDirectories(int baseId = 0)
         {
             SqlCommand cmd = new SqlCommand();
-            cmd.CommandText = "[urbd_SelectScheduleExtForms]";
-            cmd.Parameters.AddWithValue("@base_name", baseName);
+            cmd.CommandText = "[urbd_SelectScheduleExtDirectories]";
+            cmd.Parameters.AddWithValue("@base_id", baseId);
 
             DataTable schEFData = ExecuteDataSqlCommand(cmd).Tables[0];
-            schEFData.TableName = "ScheduleExtForms";
+            schEFData.TableName = "ScheduleExtDirectories";
             return schEFData;
         }
 
@@ -119,72 +166,29 @@ namespace Ugoria.URBD.CentralService.DataProvider
             return reportData;
         }
 
-        public DataTable GetAlarmList(string address)
+        public DataTable GetAlarmList(Guid reportGuid)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "[urbd_SelectAlarmReceive]";
-            cmd.Parameters.AddWithValue("@address", address);
+            cmd.Parameters.AddWithValue("@report_guid", reportGuid);
 
             DataTable reportData = ExecuteDataSqlCommand(cmd).Tables[0];
-            reportData.TableName = "AlarmReceiver";
+            reportData.TableName = "AlarmReceivers";
             return reportData;
         }
 
-        public DataSet ExecuteDataSqlCommand(SqlCommand command, string transactionName = null)
+        public DataSet ExecuteDataSqlCommand(SqlCommand command)
         {
             DataSet dataSet = new DataSet();
             try
             {
-                SqlConnection conn = null;
-                if (transactionName != null)
-                {
-                    SqlTransaction trans = transactions[transactionName];
-                    command.Transaction = trans;
-                    conn = trans.Connection;
-                }
-                else
-                {
-                    conn = db.Connection;
-                    conn.Open();
-                }
-                command.Connection = conn;
-
+                command.Connection = tran.Connection;
+                command.Transaction = tran;
                 SqlDataAdapter dataAdapter = new SqlDataAdapter(command);
                 dataAdapter.Fill(dataSet);
 
-                if (transactionName == null)
-                    conn.Close();
-
                 return dataSet;
-            }
-            catch (SqlException ex)
-            {
-                throw;
-            }
-        }
-
-        public void ExecuteVoidSqlCommand(SqlCommand command, string transactionName = null)
-        {
-            try
-            {
-                SqlConnection conn = null;
-                if (transactionName != null)
-                {
-                    SqlTransaction trans = transactions[transactionName];
-                    command.Transaction = trans;
-                    conn = trans.Connection;
-                }
-                else
-                {
-                    conn = db.Connection;
-                    conn.Open();
-                }
-                command.Connection = conn;
-                command.ExecuteNonQuery();
-
-                if (transactionName == null)
-                    conn.Close();
             }
             catch (SqlException)
             {
@@ -192,7 +196,21 @@ namespace Ugoria.URBD.CentralService.DataProvider
             }
         }
 
-        public void SetPID1C(Guid reportGuid, Guid launchGuid, DateTime startDate, int pid, string transactionName = null)
+        public void ExecuteVoidSqlCommand(SqlCommand command)
+        {
+            try
+            {
+                command.Connection = tran.Connection;
+                command.Transaction = tran;
+                command.ExecuteNonQuery();
+            }
+            catch (SqlException)
+            {
+                throw;
+            }
+        }
+
+        public void SetPID1C(Guid reportGuid, Guid launchGuid, DateTime startDate, int pid)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
@@ -202,10 +220,10 @@ namespace Ugoria.URBD.CentralService.DataProvider
             cmd.Parameters.AddWithValue("@date_start", startDate != DateTime.MinValue ? (object)startDate : DBNull.Value);
             cmd.Parameters.AddWithValue("@pid", pid != 0 ? (object)pid : DBNull.Value);
 
-            ExecuteVoidSqlCommand(cmd, transactionName);
+            ExecuteVoidSqlCommand(cmd);
         }
 
-        public void SetReport(Guid guid, DateTime completeDate, string status, string message, string mdRelease, DateTime releaseDate, string transactionName = null)
+        public void SetReport(Guid guid, DateTime completeDate, string status, string message, string mdRelease = null, DateTime? releaseDate = null)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
@@ -215,12 +233,12 @@ namespace Ugoria.URBD.CentralService.DataProvider
             cmd.Parameters.AddWithValue("@status", status);
             cmd.Parameters.AddWithValue("@message", message);
             cmd.Parameters.AddWithValue("@md_release", mdRelease);
-            cmd.Parameters.AddWithValue("@date_release", releaseDate != DateTime.MinValue ? (object)releaseDate : DBNull.Value);
+            cmd.Parameters.AddWithValue("@date_release", releaseDate != null && releaseDate.Value != DateTime.MinValue ? (object)releaseDate.Value : DBNull.Value);
 
-            ExecuteVoidSqlCommand(cmd, transactionName);
+            ExecuteVoidSqlCommand(cmd);
         }
 
-        public void SetCommandReport(int userId, Guid guid, int baseId, DateTime commandDate, string transactionName = null)
+        public void SetCommandReport(int userId, Guid guid, int baseId, DateTime commandDate, string componentName)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
@@ -229,11 +247,12 @@ namespace Ugoria.URBD.CentralService.DataProvider
             cmd.Parameters.AddWithValue("@date_command", commandDate);
             cmd.Parameters.AddWithValue("@report_guid", guid);
             cmd.Parameters.AddWithValue("@user_id", userId);
+            cmd.Parameters.AddWithValue("@component", componentName);
 
-            ExecuteVoidSqlCommand(cmd, transactionName);
+            ExecuteVoidSqlCommand(cmd);
         }
 
-        public void SetReportLog(Guid guid, DateTime messageDate, string type, string text, string transactionName = null)
+        public void SetReportLog(Guid guid, DateTime messageDate, string type, string text)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
@@ -243,10 +262,23 @@ namespace Ugoria.URBD.CentralService.DataProvider
             cmd.Parameters.AddWithValue("@type", type);
             cmd.Parameters.AddWithValue("@text", text);
 
-            ExecuteVoidSqlCommand(cmd, transactionName);
+            ExecuteVoidSqlCommand(cmd);
         }
 
-        public void SetReportPacket(Guid guid, string filename, DateTime packetDate, char type, long filesize, string filehash, string transactionName = null)
+        public void SetReportFile(Guid guid, string filename, DateTime createdDate, long size)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "[urbd_SetReportFile]";
+            cmd.Parameters.AddWithValue("@guid", guid);
+            cmd.Parameters.AddWithValue("@filename", filename);
+            cmd.Parameters.AddWithValue("@date_file", createdDate);
+            cmd.Parameters.AddWithValue("@filesize", size);
+
+            ExecuteVoidSqlCommand(cmd);
+        }
+
+        public void SetReportPacket(Guid guid, string filename, DateTime packetDate, char type, long filesize)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
@@ -257,10 +289,10 @@ namespace Ugoria.URBD.CentralService.DataProvider
             cmd.Parameters.AddWithValue("@date_file", packetDate);
             cmd.Parameters.AddWithValue("@filesize", filesize);
 
-            ExecuteVoidSqlCommand(cmd, transactionName);
+            ExecuteVoidSqlCommand(cmd);
         }
 
-        public void SetLog(string address, DateTime messageDate, char status, string message, string transactionName = null)
+        public void SetLog(string address, DateTime messageDate, char status, string message)
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
@@ -270,34 +302,32 @@ namespace Ugoria.URBD.CentralService.DataProvider
             cmd.Parameters.AddWithValue("@status", status);
             cmd.Parameters.AddWithValue("@message", message);
 
-            ExecuteVoidSqlCommand(cmd, transactionName);
+            ExecuteVoidSqlCommand(cmd);
         }
 
-        public void Commit(string transactionName)
+        public void SetPhoneMessage(List<string> phones, string message)
         {
-            SqlTransaction transaction = transactions[transactionName];
-            SqlConnection conn = transaction.Connection;
-            transaction.Commit();
+            SqlCommand cmd = new SqlCommand();
+            cmd.Parameters.AddWithValue("@msg", message);
+            StringBuilder strBuilder = new StringBuilder("insert into ozekimessageout(receiver, msg, status)) ");
+            IEnumerator<string> enumerator = phones.GetEnumerator();
+            int i = 0;
+            foreach (string phone in phones)
+            {
+                if (i > 0) strBuilder.Append(",");
+                strBuilder.AppendFormat(" values(@phone{0}, @msg, 'send')", i);
+                cmd.Parameters.AddWithValue("@phone" + i, phones[i++]);
+            }
+            ExecuteVoidSqlCommand(cmd);
+        }
+
+        public void Dispose()
+        {
+            SqlConnection conn = tran.Connection;
+            if (conn == null)
+                return;
+            tran.Commit();
             conn.Close();
-            transactions.TryRemove(transactionName, out transaction);
-        }
-
-        public void Rollback(string transactionName)
-        {
-            SqlTransaction transaction = transactions[transactionName];
-            SqlConnection conn = transaction.Connection;
-            transaction.Rollback();
-            conn.Close();
-            transactions.TryRemove(transactionName, out transaction);
-        }
-
-        public void BeginTransaction(string transactionName)
-        {
-            SqlConnection conn = db.Connection;
-            conn.Open();
-            //  уровень изоляции "грязных чтений", для претовращения взаимоблокировок при записи отчетов одновременно от не нескольких сервисов
-            SqlTransaction transaction = conn.BeginTransaction(IsolationLevel.ReadUncommitted, transactionName);
-            transactions.TryAdd(transactionName, transaction);
         }
     }
 }

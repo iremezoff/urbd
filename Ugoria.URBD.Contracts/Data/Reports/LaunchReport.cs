@@ -6,7 +6,6 @@ using System.Runtime.Serialization;
 
 namespace Ugoria.URBD.Contracts.Data.Reports
 {
-    [KnownType(typeof(Report))]
     [DataContract]
     public class LaunchReport : Report
     {

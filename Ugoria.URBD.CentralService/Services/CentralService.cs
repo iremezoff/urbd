@@ -100,7 +100,7 @@ namespace Ugoria.URBD.CentralService
             get { return uri; }
         }
 
-        internal NoticeReportArgs (OperationReport report, Uri uri)
+        internal NoticeReportArgs(OperationReport report, Uri uri)
         {
             this.report = report;
             this.uri = uri;

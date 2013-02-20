@@ -10,13 +10,24 @@ using Ugoria.URBD.Contracts.Data.Commands;
 using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.Shared;
 using Ugoria.URBD.Shared.Configuration;
-using Ugoria.URBD.CentralService.CommandBuilding;
 
 namespace Ugoria.URBD.CentralService.Scheduler
 {
     class SchedulerManager
     {
         private IScheduler scheduler;
+
+        public IScheduler Scheduler
+        {
+            get { return scheduler; }
+        }
+        private volatile int delayCheck = 1;
+
+        public int DelayCheck
+        {
+            get { return delayCheck; }
+            set { delayCheck = value; }
+        }
 
         public SchedulerManager()
         {
@@ -28,25 +39,24 @@ namespace Ugoria.URBD.CentralService.Scheduler
             ISchedulerFactory schedulerFactory = new StdSchedulerFactory();
             scheduler = schedulerFactory.GetScheduler();
         }
-
+        
         // для установки запуска
-        public void AddScheduleLaunch(Action<CommandBuilder, int> commanAction, CommandBuilder builder, string time, Action<CommandBuilder> checkAction, int delayCheck)
+        public void AddScheduleLaunch(Action<ExecuteCommand> commanAction, ExecuteCommand command, string time, Action<ExecuteCommand> checkAction)
         {
-            IJobDetail jobDetail = GetJobDetail(builder.BaseId.ToString(), builder.Description);
+            IJobDetail jobDetail = GetJobDetail(command.baseId.ToString(), command.GetType().Name);
 
-            string triggerName = String.Format("{0}_{1}", builder.BaseId, time);
+            string triggerName = String.Format("{0}_{1}", command.baseId, time);
 
             ITrigger trigger = (ICronTrigger)TriggerBuilder.Create()
-                                                      .WithIdentity(triggerName, builder.Description)
+                                                      .WithIdentity(triggerName, command.GetType().Name)
                                                       .WithCronSchedule(SchedulerUtil.CronExpressionBuild(time))
                                                       .ForJob(jobDetail)
                                                       .Build();
 
-            trigger.JobDataMap["command_builder"] = builder;
+            trigger.JobDataMap["command"] = command;
             trigger.JobDataMap["user_id"] = 1;
             trigger.JobDataMap["action"] = commanAction;
             trigger.JobDataMap["check_action"] = checkAction;
-            trigger.JobDataMap["delay_check"] = delayCheck;
 
             if (!scheduler.CheckExists(trigger.Key))
                 scheduler.ScheduleJob(trigger);
@@ -60,41 +70,38 @@ namespace Ugoria.URBD.CentralService.Scheduler
         // для запуска проверок
         public void TriggerComplete(ITrigger sender, EventArgs args)
         {
-            AddScheduleLaunch((Action<CommandBuilder>)sender.JobDataMap["check_action"],
-                (CommandBuilder)sender.JobDataMap["command_builder"],
-                (int)sender.JobDataMap["delay_check"]);
+            AddScheduleLaunch((Action<ExecuteCommand>)sender.JobDataMap["check_action"], (ExecuteCommand)sender.JobDataMap["command"]);
         }
 
         // для запусков заданий проверок (единовременные запуски)
-        public void AddScheduleLaunch(Action<CommandBuilder> checkAction, CommandBuilder builder, int delayCheck)
+        public void AddScheduleLaunch(Action<ExecuteCommand> checkAction, ExecuteCommand command)
         {
-            IJobDetail jobDetail = GetJobDetail(builder.BaseId.ToString());
+            IJobDetail jobDetail = GetJobDetail(command.baseId.ToString(), "checker");
 
-            string triggerName = String.Format("{0}_checker_{1:yyyy-MM-dd_HHmmss-ffffff}", builder.BaseId, DateTime.Now);
+            string triggerName = String.Format("{0}_checker_{1:yyyy-MM-dd_HHmmss-ffffff}", command.baseId, DateTime.Now);
 
             ITrigger trigger = (ISimpleTrigger)TriggerBuilder.Create()
-                                                      .WithIdentity(triggerName, CommandType.Checker.ToString())
+                                                      .WithIdentity(triggerName, "checker")
                                                       .StartAt(DateBuilder.FutureDate(delayCheck, IntervalUnit.Minute))  // временной промежуток
                                                       .WithSimpleSchedule()
                                                       .ForJob(jobDetail)
                                                       .Build();
 
             trigger.JobDataMap["action"] = checkAction;
-            trigger.JobDataMap["command_builder"] = builder;
+            trigger.JobDataMap["command"] = command;
 
             scheduler.ScheduleJob(trigger);
         }
 
-        private IJobDetail GetJobDetail(string jobName, string description = null)
+        private IJobDetail GetJobDetail(string jobName, string description)
         {
-            JobKey jobKey = new JobKey(description ?? "checked", jobName);
+            JobKey jobKey = new JobKey(description, jobName);
             IJobDetail jobDetail = null;
             if (!scheduler.CheckExists(jobKey)) // проверка на наличие у шедулера текущего задания
             {
-                JobBuilder builder = string.IsNullOrEmpty(description) ? JobBuilder.Create<CheckJob>() : JobBuilder.Create<CommandJob>();
-                jobDetail = builder.WithIdentity(jobKey)
-                    .Build();
-                jobDetail.JobDataMap["base_id"] = jobName;
+                jobDetail = JobBuilder.Create<CommandJob>().
+                    WithIdentity(jobKey).
+                    Build();
                 scheduler.AddJob(jobDetail, true);
             }
             else
@@ -107,19 +114,21 @@ namespace Ugoria.URBD.CentralService.Scheduler
             scheduler.Start();
         }
 
-        public void StopForBase(string baseName)
+        public void RemoveScheduleLaunch(string groupName)
         {
-            GroupMatcher<JobKey> matcher = GroupMatcher<JobKey>.GroupContains(baseName);
-            scheduler.UnscheduleJobs(
-                scheduler.GetTriggersOfJob(
-                    new JobKey(CommandType.Exchange.ToString(), baseName)).Select<ITrigger, TriggerKey>(t => t.Key).ToList());
-            scheduler.UnscheduleJobs(
-                scheduler.GetTriggersOfJob(
-                    new JobKey(CommandType.ExtForms.ToString(), baseName)).Select<ITrigger, TriggerKey>(t => t.Key).ToList());
-            // под сомнением
-            /*scheduler.UnscheduleJobs(
-                scheduler.GetTriggersOfJob(
-                    new JobKey(CommandType.Checker.ToString(), baseName)).Select<ITrigger, TriggerKey>(t => t.Key).ToList());*/
+            GroupMatcher<JobKey> matcher = GroupMatcher<JobKey>.GroupEquals(groupName);
+
+            IEnumerable<JobKey> set = scheduler.GetJobKeys(matcher).Where(jk => !jk.Name.Equals(typeof(CheckCommand).Name));
+
+            foreach (JobKey jobKey in scheduler.GetJobKeys(matcher).Where(jk => !jk.Name.Equals(typeof(CheckCommand).Name)).Select(j => j))
+            {
+                scheduler.UnscheduleJobs(scheduler.GetTriggersOfJob(jobKey).Select(x => x.Key).ToList());
+            }
+        }
+
+        public void RemoveScheduleLaunch(string groupName, string nameStart)
+        {
+
         }
 
         public void Stop()
@@ -127,6 +136,4 @@ namespace Ugoria.URBD.CentralService.Scheduler
             scheduler.Shutdown();
         }
     }
-
-
 }

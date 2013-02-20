@@ -8,14 +8,14 @@ namespace Ugoria.URBD.RemoteService.Services
 {
     public class CommandEventArgs : EventArgs
     {
-        private Command command;
+        private ExecuteCommand command;
 
-        public Command Command
+        public ExecuteCommand Command
         {
             get { return command; }
         }
 
-        internal CommandEventArgs(Command command)
+        internal CommandEventArgs(ExecuteCommand command)
         {
             this.command = command;
         }

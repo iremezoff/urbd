@@ -5,6 +5,8 @@ using System.Web;
 using System.Data.Objects;
 using System.IO;
 using System.Xml.Linq;
+using Ugoria.URBD.Contracts.Services;
+using Ugoria.URBD.WebControl.ViewModels;
 
 namespace Ugoria.URBD.WebControl.Models
 {
@@ -264,6 +266,14 @@ namespace Ugoria.URBD.WebControl.Models
         long? Size { get; }
     }
 
+    public class ReportPacketViewModel2
+    {
+        public string Filename { get; set; }
+        public DateTime DateCreated { get; set; }
+        public long Size { get; set; }
+        public PacketType Type { get; set; }
+    }
+
     public class ReportPacketView : IReportPacketView
     {
         private string filename;
@@ -291,108 +301,22 @@ namespace Ugoria.URBD.WebControl.Models
 
     public class BaseReportView : IBaseReportView
     {
-        private int baseId;
-
-        public int BaseId
-        {
-            get { return baseId; }
-            set { baseId = value; }
-        }
-        private string baseName;
-
-        public string BaseName
-        {
-            get { return baseName; }
-            set { baseName = value; }
-        }
-        private string groupName;
-
-        public string GroupName
-        {
-            get { return groupName; }
-            set { groupName = value; }
-        }
-
-
-
-        private string serviceName;
-
-        public string ServiceName
-        {
-            get { return serviceName; }
-            set { serviceName = value; }
-        }
-        private string serviceAddress;
-
-        public string ServiceAddress
-        {
-            get { return serviceAddress; }
-            set { serviceAddress = value; }
-        }
-        private string status;
-
-        public string Status
-        {
-            get { return status; }
-            set { status = value; }
-        }
-        private DateTime? dateComplete;
-
-        public DateTime? DateComplete
-        {
-            get { return dateComplete; }
-            set { dateComplete = value; }
-        }
-        private DateTime? dateCommand;
-
-        public DateTime? DateCommand
-        {
-            get { return dateCommand; }
-            set { dateCommand = value; }
-        }
-        private string message;
-
-        public string Message
-        {
-            get { return message; }
-            set { message = value; }
-        }
-        private IEnumerable<IReportPacketView> loadPackets;
-
-        public IEnumerable<IReportPacketView> LoadPackets
-        {
-            get { return loadPackets; }
-            set { loadPackets = value; }
-        }
-        private IEnumerable<IReportPacketView> unloadPackets;
-
-        public IEnumerable<IReportPacketView> UnloadPackets
-        {
-            get { return unloadPackets; }
-            set { unloadPackets = value; }
-        }
-
-        private int? groupId;
-        public int? GroupId
-        {
-            get { return groupId; }
-            set { groupId = value; }
-        }
-
-        private int? serviceId;
-        public int? ServiceId
-        {
-            get { return serviceId; }
-            set { serviceId = value; }
-        }
-
-        private string mdRelease;
-
-        public string MDRelease
-        {
-            get { return mdRelease; }
-            set { mdRelease = value; }
-        }
+        public int BaseId { get; set; }
+        public string BaseName { get; set; }
+        public string GroupName { get; set; }
+        public string ServiceName { get; set; }
+        public string ServiceAddress { get; set; }
+        public string Status { get; set; }
+        public DateTime? DateComplete { get; set; }
+        public DateTime? DateCommand { get; set; }
+        public string Message { get; set; }
+        public IEnumerable<ReportPacketViewModel> Packets { get; set; }
+        public IEnumerable<ExtDirectoriesFileViewModel> Files { get; set; }
+        public int? GroupId { get; set; }
+        public int? ServiceId { get; set; }
+        public string MDRelease { get; set; }
+        public int ParentBaseId { get; set; }
+        public string ParentBaseName { get; set; }
     }
 
     public interface IBaseReportView
@@ -400,6 +324,8 @@ namespace Ugoria.URBD.WebControl.Models
         int BaseId { get; }
         int? GroupId { get; }
         string BaseName { get; }
+        int ParentBaseId { get; }
+        string ParentBaseName { get; }
         string MDRelease { get; }
         string GroupName { get; }
         int? ServiceId { get; }
@@ -409,15 +335,16 @@ namespace Ugoria.URBD.WebControl.Models
         DateTime? DateComplete { get; }
         DateTime? DateCommand { get; }
         string Message { get; }
-        IEnumerable<IReportPacketView> LoadPackets { get; }
-        IEnumerable<IReportPacketView> UnloadPackets { get; }
+        IEnumerable<ReportPacketViewModel> Packets { get; }
+        IEnumerable<ExtDirectoriesFileViewModel> Files { get; }
     }
 
-    public enum TableGrouper { group, service }
+    public enum TableGrouper { group, service, filial }
+    public enum SystemComponent { Exchange, ExtDirectories }
     public interface IBaseRepository
     {
-        IEnumerable<IBaseReportView> GetBases(TableGrouper grouper);
-        IBaseReportView GetBaseById(int baseId);
+        IEnumerable<IBaseReportView> GetBases(TableGrouper grouper, SystemComponent reportComponent);
+        IBaseReportView GetBaseById(int baseId, SystemComponent reportComponent);
     }
 
     public class BaseRepository : IBaseRepository
@@ -445,46 +372,121 @@ namespace Ugoria.URBD.WebControl.Models
             return list;
         }
 
-        private IBaseReportView ParseBaseReport(BaseReportList baseReport)
+        public IBaseReportView GetBaseById(int baseId, SystemComponent reportComponent)
         {
-            IBaseReportView baseReportView = new BaseReportView()
-            {
-                BaseId = baseReport.base_id,
-                GroupId = baseReport.group_id,
-                MDRelease = baseReport.md_release,
-                ServiceId = baseReport.service_id,
-                BaseName = baseReport.base_name,
-                DateCommand = baseReport.date_command,
-                DateComplete = baseReport.date_complete,
-                GroupName = baseReport.group_name,
-                Message = baseReport.message,
-                Status = baseReport.status,
-                ServiceName = baseReport.service_name,
-                ServiceAddress = baseReport.service_address,
-                LoadPackets = ParsePackets(baseReport.load_packets),
-                UnloadPackets = ParsePackets(baseReport.unload_packets)
-            };
-            return baseReportView;
-        }
-
-        public IBaseReportView GetBaseById(int baseId)
-        {
+            string componentName = reportComponent.ToString();
             var query = (isAdminAccess
                 ? dataContext.BaseReportList
-                : dataContext.UserServicesPermission.Where(p => p.user_id == userId).Join(dataContext.BaseReportList.Select(b => b), p => p.service_id, b => b.service_id, (p, b) => b))
-                .Where(b => b.base_id == baseId).Select<BaseReportList, IBaseReportView>(new Func<BaseReportList, IBaseReportView>(x => ParseBaseReport(x)));
-            if (query.Count() == 0)
+                    .Where(x => x.component_name.Equals(componentName))
+                : dataContext.UserBasesPermission
+                    .Where(p => p.user_id == userId)
+                    .Join(dataContext.BaseReportList.Where(x => x.component_name.Equals(reportComponent)).Select(b => b), p => p.base_id, b => b.base_id, (p, b) => b))
+                    .Where(b => b.base_id == baseId);
+
+            var query2 = query.Select<BaseReportList, IBaseReportView>(new Func<BaseReportList, BaseReportView>(x => new BaseReportView
+             {
+                 BaseId = x.base_id,
+                 GroupId = x.group_id,
+                 BaseName = x.base_name,
+                 DateCommand = x.date_command,
+                 DateComplete = x.date_complete,
+                 Message = x.message,
+                 ParentBaseId = x.parent_base_id,
+                 ParentBaseName = x.parent_base_name,
+                 ServiceId = x.service_id,
+                 ServiceAddress = x.service_address,
+                 GroupName = x.group_name,
+                 MDRelease = x.md_release,
+                 ServiceName = x.service_name,
+                 Status = x.status
+             }));
+            //System.Diagnostics.Trace.WriteLine(((ObjectQuery)query2).ToTraceString() + " " + query2.Count());
+            System.Diagnostics.Trace.WriteLine(query.Count());
+            if (query2.Count() == 0)
                 return null;
-            return query.Single();
+            return query2.Single();
         }
 
-        public IEnumerable<IBaseReportView> GetBases(TableGrouper grouper)
+        public IEnumerable<IBaseReportView> GetBases(TableGrouper grouper, SystemComponent reportComponent)
         {
+            string componentName = reportComponent.ToString();
             var query = isAdminAccess
                 ? dataContext.BaseReportList
-                : dataContext.UserServicesPermission.Where(x => x.user_id == userId).Join(dataContext.BaseReportList.Select(b => b), p => p.service_id, b => b.service_id, (p, b) => b);
-            System.Diagnostics.Trace.Write(((ObjectQuery)query).ToTraceString());
-            return query.OrderBy(x => grouper == TableGrouper.group ? x.group_id : x.service_id).ThenBy(x => x.base_id).Select(new Func<BaseReportList, IBaseReportView>(x => ParseBaseReport(x)));
+                    .Where(x => x.component_name.Equals(componentName))
+                : dataContext.UserBasesPermission
+                    .Where(x => x.user_id == userId)
+                    .Join(dataContext.BaseReportList.Where(x => x.component_name.Equals(componentName))
+                    .Select(b => b), p => p.base_id, b => b.base_id, (p, b) => b);
+            if (grouper == TableGrouper.group)
+                query = query.OrderBy(x => x.group_id).ThenBy(x => x.base_name);
+            else if (grouper == TableGrouper.service)
+                query = query.OrderBy(x => x.service_id).ThenBy(x => x.base_name);
+            else
+                query = query.OrderBy(x => x.parent_base_name);
+            //System.Diagnostics.Trace.Write(((ObjectQuery)query.OrderBy(x => x.base_name)).ToTraceString());
+
+            if (reportComponent == SystemComponent.Exchange)
+            {
+                return query.Select(x => new BaseReportView
+                {
+                    BaseId = x.base_id,
+                    GroupId = x.group_id,
+                    BaseName = x.base_name,
+                    DateCommand = x.date_command,
+                    DateComplete = x.date_complete,
+                    Message = x.message,
+                    ParentBaseId = x.parent_base_id,
+                    ParentBaseName = x.parent_base_name,
+                    ServiceId = x.service_id,
+                    ServiceAddress = x.service_address,
+                    GroupName = x.group_name,
+                    MDRelease = x.md_release,
+                    ServiceName = x.service_name,
+                    Status = x.status,
+                    Packets = dataContext.Packet.Join(dataContext.ReportPacket,
+                        p => p.packet_id,
+                        rp => rp.packet_id,
+                        (p, rp) =>
+                            new
+                            {
+                                packet = p,
+                                reportPacket = rp
+                            }).Where(rp => rp.packet.base_id == x.base_id && rp.reportPacket.rp_id == dataContext.ReportPacket.Where(rp2 => rp2.packet_id == rp.reportPacket.packet_id).Max(m => m.rp_id)).Select(rp => new ReportPacketViewModel
+                            {
+                                CreatedDate = rp.reportPacket.date_created.Value,
+                                Packet = new PacketViewModel { FileName = rp.packet.filename, PacketId = rp.packet.packet_id, Type = rp.packet.type },
+                                Size = rp.reportPacket.size.Value
+                            })
+                });
+            }
+            else
+            {
+                return query.Select(x => new BaseReportView
+                {
+                    BaseId = x.base_id,
+                    GroupId = x.group_id,
+                    BaseName = x.base_name,
+                    DateCommand = x.date_command,
+                    DateComplete = x.date_complete,
+                    Message = x.message,
+                    ParentBaseId = x.parent_base_id,
+                    ParentBaseName = x.parent_base_name,
+                    ServiceId = x.service_id,
+                    ServiceAddress = x.service_address,
+                    GroupName = x.group_name,
+                    MDRelease = x.md_release,
+                    ServiceName = x.service_name,
+                    Status = x.status,
+                    Files = dataContext.ExtDirectoryFile.Where(f => f.report_id == dataContext.ExtDirectoryFile.Where(f2 => f2.Report.base_id == x.base_id).Max(f2 => f2.report_id)).Select(f =>
+                        new ExtDirectoriesFileViewModel
+                            {
+                                FileId = f.file_id,
+                                Filename = f.filename,
+                                Size = f.size,
+                                DateCopied = f.date_copied
+                            })
+                });
+            }
         }
 
         public BaseRepository(URBD2Entities dataContext, int userId, bool isAdminAccess = false)

@@ -88,7 +88,8 @@ namespace Ugoria.URBD.RemoteService.Services
             try
             {
                 // определить, односторонняя ли операция
-                //commObj.Close();
+                if (commObj.State == CommunicationState.Opened)
+                    commObj.Close();
             }
             catch (Exception)
             {

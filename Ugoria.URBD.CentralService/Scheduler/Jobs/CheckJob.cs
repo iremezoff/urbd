@@ -6,7 +6,7 @@ using Quartz;
 using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.Shared;
 using Ugoria.URBD.Shared.Configuration;
-using Ugoria.URBD.CentralService.CommandBuilding;
+using Ugoria.URBD.Contracts.Data.Commands;
 
 namespace Ugoria.URBD.CentralService.Scheduler
 {
@@ -17,8 +17,8 @@ namespace Ugoria.URBD.CentralService.Scheduler
             // разобрать входящие параметры, сформировать объект Command и послать его. учитывать разные типы и т.п. параметры брать из context.merged
             JobDataMap dataMap = context.MergedJobDataMap;
 
-            Action<CommandBuilder> action = (Action<CommandBuilder>)dataMap["action"];
-            CommandBuilder builder = (CommandBuilder)dataMap["command_builder"];
+            Action<Command> action = (Action<Command>)dataMap["action"];
+            Command builder = (Command)dataMap["command"];
 
             action.Invoke(builder); // отправка команды
         }

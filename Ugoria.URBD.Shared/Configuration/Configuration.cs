@@ -7,6 +7,7 @@ using System.Collections;
 namespace Ugoria.URBD.Shared.Configuration
 {
     // разнести по разным сборкам
+    [Serializable]
     public class Configuration : IConfiguration
     {
         private Hashtable settings;

@@ -16,35 +16,42 @@ namespace Ugoria.URBD.Shared
         private static object objLock = new object();
         private static int tile = 0;
         private static bool LogEnabled = true;
-        private static string logDir = "";
+        private static string logDir = string.Empty;
 
-        public static bool IsConsoleOutputEnabled = false;
+        public static string LogDir
+        {
+            get { return logDir; }
+        }
+
+        public static bool IsConsoleOutputEnabled = true;
         public static bool IsDiagnosticTraceOutputEnabled = false;
         public static URBDComponent CurrentComponent = URBDComponent.Web;
         // возможные пути сохранения логов: директрория программы, диск С, директория AppData приложения
-        private static string[] logDirs = new string[] { AppDomain.CurrentDomain.BaseDirectory, @"c:\", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) };
+        private static string[] logDirs = new string[] { 
+            AppDomain.CurrentDomain.BaseDirectory, 
+            @"c:\", 
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) 
+        };
 
         static LogHelper()
         {
             foreach (string el in logDirs)
             {
-                if (AccessCheck.IsRuleAllow(el, FileSystemRights.CreateDirectories))
+                if (SecureHelper.IsRuleAllow(el, FileSystemRights.CreateDirectories))
                 {
                     logDir = el;
                     break;
                 }
             }
-
             if (string.IsNullOrEmpty(logDir))
             {
                 LogEnabled = false;
                 return;
             }
-
             logDir += @"\urbd-logs";
             if (!Directory.Exists(logDir))
                 Directory.CreateDirectory(logDir);
-        }        
+        }
 
         public static void Write2Log(URBDComponent component, string message, LogLevel level)
         {

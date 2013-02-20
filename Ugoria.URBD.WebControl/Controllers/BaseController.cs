@@ -8,67 +8,176 @@ using Ugoria.URBD.WebControl.ViewModels;
 using System.ServiceModel;
 using OpenFlashChart;
 using Ugoria.URBD.WebControl.Models;
+using System.Globalization;
+using Ugoria.URBD.WebControl.Helpers;
 
 namespace Ugoria.URBD.WebControl.Controllers
 {
+    [SecurityAccess(typeof(IBase))]
     public class BaseController : Controller
     {
         private ChannelFactory<IControlService> channelFactory = new ChannelFactory<IControlService>(new NetTcpBinding(SecurityMode.None), new EndpointAddress("net.tcp://localhost:8888/URBDControl"));
+        private ChannelFactory<IRemoteService> remoteChannelFactory = new ChannelFactory<IRemoteService>(new NetTcpBinding(SecurityMode.None));
         private URBD2Entities dataContext = new URBD2Entities();
+        private IServiceRepository serviceRepo;
+
+        public BaseController()
+        {
+            serviceRepo = new ServiceRepository(dataContext);
+        }
 
         public ActionResult Index()
         {
             return RedirectToAction("Index", "Service");
         }
 
-        public ActionResult Edit(BaseViewModel @base)
-        {            
+        public JsonResult ReportData(DateTime dateStart, DateTime dateEnd, SystemComponent component)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
             IServiceRepository serviceRepo = new ServiceRepository(dataContext);
 
-            int baseId = int.Parse(RouteData.Values["id"].ToString());
-
-            IBase base1c = serviceRepo.GetBaseById(baseId);
-            if(base1c==null)
-                throw new HttpException(404, "Отсутствует Иб с данным ID");
-            IService service = serviceRepo.GetServiceById(base1c.ServiceId);
-
-            ViewData["service_id"] = service.ServiceId;
-            ViewData["service_address"] = service.Address;
-            ViewData["service_name"] = service.Name;
-            ViewData["base"] = base1c;
-            ViewData["bases"] = serviceRepo.GetBasesByServiceId(base1c.ServiceId);
-            ViewData["reports"] = serviceRepo.GetReportsByBaseId(baseId);
-
-            if ("POST".Equals(Request.RequestType))
+            if (component == SystemComponent.Exchange)
             {
-                IDictionary<string, string> validateReport = null;
+                IEnumerable<ReportViewModel> reports = serviceRepo.GetExchangeReportsByBaseId(baseId, dateStart, dateEnd);
+                int count = reports.Count();
+
+                return Json(new
+                {
+                    aaData = reports.Select(r => new string[] { 
+                    r.CommandDate!=null&& r.CommandDate.HasValue?r.CommandDate.Value.ToString("dd.MM.yyyy HH:mm:ss"):"",
+                    r.CompleteDate!=null && r.CompleteDate.HasValue?r.CompleteDate.Value.ToString("dd.MM.yyyy HH:mm:ss"):"",
+                    r.Status, 
+                    r.Message??"", 
+                   string.Join("<br/>", r.PacketList.Where(p=>p.Packet.Type[0]==(char)PacketType.Load).Select(pl => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", pl.Packet.FileName, pl.Size / 1024f, pl.CreatedDate))), 
+                   string.Join("<br/>", r.PacketList.Where(p=>p.Packet.Type[0]==(char)PacketType.Unload).Select(pl => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", pl.Packet.FileName, pl.Size / 1024f, pl.CreatedDate))), 
+                   r.User 
+                })
+                }, JsonRequestBehavior.AllowGet);
+            }
+            else
+            {
+                IEnumerable<ReportViewModel> reports = serviceRepo.GetExtDirectoriesReportsByBaseId(baseId, dateStart, dateEnd);
+                int count = reports.Count();
+
+                return Json(new
+                {
+                    aaData = reports.Select(r => new string[] { 
+                    r.CommandDate!=null&& r.CommandDate.HasValue?r.CommandDate.Value.ToString("dd.MM.yyyy HH:mm:ss"):"",
+                    r.CompleteDate!=null && r.CompleteDate.HasValue?r.CompleteDate.Value.ToString("dd.MM.yyyy HH:mm:ss"):"",
+                    r.Status, 
+                    r.Message??"", 
+                   string.Join("<br/>", r.Files.Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Filename, c.Size / 1024f, c.DateCopied))), 
+                   r.User 
+                })
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpPost]
+        public ActionResult EditNotification(IEnumerable<ReportNotificationViewModel> notifies)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+            if (baseId == 0)
+                throw new HttpException(404, "ИБ не найдена");
+
+            serviceRepo.SaveNotification(notifies, baseId, SessionStore.GetCurrentUser().UserId);
+            return RedirectToAction("Edit", new { id = RouteData.Values["id"] });
+        }
+
+        [HttpPost]
+        [SecurityAccess(IsAdmin=true)]
+        public ActionResult EditPermissions(IEnumerable<PermissionViewModel> permissions)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+            if (baseId == 0)
+                throw new HttpException(404, "ИБ не найдена");
+
+            using (UnitOfWork unitOfWork = new UnitOfWork())
+            {
+                IServiceRepository serviceRepo = new ServiceRepository(unitOfWork.DataContext);
+                foreach (var permission in permissions)
+                {
+                    serviceRepo.SavePermission(permission, baseId);
+                }
+                unitOfWork.Commit();
+            }
+            return RedirectToAction("Edit", new { id = RouteData.Values["id"] });
+        }
+
+        [HttpPost]
+        [SecurityAccess(typeof(IBase), IsChange=true)]
+        public ActionResult Edit(BaseViewModel @base = null)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+            if (baseId == 0)
+                throw new HttpException(404, "ИБ не найдена");
+
+            if (string.IsNullOrEmpty(@base.Path))
+                ModelState.AddModelError("base.Path", "пустой путь не допускается");
+            if (string.IsNullOrEmpty(@base.Name))
+                ModelState.AddModelError("base.Name", "пустое название не допускается");
+            if (string.IsNullOrEmpty(@base.Username))
+                ModelState.AddModelError("base.Username", "пустое имя пользователя не допускается");
+            foreach (PacketViewModel packetVM in @base.PacketList)
+            {
+                if (!string.IsNullOrEmpty(packetVM.FileName))
+                    continue;
+                ModelState.AddModelError("base.PacketList.FileName", "Имена пакетов не могут быть пустыми");
+                break;
+            }
+            IDictionary<string, string> validateReport = null;
+            IRemoteService remoteService = remoteChannelFactory.CreateChannel(new EndpointAddress(string.Format("net.tcp://{0}/URBDRemoteService", @base.ServiceAddress)));
+            try { }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("ServiceError", "Не удалось подключиться к удаленному сервису, попробуйте позже");
+            }
+
+            TempData["success"] = false;
+            if (ModelState.IsValid)
+            {
+                // сохраняем, если конфигруация прошла
+                serviceRepo.SaveBase(@base);
+                TempData["success"] = true;
                 try
                 {
+                    // конфигурируем
                     IControlService controlService = channelFactory.CreateChannel();
-                    validateReport = controlService.ValidateConfiguration(new Uri(String.Format("net.tcp://{0}", @base.ServiceAddress)), new Contracts.Data.RemoteConfiguration
-                    {
-                        baseList = new List<Contracts.Data.Base>() { 
-                    new Contracts.Data.Base { basePath = @base.Path}
-                }
-                    });
-                    if (validateReport != null)
-                    {
-                        foreach (KeyValuePair<string, string> reportItem in validateReport)
-                        {
-                            ModelState.AddModelError(reportItem.Key, reportItem.Value);
-                        }
-                    }
+                    ICommunicationObject commControlObject = (ICommunicationObject)controlService;
+                    commControlObject.Open();
+                    controlService.ReconfigureBaseOfService(@base.BaseId);
+                    commControlObject.Close();
                 }
                 catch (Exception ex)
                 {
-                    ModelState.AddModelError("GeneralError", "Не удалось подключиться к сервису, попробуйте позже");
+                    TempData["ReconfigureFail"] = "Произошла ошибка при конфигурировании центрального сервиса. Причина: " + ex.Message;
                 }
-
-                if (ModelState.IsValid)
-                {
-                    // сохраняем
-                }
+                return RedirectToActionPermanent("Edit");
             }
+            ViewData["base"] = @base;
+            return Edit();
+        }
+
+        public ActionResult Edit()
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+
+            BaseViewModel @base = ViewData["base"] == null ? serviceRepo.GetBaseById(baseId) : (BaseViewModel)ViewData["base"];
+            ViewData["success"] = TempData["success"];
+            if (TempData["ReconfigureFail"] != null)
+                ModelState.AddModelError("ReconfigureFail", (string)TempData["ReconfigureFail"]);
+
+            ViewData["base"] = @base;
+            IUser user = SessionStore.GetCurrentUser();
+            ViewData["bases"] = serviceRepo.GetBasesByServiceId(@base.ServiceId, user.UserId, user.IsAdmin);
+            ViewData["extdirectories"] = serviceRepo.GetExtDirectories();
+            ViewData["reports"] = new List<ReportViewModel>();
+            ViewData["report_statuses"] = serviceRepo.GetComponentReportStatusByUserId(SessionStore.GetCurrentUser().UserId, baseId);
+            IEnumerable<ServiceViewModel> services = serviceRepo.GetServices();
+            ServiceViewModel service = services.Where(s => s.ServiceId == @base.ServiceId).Single();
+            ViewData["services"] = services;
+            ViewData["service"] = service;
+            ViewData["permissions"] = serviceRepo.GetBasePermissions(baseId);
 
             return View();
         }
@@ -104,7 +213,7 @@ namespace Ugoria.URBD.WebControl.Controllers
             colors.Enqueue("#008080");
             Queue<string> reserveColors = new Queue<string>(colors);
             int total = 0;
-            foreach (IReferenceSchedule schedule in serviceRepo.GetReferenceByBaseId(baseId))
+            foreach (BaseTreeSchedule schedule in serviceRepo.GetReferenceByBaseId(baseId))
             {
                 while (fillStart <= TimeSpan.Parse(schedule.Time))
                 {
@@ -139,7 +248,7 @@ namespace Ugoria.URBD.WebControl.Controllers
                         storedValue[storedValue.Count - 1].Val++;
                     else
                         storedValue.Add(new BarStackValue(1, currColor));
-                    lastBaseId = schedule.BaseId.Value;
+                    lastBaseId = schedule.BaseId;
                 }
                 max = total > max ? total : max;
             }
