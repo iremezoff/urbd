@@ -107,6 +107,7 @@
     <Compile Include="Kit\ServiceUtil.cs" />
     <Compile Include="Services\RemoteService.cs" />
     <Compile Include="Strategy\Builders\ExtDirectoriesStrategyBuilder.cs" />
+    <Compile Include="Strategy\Builders\MlgCollectStrategyBuilder.cs" />
     <Compile Include="Strategy\ExchangeContext.cs" />
     <Compile Include="Strategy\ExchangeStrategy.cs" />
     <Compile Include="Strategy\Builders\ExchangeStrategyBuilder.cs" />
@@ -117,6 +118,8 @@
     <Compile Include="Strategy\Exchange\Verifier.cs" />
     <Compile Include="Strategy\ExtDirectoriesContext.cs" />
     <Compile Include="Strategy\ExtDirectoriesStrategy.cs" />
+    <Compile Include="Strategy\MlgCollectContext.cs" />
+    <Compile Include="Strategy\MlgCollectStrategy.cs" />
     <Compile Include="URBDRemoteWorker.cs" />
   </ItemGroup>
   <ItemGroup>

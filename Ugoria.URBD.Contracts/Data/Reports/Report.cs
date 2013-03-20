@@ -6,6 +6,7 @@ using System.Runtime.Serialization;
 
 namespace Ugoria.URBD.Contracts.Data.Reports
 {
+    [Serializable]
     [DataContract]
     [KnownType(typeof(OperationReport))]
     [KnownType(typeof(LaunchReport))]

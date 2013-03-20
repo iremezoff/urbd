@@ -113,7 +113,7 @@ namespace UnitTests
             Assert.IsNull(actual);
 
             // Half-negative test
-            target.SetCommandReport(command, "Exchange", userId);
+            target.SetCommandReport(command, userId);
             actual = target.GetLaunchReport(command);
             Assert.IsNotNull(actual);
             Assert.AreEqual(DateTime.MinValue, actual.startDate);
@@ -177,7 +177,7 @@ namespace UnitTests
         public void SetCommandReportTest()
         {
             ExecuteCommand actual;
-            actual = target.SetCommandReport(command, userId);
+            target.SetCommandReport(command, userId);
 
             using (SqlConnection conn = DB.Instance.Connection)
             {
@@ -213,7 +213,7 @@ namespace UnitTests
                 baseId = command.baseId,
                 commandDate = command.commandDate,
                 dateComplete = DateTime.Now,
-                status = ExchangeReportStatus.Warning,
+                status = ReportStatus.Warning,
                 dateRelease = DateTime.Now.AddDays(-1),
                 mdRelease = "1.99",
                 message = "super good",
@@ -221,9 +221,9 @@ namespace UnitTests
             };
             ReportStatus expected = ReportStatus.Warning; // TODO: Initialize to an appropriate value
             ReportStatus actual;
-            actual = target.SetReport(report);
+            target.SetReport(report);
 
-            Assert.AreEqual(expected, actual);
+            //Assert.AreEqual(expected, actual);
 
             using (SqlConnection conn = DB.Instance.Connection)
             {
@@ -240,7 +240,7 @@ namespace UnitTests
 
                 // Positive test
                 target.SetCommandReport(command, userId);
-                actual = target.SetReport(report);
+                target.SetReport(report);
                 adapter.Fill(dataTable);
                 Assert.IsTrue(dataTable.Rows.Count > 0);
 

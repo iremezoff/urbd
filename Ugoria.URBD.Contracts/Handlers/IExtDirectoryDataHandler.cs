@@ -11,6 +11,6 @@ namespace Ugoria.URBD.Contracts.Handlers
     public interface IExtDirectoriesDataHandler : IDataHandler
     {
         ExtDirectoriesCommand GetPreparedExtDirectoriesCommand(ExtDirectoriesCommand command);
-        ReportStatus SetReport(ExtDirectoriesReport report);
+        void SetReport(ExtDirectoriesReport report);
     }
 }

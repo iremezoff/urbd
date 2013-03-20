@@ -1,14 +1,10 @@
 ﻿@using MvcContrib.UI.Grid
 @using Ugoria.URBD.WebControl.Models
 @{
-    ViewBag.Title = "Управление пользователями - УРБД 2.5";
-    Layout = "~/Views/Shared/MainLayout.cshtml";
     bool? success = (bool?)ViewData["success"];
 }
 <script type="text/javascript" language="javascript">
     $(document).ready(function () {
-
-        $(":submit").button();
         $("table#users tbody").on("changerows", function () {
             var trs = $("tr:not(.new-row)", this);
             $("input.UserId:hidden", trs).attr("name", function (index) { return "users[" + index + "].UserId" });
@@ -73,10 +69,12 @@
         },
             text: false
         });
+
+        $(":submit").button();
     });
 </script>
-<h2>
-    Управление пользователями</h2>
+<h4>
+    Управление пользователями</h4>
 <div style="width: 70%">
     @if (success.HasValue && success.Value)
     {

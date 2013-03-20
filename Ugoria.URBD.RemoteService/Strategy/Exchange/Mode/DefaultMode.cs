@@ -14,7 +14,7 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange.Mode
         private Verifier verifier;
         protected string basepath;
         protected int waitTime = 1;
-        private static readonly string messageUrbdPattern = @"{0}\ExtForms\!md_message_urbd.txt";
+        private static readonly string messageUrbdPattern = @"{0}\!md_message_urbd.txt";
         private bool attempt = false;
 
         private bool isAborted = false;

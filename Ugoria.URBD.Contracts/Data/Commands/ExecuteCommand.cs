@@ -10,6 +10,7 @@ namespace Ugoria.URBD.Contracts.Data.Commands
     [DataContract]
     [KnownType(typeof(ExchangeCommand))]
     [KnownType(typeof(ExtDirectoriesCommand))]
+    [KnownType(typeof(MlgCollectCommand))]
     public class ExecuteCommand : Command
     {
         [DataMember]

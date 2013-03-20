@@ -30,7 +30,7 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
                 string line = "";
                 while ((line = read.ReadLine()) != null)
                 {
-                    MLGMessage mlgMessage = BuildMlgMessage(line);
+                    MlgMessage mlgMessage = BuildMlgMessage(line);
                     if (mlgMessage == null)
                         continue;
                     switch (mlgMessage.eventType)
@@ -79,9 +79,9 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
             catch (Exception) { }
         }
 
-        private static MLGMessage BuildMlgMessage(string line)
+        private static MlgMessage BuildMlgMessage(string line)
         {
-            MLGMessage mlgMessage = new MLGMessage();
+            MlgMessage mlgMessage = new MlgMessage();
             //20070728;13:59:48;Администратор;C;Distr;DistDnldBeg;1;Код ИБ: 'СП ', Файл: 'F:\Base_urbd_sql\SPB\CP\SPB_C.zip';;
             string[] messArr = line.Split(new char[] { ';' });
             if (messArr.Length < 8 || !"Distr".Equals(messArr[4])) // пропуск записей, не связанных с обменом или с недостатком информации

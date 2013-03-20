@@ -9,7 +9,6 @@ using System.Net;
 using Ugoria.URBD.Shared.Configuration;
 using Ugoria.URBD.CentralService.DataProvider;
 using Ugoria.URBD.CentralService.Logging;
-using Ugoria.URBD.Shared.DataProvider;
 
 
 namespace Ugoria.URBD.CentralService.Alarming

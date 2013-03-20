@@ -1,0 +1,115 @@
+﻿@using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Models
+<script type="text/javascript" language="javascript">
+    // on и off для предотвращения навешивания повторяющихся обработчиков
+    function deleteRow(table, except) {
+        $(".delete-row", table).button({ icons: {
+            primary: "ui-icon-closethick"
+        },
+            text: false
+        }).off("click").on("click", function () {
+            if (!except)
+                $(this).closest('tr').remove();
+            else
+                $(this).closest('tr').css("display", "none").find("input:not(" + except + ")").val("");
+            $(table).trigger("changerows");
+            return false;
+        });
+    }
+    $(document).ready(function () {
+
+        $("table#extdirectories tbody").on("changerows", function () {
+            var trs = $("tr:not(.new-row)", this);
+            $("input.DirId:hidden", trs).attr("name", function (index) { return "dirs[" + index + "].DirId" });
+            $("input.LocalPath:hidden", trs).attr("name", function (index) { return "dirs[" + index + "].LocalPath" });
+            $("input.FtpPath:hidden", trs).attr("name", function (index) { return "dirs[" + index + "].FtpPath" });
+
+            $(".localpath, .ftppath").editable(function (value, settings) {
+                $(this).prev().attr("value", value);
+                return (value);
+            }, {
+                type: 'text',
+                placeholder: 'пусто',
+                width: 200
+            }).css("cursor", "pointer").each(function () { $(this).html($(this).html().trim()); });
+            deleteRow(this, ".DirId");
+        }).trigger("changerows");
+
+        $("tr.new-row input:hidden").attr("disabled", "");
+
+        $("a.addrow").click(function () {
+            var table = $(this).prev();
+            var newRow = $("tr.new-row", table).clone(false).removeClass("new-row");
+            $(":disabled", newRow).removeAttr("disabled");
+            $("tbody", table).append(newRow).trigger("changerows");
+            return false;
+        }).button({ icons: {
+            primary: "ui-icon-plusthick"
+        },
+            text: false
+        });
+
+        $(":submit").button();
+    });
+</script>
+<h4>
+    Расширенные директории</h4>
+<div style="width: 30%">
+    @if (ViewData["success"] != null && (bool)ViewData["success"])
+    {
+        @Html.Partial("InformationBlock", "Директории успешно сохранены")
+    }
+</div>
+@Html.ValidationMessage("PathError")
+@{Html.BeginForm("ExtDirectories");}
+<table id="extdirectories" style="width: 40%">
+    <thead>
+        <tr>
+            <th class="ui-state-default" width="40%">
+                Локальный путь
+            </th>
+            <th class="ui-state-default" width="50%">
+                Сетевой путь
+            </th>
+            <th class="ui-state-default" width="10%">
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="new-row">
+            @(Html.Hidden("dirs[].DirId", 0, new { @class = "DirId", id = "" }))
+            @(Html.Hidden("dirs[].LocalPath", string.Empty, new { @class = "LocalPath", id = "" }))
+            <td class="localpath">
+            </td>
+            @Html.Hidden("dirs[].FtpPath", string.Empty, new { @class = "FtpPath", id = "" })
+            <td class="ftppath">
+            </td>
+            <td>
+                @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+            </td>
+        </tr>
+        @{int r = 0;}
+        @foreach (var dir in (IEnumerable<IExtDirectory>)ViewData["extdirectories"])
+        {
+            <tr>
+                @Html.Hidden(string.Format("dirs[{0}].DirId", r), dir.DirId, new { @class = "DirId", id = "" })
+                @Html.Hidden(string.Format("dirs[{0}].LocalPath", r), dir.LocalPath, new { @class = "LocalPath", id = "" })
+                <td class="localpath">
+                    @dir.LocalPath
+                </td>
+                @Html.Hidden(string.Format("dirs[{0}].FtpPath", r), dir.FtpPath, new { @class = "FtpPath", id = "" })
+                <td class="ftppath">
+                    @dir.FtpPath
+                </td>
+                <td>
+                    @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+                </td>
+            </tr> 
+        }
+    </tbody>
+</table>
+<a href="#" class="addrow">добавить</a>
+<br />
+<br />
+<input type="submit" value="Сохранить" />
+@{Html.EndForm();}

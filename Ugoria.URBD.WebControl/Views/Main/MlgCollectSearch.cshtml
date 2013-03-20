@@ -1,0 +1,126 @@
+﻿@using Ugoria.URBD.WebControl.Models
+@using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Helpers
+@{
+    Layout = "~/Views/Shared/MainLayout.cshtml";
+    ViewBag.Title = "Результаты поиска";
+    List<SelectListItem> typeList = new List<SelectListItem>();
+    typeList.Add(new SelectListItem { Text = "---", Value = "0" });
+    typeList.AddRange(((IEnumerable<IObjectType>)ViewData["object_types"]).Select<IObjectType, SelectListItem>(x => new SelectListItem { Text = string.Format("{0} ({1})", x.Type, x.Name), Value = x.TypeId.ToString(), Selected = x.TypeId == (int)ViewData["type"] }));
+    List<SelectListItem> codeList = new List<SelectListItem>();
+    codeList.AddRange(((IEnumerable<string>)ViewData["base_codes"]).Select<string, SelectListItem>(x => new SelectListItem { Text = x, Value = x, Selected = x.Equals(ViewData["base_code"]) }));
+}
+<script language="javascript" type="text/javascript">
+    $(document).ready(function () {
+    $.datepicker.setDefaults($.extend($.datepicker.regional["ru"]));
+
+    $("a#component_menu")
+	  .button( {
+		text: false,
+		icons: {
+		  primary: "ui-icon-triangle-1-s"
+		}
+	  })
+	  .click( function() {
+		var menu = $(this).parent().next().toggle().position({
+		  my: "right top",
+		  at: "right bottom",
+		  of: this
+		});
+		$(document).one("click", function() {
+		  menu.hide();
+		});
+		return false;
+	  })
+	.parent()
+	.next()
+	  .hide()
+	  .menu();
+      
+        $("input.date").datepicker({
+            defaultDate: null
+        })
+        .mask("99.99.9999");
+
+        $( "input:submit" ).button();
+
+        var reportTable = $("table#result").dataTable({
+            "bJQueryUI": true,
+            "bAutoWidth":false,
+            "aaSorting": [],
+            "bLengthChange": false,
+            "bDestroy": true,
+            "bPaginate": false,
+            "bFilter": false,
+            "aoColumnDefs": [                
+                { "sType": "date-eu", "aTargets": [ 6 ] }                        
+                ],
+            "oLanguage": {
+                "sUrl": "@(Url.Content("~/Scripts/ru_RU.txt"))"
+                }
+            });
+    });
+</script>
+<h2 class="component">
+    @ViewBag.ComponentHead</h2>
+@Html.Partial("ComponentMenu")
+<br />
+@{Html.BeginForm();}
+<table>
+    <tr>
+        <td class="ui-state-default" colspan="2">
+            Поиск
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Идентификационный номер:
+        </td>
+        <td>@Html.TextBox("number", ViewData["number"])
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Объект:
+        </td>
+        <td>@Html.DropDownList("type", typeList)
+            Тип объекта (название)
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Префикс ИБ:
+        </td>
+        <td>@Html.DropDownList("baseCode", codeList)
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Период:
+        </td>
+        <td>
+            C @Html.TextBox("startDate", ViewData["date_start"], new { @class = "date" }) по @Html.TextBox("endDate", ViewData["date_end"], new { @class = "date" })
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2">
+            <input type="submit" value="Искать" />
+        </td>
+    </tr>
+</table>
+@{Html.EndForm();}
+<br />
+@(Html.Grid((IEnumerable<ReportLog>)ViewData["logs"]).Columns(c =>
+{
+    c.Custom(b => b.Object != null ? b.Object.identifier : string.Empty).Named("Идентификатор");
+    c.Custom(b => b.Object != null ? b.Object.ObjectType.type : string.Empty).Named("Тип");
+    c.Custom(b => b.Object != null ? b.Object.ObjectType.name : string.Empty).Named("Название объекта");
+    c.Custom(b => string.Format("{0} ({1})", b.EventType.description, b.EventType.name)).Named("Действие");
+    c.Custom(b => string.Format("{0} ({1})", b.EventType.EventGroup.description, b.EventType.EventGroup.name)).Named("Группа действий");
+    c.For(b => b.date_message).Named("Дата действия");
+    c.Custom(b => b.account).Named("Пользователь");
+    c.Custom(b => b.Report.Base.Name).Named("ИБ");
+    c.Custom(b => b.Object != null ? b.Object.base_code : string.Empty).Named("Префикс ИБ");
+    c.For(b => b.information).Named("Информация");
+    c.For(b => b.additional).Named("Дополнительно");
+}).Attributes(id => "result", width=>"100%").RenderUsing(new CustomRenderer<ReportLog>()))

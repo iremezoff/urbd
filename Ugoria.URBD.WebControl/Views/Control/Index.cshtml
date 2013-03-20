@@ -1,0 +1,63 @@
+﻿@using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Models
+@{    
+    Layout = "~/Views/Shared/MainLayout.cshtml";
+    ViewBag.Title = "Конфигурация УРБД";
+}
+<script language="javascript" type="text/javascript">
+    function form_process(ui) {
+        var form = $("form", ui.panel);
+        console.log(form);
+        $(":submit", form).on("click", function () {
+            ui.panel.prepend($('<img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/><span>Запрос...</span>'));
+            $.ajax({
+                url: $(form).attr("action"),
+                type: "POST",
+                data: $(form).serialize(),
+                dataType: "html",
+                complete: function (result) {
+                    $(ui.panel).html(result.responseText);
+                    form_process(ui);
+                    //$(tabs).tabs("load", $(ui.tab).index());
+                }
+            });
+            return false;
+        });
+    }
+
+    $(document).ready(function () {
+        $("#tabs").tabs({
+            beforeLoad: function (event, ui) {
+                ui.ajaxSettings.error = function (jqXHR, textStatus, errorThrown) {
+                    ui.panel.html($("<span>").text("Не удалось загрузить форму конфигурации. Сообщение: " + errorThrown).addClass("field-validation-error"));
+                }
+                if (ui.tab.data("loaded")) {
+                    event.preventDefault();
+                    return;
+                }
+                ui.jqXHR.success(function () {                    
+                    ui.tab.data("loaded", true);
+                });
+                ui.panel.html($('<img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/><span>Загрузка...</span>'));
+            },
+            load: function (event, ui) {
+                form_process(ui);
+            }
+        });
+    });
+</script>
+<h2>
+    Конфигурация</h2>
+<div style="width: 70%">
+    @if (ViewData["success"] != null && (bool)ViewData["success"])
+    {
+        @Html.Partial("InformationBlock", new { Text = "Настройки успешно сохранены" })
+    }
+</div>
+<div id="tabs">
+    <ul>
+        <li>@Html.ActionLink("Настройки", "Settings")</li>
+        <li>@Html.ActionLink("Пользователи", "Users")</li>
+        <li>@Html.ActionLink("Директории", "ExtDirectories")</li>
+    </ul>
+</div>

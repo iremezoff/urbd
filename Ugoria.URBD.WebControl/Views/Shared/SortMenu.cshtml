@@ -1,0 +1,31 @@
+﻿@using Ugoria.URBD.WebControl.Models
+Группировать по <b>
+    @if (!TableGrouper.filial.Equals(ViewData["sort"]))
+    {
+        @Html.ActionLink("филиалу", "Index", new { sort = TableGrouper.filial })
+    }
+    else
+    {
+        <text> филиалу
+        </text>
+    }
+</b>, <b>
+    @if (!TableGrouper.service.Equals(ViewData["sort"]))
+    {
+        @Html.ActionLink("сервису", "Index", new { sort = TableGrouper.service })
+    }
+    else
+    {
+        <text> сервису
+        </text>
+    }
+</b>, <b>
+    @if (!TableGrouper.group.Equals(ViewData["sort"]))
+    { 
+        @Html.ActionLink("группе", "Index", new { sort = TableGrouper.group })
+    }
+    else
+    {
+        <text> группе
+        </text>
+    }</b>

@@ -1,66 +1,41 @@
 ﻿@using Ugoria.URBD.WebControl.Models
 @using Ugoria.URBD.WebControl.ViewModels
 @using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Helpers
+@model IEnumerable<ServiceLogViewModel>
 @{
     ServiceViewModel service = (ServiceViewModel)ViewData["service"];
     ViewBag.Title = string.Format("Логи сервиса {0} ({1}) - УРБД 2.5", service.Name, service.Address);
     Layout = "~/Views/Shared/MainLayout.cshtml";
 }
 <script language="javascript" type="text/javascript">
+        
         $(document).ready(function () { 
-        $.datepicker.setDefaults(
-	        $.extend($.datepicker.regional["ru"])
-	  );
-
+        $.datepicker.setDefaults($.extend($.datepicker.regional["ru"]));
             $("input.date").datepicker({
             defaultDate: null
-            }).mask("99.99.9999").val($.datepicker.formatDate(
-	'dd.mm.yy',
-	new Date()
-));
-$('input:submit').button();
-            var dataGetterFunc = function() {
-                reportTable.fnClearTable(0);
-                $.getJSON("@(Url.Action("LogData", new {id = ViewContext.RouteData.Values["id"]}))", { "dateStart": $("input#date_start").val(), "dateEnd": $("input#date_end").val()  }, function(data) {
-                //alert(data);
-                //reportTable.fnAddData(data);
-        $.each(data, function(i,rowData){
-       reportTable.fnAddData( rowData );
-                });
-            }        );}
+        })
+        .mask("99.99.9999");
 
-            var reportTable = $("table#logs").dataTable({
-            "bJQueryUI": true,
-        "bAutoWidth":false,
-        "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
-        cssClass = aData[1] == "F"? "fail"
-        : aData[1] == "W" 
-            ? "warning"
-            : aData[1] == "I" 
-                ? "success"
-                        :"blank";            
-                $('td:eq(1)', nRow).addClass(cssClass).html("");
-        },
-        "fnInitComplete": function(oSettings, json) {
-      dataGetterFunc();
-    },
-        "aaSorting": [[0, "desc"]],
-            "bLengthChange": false,
-             "aaSorting": [[0, "desc"]],
-             "bDestroy": true,
-            "bPaginate": false,
-            "bFilter": false,
-            "aoColumnDefs": [
-                        { "bSearchable": false, "bSortable":false, "aTargets": [ 1 ] },
-            { "sType": "date-eu", "aTargets": [ 0 ] }                        
+            $('input:submit').button(); 
 
+            var reportTable = $("table.logs").dataTable({
+                "bJQueryUI": true,
+                "bAutoWidth":false,
+                "aaSorting": [[0, "desc"]],
+                "bLengthChange": false,
+                "aaSorting": [[0, "desc"]],
+                "bDestroy": true,
+                "bPaginate": false,
+                "bFilter": false,
+                "aoColumnDefs": [
+                    { "bSearchable": false, "bSortable":false, "aTargets": [ 1 ] },
+                    { "sType": "date-eu", "aTargets": [ 0 ] }                        
                     ],
                 "oLanguage": {
                     "sUrl": "@(Url.Content("~/Scripts/ru_RU.txt"))"
                 }
             });
-
-            $("#date-period").click(dataGetterFunc);
             });
 </script>
 <h1>
@@ -70,17 +45,19 @@ $('input:submit').button();
     <h3>
         Логи сервиса</h3>
     <div id="logs">
+        @{Html.BeginForm((string)ViewContext.RouteData.Values["action"], (string)ViewContext.RouteData.Values["controller"], FormMethod.Get);}
         <div id="date_period">
             С даты
-            <input type="text" id="date_start" class="date" />
+            <input type="text" name="dateStart" class="date" value="@ViewBag.dateStart.ToString("dd.MM.yyyy")" />
             по:
-            <input type="text" id="date_end" class="date" />
+            <input type="text" name="dateEnd" class="date" value="@ViewBag.dateEnd.ToString("dd.MM.yyyy")" />
             <input type="submit" name="view_reports" value="Показать" id="date-period" /></div>
-        @(Html.Grid<ServiceLogViewModel>("logs").Columns(c =>
+        @{Html.EndForm();}
+        @(Html.Grid(Model).Columns(c =>
     {
-        c.For(r => "").Named("Дата сообщения").HeaderAttributes(width => "10%");
-        c.For(r => "").HeaderAttributes(width => "2");
-        c.For(r => "").Named("Сообщение").HeaderAttributes(width => "90%");
-    }).Attributes(id => "logs").RenderUsing(new Ugoria.URBD.WebControl.Helpers.LogRenderer()))
+        c.For(r => r.Date).Named("Дата сообщения").HeaderAttributes(width => "10%");
+        c.Custom(r => string.Empty).Attributes(new Func<GridRowViewData<ServiceLogViewModel>, Dictionary<string, object>>(item => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColorLog(item.Item.Status) } })).HeaderAttributes(width => "2");
+        c.For(r => r.Text).Named("Сообщение").HeaderAttributes(width => "90%");
+    }).Attributes(@class => "logs").RenderUsing(new CustomRenderer<ServiceLogViewModel>()))
     </div>
 </div>

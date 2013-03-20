@@ -106,6 +106,12 @@ footer, #footer
     -moz-border-radius: 0 0 4px 4px;
 }
 
+/* SELECT */
+select#skin 
+{
+    font-size: 0.9em;
+}
+
 /* TAB MENU   
 ----------------------------------------------------------*/
 ul#menu
@@ -356,7 +362,7 @@ div#title
 ul.func_menu
 {
     position: absolute;
-    z-index: 10;
+    z-index: 110;
     min-width:150px;
 }
 

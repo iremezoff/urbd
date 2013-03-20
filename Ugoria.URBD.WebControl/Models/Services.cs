@@ -24,6 +24,7 @@ namespace Ugoria.URBD.WebControl.Models
         IEnumerable<IPacket> PacketList { get; }
         IEnumerable<IScheduleExchange> ScheduleExchangeList { get; }
         IEnumerable<IScheduleExtDirectories> ScheduleExtDirectoriesList { get; }
+        IEnumerable<IScheduleMlgCollect> ScheduleMlgCollectList { get; }
         IEnumerable<IExtDirectory> ExtDirectoriesList { get; }
     }
 
@@ -96,6 +97,13 @@ namespace Ugoria.URBD.WebControl.Models
     }
 
     public interface IScheduleExtDirectories
+    {
+        int ScheduleId { get; }
+        string Time { get; set; }
+        bool? IsActive { get; set; }
+    }
+
+    public interface IScheduleMlgCollect
     {
         int ScheduleId { get; }
         string Time { get; set; }
@@ -236,6 +244,12 @@ namespace Ugoria.URBD.WebControl.Models
         {
             get { return extDirectories; }
         }
+
+
+        public IEnumerable<IScheduleMlgCollect> ScheduleMlgCollectList
+        {
+            get { return ScheduleMlgCollect; }
+        }
     }
 
     public partial class Service : IService
@@ -359,6 +373,26 @@ namespace Ugoria.URBD.WebControl.Models
         }
     }
 
+    public partial class ScheduleMlgCollect : IScheduleMlgCollect
+    {
+        public int ScheduleId
+        {
+            get { return schedule_id; }
+        }
+
+        public string Time
+        {
+            get { return time; }
+            set { time = value; }
+        }
+
+        public bool? IsActive
+        {
+            get { return is_active; }
+            set { is_active = value; }
+        }
+    }
+
     public partial class ScheduleExchangeOfService : IServiceScheduleExchange
     {
         public int ScheduleId { get { return schedule_id; } }
@@ -421,12 +455,7 @@ namespace Ugoria.URBD.WebControl.Models
         IComponent Component { get; }
     }
 
-    public interface IComponent
-    {
-        int ComponentId { get; }
-        string Name { get; }
-        string Description { get; }
-    }
+
 
     public interface IReportStatus
     {
@@ -440,14 +469,7 @@ namespace Ugoria.URBD.WebControl.Models
         public string Name { get { return name; } }
     }
 
-    public partial class Component : IComponent
-    {
-        public int ComponentId { get { return component_id; } }
 
-        public string Name { get { return name; } }
-
-        public string Description { get { return description; } }
-    }
 
     public partial class ComponentReportStatus : IComponentReportStatus
     {
@@ -532,14 +554,15 @@ namespace Ugoria.URBD.WebControl.Models
         IEnumerable<IServiceScheduleExchange> GetServiceScheduleExchangeByBaseId(int baseId);
         IEnumerable<BaseTreeSchedule> GetReferenceByBaseId(int baseId);
         BaseViewModel GetBaseById(int baseId);
-        IEnumerable<ReportViewModel> GetExtDirectoriesReportsByBaseId(int baseId, DateTime startDate, DateTime endDate);
-        IEnumerable<ReportViewModel> GetExchangeReportsByBaseId(int baseId, DateTime startDate, DateTime endDate);
+        IEnumerable<ExtDirectoryReportView> GetExtDirectoriesReportsByBaseId(int baseId, DateTime startDate, DateTime endDate);
+        IEnumerable<ExchangeReportView> GetExchangeReportsByBaseId(int baseId, DateTime startDate, DateTime endDate);
+        IEnumerable<MlgCollectReportView> GetMlgCollectReportsByBaseId(int baseId, DateTime startDate, DateTime endDate);
         IEnumerable<ComponentReportStatusView> GetComponentReportStatusByUserId(int userId, int baseId);
-        IEnumerable<ExtDirectoryView> GetExtDirectories();
+        IEnumerable<IExtDirectory> GetExtDirectories();
         IEnumerable<UserBasesPermission> GetBasePermissions(int baseId);
         void SaveBase(BaseViewModel baseVM);
         void SaveService(ServiceViewModel serviceVM);
-        void SaveNotification(IEnumerable<ReportNotificationViewModel> notifies, int baseId, int userId);
+        void SaveNotification(ReportNotificationViewModel notify, int baseId, int userId);
         void SavePermission(PermissionViewModel permission, int baseId);
     }
 
@@ -576,10 +599,10 @@ namespace Ugoria.URBD.WebControl.Models
 
         public IEnumerable<BaseViewModel> GetBasesByServiceId(int serviceId, int userId, bool isAdmin)
         {
-            var query = dataContext.Base.Include(b=>b.Packet).Where(b => b.service_id == serviceId);
-            
-            if(!isAdmin)
-                query = query.Join(dataContext.UserBasesPermission, b=>b.base_id, p=>p.base_id, (b,p)=>new {Base=b, Permission=p}).Where(bp=>bp.Permission.user_id==userId).Select(bp=>bp.Base);
+            var query = dataContext.Base.Include(b => b.Packet).Where(b => b.service_id == serviceId);
+
+            if (!isAdmin)
+                query = query.Join(dataContext.UserBasesPermission, b => b.base_id, p => p.base_id, (b, p) => new { Base = b, Permission = p }).Where(bp => bp.Permission.user_id == userId).Select(bp => bp.Base);
 
             var query2 = query.OrderBy(b => b.base_name).Select<Base, BaseViewModel>(b => new BaseViewModel
             {
@@ -598,80 +621,118 @@ namespace Ugoria.URBD.WebControl.Models
             @base.C1c_database = baseVM.Path;
             @base.Username = baseVM.Username;
             @base.Password = baseVM.Password;
-            @base.SqlDatabase = baseVM.SqlDatabase;
-            @base.ServiceId = baseVM.ServiceId;
-
-            @base.Packet.Where(p => !baseVM.PacketList.Any(pvm => pvm.PacketId == p.PacketId)).ToList().ForEach(p => p.Base = null);
-
-            foreach (PacketViewModel packetVM in baseVM.PacketList)
+            @base.Service.date_change = DateTime.Now; // изменение текущего сервиса
+            if (baseVM.ServiceId != @base.ServiceId)
             {
-                if (packetVM.PacketId == 0)
+                @base.ServiceId = baseVM.ServiceId;
+                @base.Service.date_change = DateTime.Now; // изменение нового сервиса
+            }
+
+            if (baseVM.PacketList != null)
+            {
+                @base.Packet.Where(p => !baseVM.PacketList.Any(pvm => pvm.PacketId == p.PacketId)).ToList().ForEach(p => p.Base = null);
+                foreach (PacketViewModel packetVM in baseVM.PacketList)
                 {
-                    dataContext.Packet.AddObject(new Packet
+                    if (packetVM.PacketId == 0)
                     {
-                        Base = @base,
-                        filename = packetVM.FileName,
-                        type = packetVM.Type
-                    });
-                    continue;
+                        dataContext.Packet.AddObject(new Packet
+                        {
+                            Base = @base,
+                            filename = packetVM.FileName,
+                            type = packetVM.Type
+                        });
+                        continue;
+                    }
+                    Packet packet = @base.Packet.FirstOrDefault(p => p.PacketId == packetVM.PacketId);
+                    if (packet == null)
+                        continue;
+                    packet.FileName = packetVM.FileName;
+                    packet.type = packetVM.Type;
                 }
-                Packet packet = @base.Packet.FirstOrDefault(p => p.PacketId == packetVM.PacketId);
-                if (packet == null)
-                    continue;
-                packet.FileName = packetVM.FileName;
-                packet.type = packetVM.Type;
             }
 
-            @base.ScheduleExchange.Where(s => !baseVM.ScheduleExchangeList.Any(svm => svm.ScheduleId == s.ScheduleId)).ToList().ForEach(s => dataContext.ScheduleExchange.DeleteObject(s));
-            foreach (ScheduleExchangeViewModel scheduleVM in baseVM.ScheduleExchangeList)
+            if (baseVM.ScheduleExchangeList != null)
             {
-                if (scheduleVM.ScheduleId == 0)
+                @base.ScheduleExchange.Where(s => !baseVM.ScheduleExchangeList.Any(svm => svm.ScheduleId == s.ScheduleId)).ToList().ForEach(s => dataContext.ScheduleExchange.DeleteObject(s));
+                foreach (ScheduleExchangeViewModel scheduleVM in baseVM.ScheduleExchangeList)
                 {
-                    dataContext.ScheduleExchange.AddObject(new ScheduleExchange
+                    if (scheduleVM.ScheduleId == 0)
                     {
-                        Base = @base,
-                        Time = scheduleVM.Time,
-                        mode = scheduleVM.Mode
-                    });
-                    continue;
+                        dataContext.ScheduleExchange.AddObject(new ScheduleExchange
+                        {
+                            Base = @base,
+                            time = scheduleVM.Time,
+                            mode = scheduleVM.Mode,
+                            is_active = true
+                        });
+                        continue;
+                    }
+                    ScheduleExchange schedule = @base.ScheduleExchange.FirstOrDefault(s => s.ScheduleId == scheduleVM.ScheduleId);
+                    if (schedule == null)
+                        continue;
+                    schedule.time = scheduleVM.Time;
+                    schedule.mode = scheduleVM.Mode;
                 }
-                ScheduleExchange schedule = @base.ScheduleExchange.FirstOrDefault(s => s.ScheduleId == scheduleVM.ScheduleId);
-                if (schedule == null)
-                    continue;
-                schedule.Time = scheduleVM.Time;
-                schedule.mode = scheduleVM.Mode;
             }
 
-            @base.ScheduleExtDirectories.Where(s => !baseVM.ScheduleExtDirectoriesList.Any(svm => svm.ScheduleId == s.ScheduleId)).ToList().ForEach(s => dataContext.ScheduleExtDirectories.DeleteObject(s));
-            foreach (ScheduleExtDirectoriesViewModel scheduleVM in baseVM.ScheduleExtDirectoriesList)
+            if (baseVM.ScheduleExtDirectoriesList != null)
             {
-                if (scheduleVM.ScheduleId == 0)
+                @base.ScheduleExtDirectories.Where(s => !baseVM.ScheduleExtDirectoriesList.Any(svm => svm.ScheduleId == s.ScheduleId)).ToList().ForEach(s => dataContext.ScheduleExtDirectories.DeleteObject(s));
+                foreach (ScheduleExtDirectoriesViewModel scheduleVM in baseVM.ScheduleExtDirectoriesList)
                 {
-                    dataContext.ScheduleExtDirectories.AddObject(new ScheduleExtDirectories
+                    if (scheduleVM.ScheduleId == 0)
                     {
-                        Base = @base,
-                        Time = scheduleVM.Time
-                    });
-                    continue;
+                        dataContext.ScheduleExtDirectories.AddObject(new ScheduleExtDirectories
+                        {
+                            Base = @base,
+                            time = scheduleVM.Time,
+                            is_active = true
+                        });
+                        continue;
+                    }
+                    ScheduleExtDirectories schedule = @base.ScheduleExtDirectories.FirstOrDefault(s => s.ScheduleId == scheduleVM.ScheduleId);
+                    if (schedule == null)
+                        continue;
+                    schedule.Time = scheduleVM.Time;
                 }
-                ScheduleExtDirectories schedule = @base.ScheduleExtDirectories.FirstOrDefault(s => s.ScheduleId == scheduleVM.ScheduleId);
-                if (schedule == null)
-                    continue;
-                schedule.Time = scheduleVM.Time;
             }
 
-            @base.ExtDirectoryBase.Where(s => !baseVM.ExtDirectoriesList.Any(svm => svm.ExtDirectoryId == s.dir_id)).ToList().ForEach(s => dataContext.ExtDirectoryBase.DeleteObject(s));
-            IEnumerable<ExtDirectory> extDirs = dataContext.ExtDirectory.Select(d => d);
-            foreach (ExtDirectoryViewModel extDirectoryVM in @baseVM.ExtDirectoriesList.GroupBy(d => d.ExtDirectoryId, (d, c) => c.First()))
+            if (baseVM.ScheduleMlgCollectList != null)
             {
-                ExtDirectory extDirectory = @base.ExtDirectories.FirstOrDefault(d => d.DirId == extDirectoryVM.ExtDirectoryId);
-                if (extDirectory == null)
+                @base.ScheduleMlgCollect.Where(s => !baseVM.ScheduleMlgCollectList.Any(svm => svm.ScheduleId == s.ScheduleId)).ToList().ForEach(s => dataContext.ScheduleMlgCollect.DeleteObject(s));
+                foreach (ScheduleMlgCollectViewModel scheduleVM in baseVM.ScheduleMlgCollectList)
                 {
-                    //dataContext.ExtDirectoryBase.AddObject()
-                    dataContext.ExtDirectoryBase.AddObject(new ExtDirectoryBase { Base = @base, ExtDirectory = extDirs.First(d => d.DirId == extDirectoryVM.ExtDirectoryId) });
+                    if (scheduleVM.ScheduleId == 0)
+                    {
+                        dataContext.ScheduleMlgCollect.AddObject(new ScheduleMlgCollect
+                        {
+                            Base = @base,
+                            time = scheduleVM.Time,
+                            is_active = true
+                        });
+                        continue;
+                    }
+                    ScheduleMlgCollect schedule = @base.ScheduleMlgCollect.FirstOrDefault(s => s.ScheduleId == scheduleVM.ScheduleId);
+                    if (schedule == null)
+                        continue;
+                    schedule.Time = scheduleVM.Time;
                 }
             }
-            dataContext.SaveChanges();
+
+            if (@baseVM.ExtDirectoriesList != null)
+            {
+                @base.ExtDirectoryBase.Where(s => !baseVM.ExtDirectoriesList.Any(svm => svm.DirId == s.dir_id)).ToList().ForEach(s => dataContext.ExtDirectoryBase.DeleteObject(s));
+                IEnumerable<ExtDirectory> extDirs = dataContext.ExtDirectory.Select(d => d);
+                foreach (ExtDirectoryViewModel extDirectoryVM in @baseVM.ExtDirectoriesList.GroupBy(d => d.DirId, (d, c) => c.First()))
+                {
+                    ExtDirectory extDirectory = @base.ExtDirectories.FirstOrDefault(d => d.DirId == extDirectoryVM.DirId);
+                    if (extDirectory == null)
+                    {
+                        //dataContext.ExtDirectoryBase.AddObject()
+                        dataContext.ExtDirectoryBase.AddObject(new ExtDirectoryBase { Base = @base, ExtDirectory = extDirs.First(d => d.DirId == extDirectoryVM.DirId) });
+                    }
+                }
+            }
         }
 
         public void SaveService(ServiceViewModel serviceVM)
@@ -680,6 +741,7 @@ namespace Ugoria.URBD.WebControl.Models
             service.service_name = serviceVM.Name;
             service.C1c_path = serviceVM.Path1C;
             service.address = serviceVM.Address;
+            service.date_change = DateTime.Now;
             dataContext.SaveChanges();
         }
 
@@ -698,7 +760,8 @@ namespace Ugoria.URBD.WebControl.Models
                 PacketList = b.Packet.Select(p => new PacketViewModel { PacketId = p.packet_id, FileName = p.filename, Type = p.type }),
                 ScheduleExchangeList = b.ScheduleExchange.OrderBy(s => s.time).Select(s => new ScheduleExchangeViewModel { ScheduleId = s.schedule_id, Mode = s.mode, Time = s.time }),
                 ScheduleExtDirectoriesList = b.ScheduleExtDirectories.OrderBy(s => s.time).Select(s => new ScheduleExtDirectoriesViewModel { ScheduleId = s.schedule_id, Time = s.time }),
-                ExtDirectoriesList = b.ExtDirectoryBase.Select(d => new ExtDirectoryViewModel { ExtDirectoryId = d.dir_id, FtpPath = d.ExtDirectory.ftp_path, LocalPath = d.ExtDirectory.local_path })
+                ScheduleMlgCollectList = b.ScheduleMlgCollect.OrderBy(s => s.time).Select(s => new ScheduleMlgCollectViewModel { ScheduleId = s.schedule_id, Time = s.time }),
+                ExtDirectoriesList = b.ExtDirectoryBase.Select(d => new ExtDirectoryViewModel { DirId = d.dir_id, FtpPath = d.ExtDirectory.ftp_path, LocalPath = d.ExtDirectory.local_path })
             });
             System.Diagnostics.Trace.WriteLine(((ObjectQuery)query).ToTraceString());
 
@@ -751,17 +814,15 @@ namespace Ugoria.URBD.WebControl.Models
             System.Diagnostics.Trace.WriteLine(((ObjectQuery)q).ToTraceString());
 
             return q.Select(s => s);
-            return null;
         }
 
-        public IEnumerable<ReportViewModel> GetExchangeReportsByBaseId(int baseId, DateTime startDate, DateTime endDate)
+        public IEnumerable<ExchangeReportView> GetExchangeReportsByBaseId(int baseId, DateTime startDate, DateTime endDate)
         {
-            string componentName = SystemComponent.Exchange.ToString();
             var query = dataContext.Report.Include("Launch1C").Include("ReportPacket.Packet")
-              .Where(r => r.ComponentReportStatus.Component.name.Equals(componentName) && r.base_id == baseId && r.date_command >= EntityFunctions.TruncateTime(startDate) && EntityFunctions.TruncateTime(EntityFunctions.AddDays(endDate, 1)) >= r.date_command)
+              .Where(r => r.ComponentReportStatus.Component.name.Equals("Exchange") && r.base_id == baseId && r.date_command >= EntityFunctions.TruncateTime(startDate) && EntityFunctions.TruncateTime(EntityFunctions.AddDays(endDate, 1)) >= r.date_command)
               .OrderByDescending(r => r.date_command)
-              .Select<Report, ReportViewModel>(r =>
-                  new ReportViewModel
+              .Select<Report, ExchangeReportView>(r =>
+                  new ExchangeReportView
                   {
                       ReportId = r.report_id,
                       CommandDate = r.date_command,
@@ -769,38 +830,21 @@ namespace Ugoria.URBD.WebControl.Models
                       Status = r.ComponentReportStatus.ReportStatus.name,
                       Message = r.message,
                       User = r.User.user_name,
-                      LaunchList = r.Launch1C.Select(l => new LaunchViewModel
-                      {
-                          LaunchId = l.launch_id,
-                          Pid = l.pid,
-                          StartDate = l.date_start
-                      }),
-                      PacketList = r.ReportPacket.Select(p => new ReportPacketViewModel
-                      {
-                          CreatedDate = p.date_created,
-                          ReportPacketId = p.rp_id,
-                          Size = p.size,
-                          Packet = new PacketViewModel
-                          {
-                              FileName = p.Packet.filename,
-                              PacketId = p.Packet.packet_id,
-                              Type = p.Packet.type
-                          }
-                      })
+                      LaunchList = r.Launch1C,
+                      PacketList = r.ReportPacket                      
                   });
             System.Diagnostics.Trace.WriteLine(((ObjectQuery)query).ToTraceString());
-            IEnumerable<ReportViewModel> q = query.Select(new Func<ReportViewModel, ReportViewModel>(r => r));
-            return q;
+            //IEnumerable<ReportViewModel> q = query.Select(new Func<ReportViewModel, ReportViewModel>(r => r));
+            return query.ToList();
         }
 
-        public IEnumerable<ReportViewModel> GetExtDirectoriesReportsByBaseId(int baseId, DateTime startDate, DateTime endDate)
+        public IEnumerable<ExtDirectoryReportView> GetExtDirectoriesReportsByBaseId(int baseId, DateTime startDate, DateTime endDate)
         {
-            string componentName = SystemComponent.ExtDirectories.ToString();
-            var query = dataContext.Report.Include("Launch1C").Include("ReportPacket.Packet")
-                .Where(r => r.ComponentReportStatus.Component.name.Equals(componentName) && r.base_id == baseId && r.date_command >= EntityFunctions.TruncateTime(startDate) && EntityFunctions.TruncateTime(EntityFunctions.AddDays(endDate, 1)) >= r.date_command)
+            var query = dataContext.Report.Include(r=>r.Launch1C).Include("ReportPacket.Packet")
+                .Where(r => r.ComponentReportStatus.Component.name.Equals("ExtDirectories") && r.base_id == baseId && r.date_command >= EntityFunctions.TruncateTime(startDate) && EntityFunctions.TruncateTime(EntityFunctions.AddDays(endDate, 1)) >= r.date_command)
                 .OrderByDescending(r => r.date_command)
-                .Select<Report, ReportViewModel>(r =>
-                    new ReportViewModel
+                .Select<Report, ExtDirectoryReportView>(r =>
+                    new ExtDirectoryReportView
                     {
                         ReportId = r.report_id,
                         CommandDate = r.date_command,
@@ -808,33 +852,44 @@ namespace Ugoria.URBD.WebControl.Models
                         Status = r.ComponentReportStatus.ReportStatus.name,
                         Message = r.message,
                         User = r.User.user_name,
-                        Files = r.ExtDirectoryFile.Select(x => new ExtDirectoriesFileViewModel
-                        {
-                            FileId = x.file_id,
-                            Filename = x.filename,
-                            Size = x.size,
-                            DateCopied = x.date_copied.Value
-                        })
+                        Files = r.ExtDirectoryFile
                     });
             System.Diagnostics.Trace.WriteLine(((ObjectQuery)query).ToTraceString());
-            IEnumerable<ReportViewModel> q = query.Select(new Func<ReportViewModel, ReportViewModel>(r => r));
-            return q;
+            return query.ToList();
+        }
+
+        public IEnumerable<MlgCollectReportView> GetMlgCollectReportsByBaseId(int baseId, DateTime startDate, DateTime endDate)
+        {
+            var query = dataContext.Report.Include(r=>r.Launch1C)
+                .Where(r => r.ComponentReportStatus.Component.name.Equals("MlgCollect") && r.base_id == baseId && r.date_command >= EntityFunctions.TruncateTime(startDate) && EntityFunctions.TruncateTime(EntityFunctions.AddDays(endDate, 1)) >= r.date_command)
+                .OrderByDescending(r => r.date_command)
+                .Select<Report, MlgCollectReportView>(r =>
+                    new MlgCollectReportView
+                    {
+                        ReportId = r.report_id,
+                        CommandDate = r.date_command,
+                        CompleteDate = r.date_complete,
+                        Status = r.ComponentReportStatus.ReportStatus.name,
+                        Message = r.message,
+                        User = r.User.user_name,
+                        DateMlgDate = r.ReportLog.Max(l => l.date_message)
+                    });
+            System.Diagnostics.Trace.WriteLine(((ObjectQuery)query).ToTraceString());
+            return query.ToList();
         }
 
         public IEnumerable<ComponentReportStatusView> GetComponentReportStatusByUserId(int userId, int baseId)
         {
-            return dataContext.ComponentReportStatus.Include("ReportNotification.UserBasesPermission").OrderBy(c => c.component_id).Select(c => new ComponentReportStatusView
-            {
-                Component = c.Component,
-                ComponentReportStatusId = c.component_status_id,
-                ReportStatus = c.ReportStatus,
-                Notification = dataContext.ReportNotification.Where(rn => rn.component_status_id == c.component_status_id && rn.UserBasesPermission.user_id == userId && rn.UserBasesPermission.base_id == baseId).FirstOrDefault()
-            });
+            var query = dataContext.ComponentReportStatus
+                .GroupJoin(dataContext.ReportNotification.Where(rn => rn.UserBasesPermission.user_id == userId && rn.UserBasesPermission.base_id == baseId), crs => crs.component_status_id, rn => rn.component_status_id, (crs, rn) => new { crs, rn })
+                .SelectMany(x => x.rn.DefaultIfEmpty(), (crs, rn) => new ComponentReportStatusView { Component = crs.crs.Component, ComponentReportStatusId = crs.crs.component_status_id, Notification = crs.rn.FirstOrDefault(), ReportStatus = crs.crs.ReportStatus });
+            System.Diagnostics.Trace.WriteLine(((ObjectQuery)query).ToTraceString());
+            return query;
         }
 
-        public IEnumerable<ExtDirectoryView> GetExtDirectories()
+        public IEnumerable<IExtDirectory> GetExtDirectories()
         {
-            return dataContext.ExtDirectory.Select(d => new ExtDirectoryView { DirId = d.dir_id, LocalPath = d.local_path, FtpPath = d.ftp_path });
+            return dataContext.ExtDirectory.Select(d => d).ToList();
         }
 
         IEnumerable<UserBasesPermission> ubpCache;
@@ -842,10 +897,11 @@ namespace Ugoria.URBD.WebControl.Models
         public void SavePermission(PermissionViewModel permissionVM, int baseId)
         {
             if (ubpCache == null)
-                ubpCache = GetBasePermissions(baseId).ToList();
+                ubpCache = GetBasePermissions(baseId);
             if (permissionVM.PermissionId == 0)
             {
-                dataContext.UserBasesPermission.AddObject(new UserBasesPermission { base_id = baseId, user_id = permissionVM.UserId, allow_configure = permissionVM.AllowConfigure });
+                if (permissionVM.UserId != 0)
+                    dataContext.UserBasesPermission.AddObject(new UserBasesPermission { base_id = baseId, user_id = permissionVM.UserId, allow_configure = permissionVM.AllowConfigure });
                 return;
             }
             UserBasesPermission permission = ubpCache.Where(p => p.permission_id == permissionVM.PermissionId).SingleOrDefault();
@@ -860,47 +916,49 @@ namespace Ugoria.URBD.WebControl.Models
             }
         }
 
-        public void SaveNotification(IEnumerable<ReportNotificationViewModel> notifies, int baseId, int userId)
+        private UserBasesPermission cacheNotification;
+        public void SaveNotification(ReportNotificationViewModel notify, int baseId, int userId)
         {
-            UserBasesPermission basePermission = dataContext.UserBasesPermission.Include("ReportNotification").Where(ubp => ubp.user_id == userId && ubp.base_id == baseId).SingleOrDefault();
-            if (basePermission == null)
+            // условие: если кеш пуст либо в кеше хранятся записи оповещения другого разрешения (baseId и userId различаются), то кеш надо обновить
+            if (cacheNotification == null || cacheNotification.base_id != baseId || cacheNotification.user_id != userId)
             {
-                basePermission = new UserBasesPermission { base_id = baseId, user_id = userId, allow_configure = true };
-                dataContext.UserBasesPermission.AddObject(basePermission);
+                //cacheNotification = dataContext.ReportNotification.Where(rn => rn.UserBasesPermission.user_id == userId && rn.UserBasesPermission.base_id == baseId).ToList();
+                cacheNotification = dataContext.UserBasesPermission.Include(ubp => ubp.ReportNotification).Where(ubp => ubp.base_id == baseId && ubp.user_id == userId).SingleOrDefault();
             }
-
-            foreach (ReportNotificationViewModel rnVm in notifies)
+            // если отсутствует разрешение на базу, то нотификация редактируется админом, т.к. этот код не может быть вызван в контексте пользователя с отсутствующим разрешением
+            if (cacheNotification == null)
             {
-                if (rnVm.NotificationId == 0)
-                {
-                    if (!rnVm.OnMail && !rnVm.OnPhone)
-                        continue;
-                    basePermission.ReportNotification.Add(new ReportNotification
-                    {
-                        component_status_id = rnVm.ComponentStatusId,
-                        on_mail = rnVm.OnMail,
-                        on_phone = rnVm.OnPhone
-                    });
-                    continue;
-                }
-                ReportNotification reportNotification = basePermission.ReportNotification.Where(rn => rn.notification_id == rnVm.NotificationId).SingleOrDefault();
-                if (reportNotification == null)
-                    continue;
-                reportNotification.on_mail = rnVm.OnMail;
-                reportNotification.on_phone = rnVm.OnPhone;
+                cacheNotification = new UserBasesPermission { base_id = baseId, user_id = userId, allow_configure = true, ReportNotification = new EntityCollection<ReportNotification>() };
+                dataContext.UserBasesPermission.AddObject(cacheNotification);
             }
-
-            dataContext.SaveChanges();
+            // добавляем новое оповещение
+            if (notify.NotificationId == 0)
+            {
+                if (notify.OnMail || notify.OnPhone)
+                    dataContext.ReportNotification.AddObject(new ReportNotification { UserBasesPermission = cacheNotification, on_mail = notify.OnMail, on_phone = notify.OnPhone, component_status_id = notify.ComponentStatusId });
+                return;
+            }
+            // поиск в кеше
+            ReportNotification reportNotification = cacheNotification.ReportNotification.Where(rn => rn.notification_id == notify.NotificationId).SingleOrDefault();
+            if (reportNotification == null)
+                return;
+            else if (!notify.OnPhone && !notify.OnMail)
+                dataContext.ReportNotification.DeleteObject(reportNotification);
+            else
+            {
+                reportNotification.on_mail = notify.OnMail;
+                reportNotification.on_phone = notify.OnPhone;
+            }
         }
 
         public IEnumerable<ServiceViewModel> GetServices()
         {
-            return dataContext.Service.OrderBy(s => s.service_name).Select(s => new ServiceViewModel { Address = s.address, ServiceId = s.service_id, Name=s.service_name, Path1C=s.C1c_path});
+            return dataContext.Service.OrderBy(s => s.service_name).Select(s => new ServiceViewModel { Address = s.address, ServiceId = s.service_id, Name = s.service_name, Path1C = s.C1c_path }).ToList();
         }
 
         public IEnumerable<UserBasesPermission> GetBasePermissions(int baseId)
         {
-            return dataContext.UserBasesPermission.Include("User").Where(p => p.base_id == baseId).Select(p => p);
+            return dataContext.UserBasesPermission.Include(ubp => ubp.User).Where(p => p.base_id == baseId && p.user_id!=1).Select(p => p).ToList();
         }
     }
 
@@ -910,12 +968,5 @@ namespace Ugoria.URBD.WebControl.Models
         public ReportStatus ReportStatus { get; set; }
         public Component Component { get; set; }
         public ReportNotification Notification { get; set; }
-    }
-
-    public class ExtDirectoryView
-    {
-        public int DirId { get; set; }
-        public string LocalPath { get; set; }
-        public string FtpPath { get; set; }
     }
 }

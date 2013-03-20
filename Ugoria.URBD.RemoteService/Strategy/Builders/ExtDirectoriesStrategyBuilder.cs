@@ -57,17 +57,17 @@ namespace Ugoria.URBD.RemoteService.Strategy.ExtDirectory
             LogHelper.Write2Log("Проверка наличия расширенных директорий", LogLevel.Information);
 
             NetworkConnection netConn = null;
+            string username = (string)configuration.configuration["main.username"];
+            string password = (string)configuration.configuration["main.password"];
             foreach (KeyValuePair<int, Hashtable> basePair in configuration.bases)
             {
                 string basePath = (string)basePair.Value["base.1c_database"];
                 string baseName = (string)basePair.Value["base.base_name"];
-                string username = (string)basePair.Value["base.1c_username"];
-                string password = (string)basePair.Value["base.1c_password"];
                 Uri basePathUri = new Uri(basePath);
                 try
                 {
                     if (basePathUri.IsUnc)
-                        netConn = new NetworkConnection(basePathUri.OriginalString, new NetworkCredential(username, password));
+                        netConn = new NetworkConnection(basePath, new NetworkCredential(username, password));
                     foreach (KeyValuePair<string, string> dirPair in (Dictionary<string, string>)basePair.Value["base.extdir_table"])
                     {
                         DirectoryInfo extFormsDirInfo = new DirectoryInfo(string.Format(@"{0}\{1}", basePath, dirPair.Value));
@@ -110,41 +110,40 @@ namespace Ugoria.URBD.RemoteService.Strategy.ExtDirectory
                 dateComplete = DateTime.Now,
                 reportGuid = strategy.Context.Command.reportGuid,
                 files = new List<ExtDirectoriesFile>(),
-                status = ExtDirectoriesReportStatus.Unknown
+                status = ReportStatus.Unknown
             };
-
+            List<ExtDirectoriesFile> notCopiedFiles = new List<ExtDirectoriesFile>();
+            foreach (ExtDirectoriesFile efFile in strategy.Context.Files)
+            {
+                if (efFile.fileSize == 0 && efFile.createdDate == DateTime.MinValue)
+                    notCopiedFiles.Add(efFile);
+                else
+                    report.files.Add(efFile);
+            }
             if (strategy.IsInterrupt)
             {
-                report.status = ExtDirectoriesReportStatus.Interrupt;
+                report.status = ReportStatus.Interrupt;
                 report.message = "Процесс прерван вручную. Добавлено файлов: " + strategy.Context.Files.Count(f => f.fileSize > 0 && f.createdDate != DateTime.MinValue);
             }
             else
-            {
-                List<ExtDirectoriesFile> notCopiedFiles = new List<ExtDirectoriesFile>();
-                foreach (ExtDirectoriesFile efFile in strategy.Context.Files)
-                {
-                    if (efFile.fileSize == 0 && efFile.createdDate == DateTime.MinValue)
-                        notCopiedFiles.Add(efFile);
-                    else
-                        report.files.Add(efFile);
-                }
+            {                
                 if (!strategy.IsComplete)
                 {
-                    report.status = ExtDirectoriesReportStatus.Fail;
+                    report.status = ReportStatus.Fail;
                 }
                 else if (notCopiedFiles.Count > 0)
                 {
-                    report.status = ExtDirectoriesReportStatus.Warning;
+                    report.status = ReportStatus.Warning;
                     report.message = String.Format("Добавлено файлов: {0}. Не удалось скопировать следующие файлы:\r\n{1}", report.files.Count, string.Join(",\r\n", notCopiedFiles.Select(f => f.fileName)));
                 }
                 else if (report.files.Count > 0)
                 {
-                    report.status = ExtDirectoriesReportStatus.Success;
+                    report.status = ReportStatus.Success;
                     report.message = "Обновление расширенных директорий прошло успешно";
                 }
                 else
                 {
-                    report.status = ExtDirectoriesReportStatus.Success;
+                    report.status = ReportStatus.Success;
                     report.message = "Обновления отсутствуют";
                 }
             }

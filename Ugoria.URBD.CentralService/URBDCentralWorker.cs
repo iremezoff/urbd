@@ -11,7 +11,6 @@ using System.ServiceModel.Description;
 using Ugoria.URBD.Shared.Configuration;
 using Ugoria.URBD.CentralService.DataProvider;
 using Ugoria.URBD.CentralService.Logging;
-using Ugoria.URBD.Shared.DataProvider;
 using Ugoria.URBD.Contracts.Data.Commands;
 using System.Reflection;
 using System.Collections.Generic;
@@ -88,6 +87,7 @@ namespace Ugoria.URBD.CentralService
 
                         ExchangeScheduleConfigure(baseRow);
                         ExtFormsScheduleConfigure(baseRow);
+                        MlgCollectScheduleConfigure(baseRow);
                     }
                 }
             }
@@ -97,25 +97,31 @@ namespace Ugoria.URBD.CentralService
             }
         }
 
+        public void MlgCollectScheduleConfigure(DataRow baseRow)
+        {
+            foreach (DataRow schedExchRow in baseRow.GetChildRows("BaseScheduleMlgCollect"))
+            {
+                ExecuteCommand command = new ExchangeCommand
+                {
+                    baseId = (int)schedExchRow["base_id"],
+                    baseName = (string)baseRow["base_name"]
+                };
+                schedulerManager.AddScheduleLaunch(remoteServiceManager.SendCommand,
+                    command,
+                    (string)schedExchRow["time"],
+                    remoteServiceManager.CheckProcess);
+            }
+        }
+
         public void ExchangeScheduleConfigure(DataRow baseRow)
         {
-            ExecuteCommand command = null;
-            int scheduleID = 0;
             foreach (DataRow schedExchRow in baseRow.GetChildRows("BaseScheduleExchange"))
-            {
-                // добавление принадлежности команды к пулу, если в выборке ранее команда уже была
-                if ((int)schedExchRow["schedule_id"] == scheduleID)
-                {
-                    command.pools.Add((int)schedExchRow["pool_id"]);
-                    continue;
-                }
-                scheduleID = (int)schedExchRow["schedule_id"];
-                command = new ExchangeCommand
+            {                
+                ExecuteCommand command = new ExchangeCommand
                 {
                     baseId = (int)schedExchRow["base_id"],
                     baseName = (string)baseRow["base_name"],
-                    modeType = "N".Equals((string)schedExchRow["mode"]) ? ModeType.Normal : ModeType.Passive,
-                    pools = new List<int>() { (int)schedExchRow["pool_id"] }
+                    modeType = "N".Equals((string)schedExchRow["mode"]) ? ModeType.Normal : ModeType.Passive
                 };
                 schedulerManager.AddScheduleLaunch(remoteServiceManager.SendCommand,
                     command,
@@ -126,21 +132,12 @@ namespace Ugoria.URBD.CentralService
 
         public void ExtFormsScheduleConfigure(DataRow baseRow)
         {
-            ExecuteCommand command = null;
-            int scheduleID = 0;
             foreach (DataRow schedEFRow in baseRow.GetChildRows("BaseScheduleExtForms"))
-            {
-                if ((int)schedEFRow["schedule_id"] == scheduleID)
-                {
-                    command.pools.Add((int)schedEFRow["pool_id"]);
-                    continue;
-                }
-                scheduleID = (int)schedEFRow["schedule_id"];
-                command = new ExtDirectoriesCommand
+            {               
+                ExecuteCommand command = new ExtDirectoriesCommand
                 {
                     baseId = (int)schedEFRow["base_id"],
-                    baseName = (string)baseRow["base_name"],
-                    pools = new List<int>() { (int)schedEFRow["pool_id"] }
+                    baseName = (string)baseRow["base_name"]                    
                 };
                 schedulerManager.AddScheduleLaunch(remoteServiceManager.SendCommand,
                     command,

@@ -23,7 +23,7 @@ namespace Ugoria.URBD.WebControl.Controllers
         {
             return RedirectToAction("Index", "Main", new { sort = TableGrouper.service });
         }
-        
+
         public ActionResult Edit()
         {
             IServiceRepository serviceRepo = new ServiceRepository(new URBD2Entities());
@@ -81,46 +81,23 @@ namespace Ugoria.URBD.WebControl.Controllers
             return Edit();
         }
 
-        public ActionResult Logs()
+        public ActionResult Logs(DateTime? dateStart, DateTime? dateEnd)
         {
-            URBD2Entities dataContext = new URBD2Entities();
-            IServiceRepository serviceRepo = new ServiceRepository(dataContext);
+            IServiceRepository serviceRepo = new ServiceRepository(new URBD2Entities());
 
             int serviceId = int.Parse(RouteData.Values["id"].ToString());
             ServiceViewModel service = serviceRepo.GetServiceById(serviceId);
             if (service == null)
                 return RedirectToAction("Index", "Main");
 
-            ViewData["service"] = service;
             IUser user = SessionStore.GetCurrentUser();
+            var logs = serviceRepo.GetServiceLogs(serviceId, dateStart.Value.Date, dateEnd.Value.Date);
+            ViewData["service"] = service;            
             ViewData["bases"] = serviceRepo.GetBasesByServiceId(serviceId, user.UserId, user.IsAdmin);
-            ViewData["logs"] = new List<ServiceLogViewModel>();
-            return View();
-        }
-
-
-        public JsonResult LogData(string dateStart, string dateEnd)
-        {
-            DateTime startDate = DateTime.MinValue;
-            DateTime endDate = DateTime.MinValue;
-
-            DateTime.TryParseExact(dateStart, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out startDate);
-            DateTime.TryParseExact(dateEnd, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out endDate);
-
-            int serviceId = int.Parse(RouteData.Values["id"].ToString());
-            URBD2Entities dataContext = new URBD2Entities();
-            IServiceRepository serviceRepo = new ServiceRepository(dataContext);
-            IEnumerable<ServiceLogViewModel> reports = serviceRepo.GetServiceLogs(serviceId, startDate == DateTime.MinValue ? DateTime.Now : startDate, endDate == DateTime.MinValue ? DateTime.Now : endDate);
-            int count = reports.Count();
-
-            return Json(new
-            {
-                aaData = reports.Select(l => new string[] { 
-                    l.Date.Value.ToString("dd.MM.yyyy HH:mm:ss"),
-                    l.Status, 
-                    l.Text                   
-                })
-            }, JsonRequestBehavior.AllowGet);
+            ViewData["dateStart"] = dateStart.Value.Date;
+            ViewData["dateEnd"] = dateEnd.Value.Date;
+            
+            return View(logs);
         }
     }
 }

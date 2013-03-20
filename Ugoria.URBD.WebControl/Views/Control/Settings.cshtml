@@ -1,9 +1,5 @@
 ﻿@using MvcContrib.UI.Grid
 @using Ugoria.URBD.WebControl.Models
-@{
-    Layout = "~/Views/Shared/MainLayout.cshtml";
-    ViewBag.Title = "Редактирование глобальных настроек сервиса УРБД";
-}
 <script language="javascript" type="text/javascript">
     $(document).ready(function () {
         $(".value").css("cursor", "pointer").each(function (el) {
@@ -15,7 +11,8 @@
                     return (value);
                 }, {
                     tooltip: 'Нажмите для редактирования',
-                    placeholder: 'Нажмите для ввода'
+                    placeholder: 'Нажмите для ввода',
+                    width: 230
                 }).click(function () {
                     $(":text", this).keydown(function (event) {
                         // Allow: backspace, delete, tab, escape, and enter
@@ -52,28 +49,29 @@
                     return (value);
                 }, {
                     tooltip: 'Нажмите для редактирования',
-                    placeholder: 'Нажмите для ввода'
+                    placeholder: 'Нажмите для ввода',
+                    width: 230
                 });
             }
         });
-
         $(":submit").button();
     });
 </script>
-<h2>
-    Общие настройки</h2>
+        <h4>
+                Общие настройки</h4>
 <div style="width: 70%">
     @if (ViewData["success"] != null && (bool)ViewData["success"])
     {
-        @Html.Partial("InformationBlock", new { Text = "Настройки успешно сохранены" })
+        @Html.Partial("InformationBlock", "Настройки успешно сохранены")
     }
 </div>
-@Html.ValidationMessage("ReconfigureFail")
+
+        @Html.ValidationMessage("ReconfigureFail")
 @{Html.BeginForm();}
 <table class="configuration" style="width: 70%">
     <thead>
         <tr>
-            <th class="ui-state-default">
+            <th class="ui-state-default" style="text-align: right">
                 Параметр
             </th>
             <th class="ui-state-default">
@@ -104,3 +102,5 @@
 </table>
 <input type="submit" value="Сохранить" />
 @{Html.EndForm();}
+
+

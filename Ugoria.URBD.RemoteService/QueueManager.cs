@@ -17,8 +17,9 @@ namespace Ugoria.URBD.RemoteService
     class QueueExecuteManager
     {
         private RemoteConfigurationManager configurationManager;
-        private Dictionary<ExecuteCommand, ReportAsyncCallback> queueTask;
+        private List<ExecuteCommand> queueTasks;
         private SynchronizedCollection<TaskExecute> executedProcess;
+        public event ReportAsyncCallback TaskExecuted;
 
         public int ExecutedProcessCount
         {
@@ -48,7 +49,7 @@ namespace Ugoria.URBD.RemoteService
         public QueueExecuteManager(RemoteConfigurationManager cfgMngr = null)
         {
             this.configurationManager = cfgMngr;
-            this.queueTask = new Dictionary<ExecuteCommand, ReportAsyncCallback>();
+            this.queueTasks = new List<ExecuteCommand>();
             this.executedProcess = new SynchronizedCollection<TaskExecute>();
             Init();
         }
@@ -67,9 +68,9 @@ namespace Ugoria.URBD.RemoteService
 
         public bool IsFromQueue(Guid reportGuid)
         {
-            lock (((ICollection)queueTask).SyncRoot)
+            lock (queueTasks)
             {
-                return queueTask.Any(t => t.Key.reportGuid == reportGuid);
+                return queueTasks.Any(t => t.reportGuid == reportGuid);
             }
         }
 
@@ -77,10 +78,10 @@ namespace Ugoria.URBD.RemoteService
         {
             ICommandStrategy strategy = BuildCommandStrategy(interruptCommand);
 
-            lock (((ICollection)queueTask).SyncRoot)
+            lock (queueTasks)
             {
                 LogHelper.Write2Log(String.Format("Поиск в очереди задачи для ИБ ", interruptCommand.reportGuid, interruptCommand.baseName), LogLevel.Information);
-                ExecuteCommand command = queueTask.FirstOrDefault(t => t.Key.reportGuid == interruptCommand.reportGuid).Key;
+                ExecuteCommand command = queueTasks.FirstOrDefault(t => t.reportGuid == interruptCommand.reportGuid);
                 if (command != null)
                 {
                     LogHelper.Write2Log(String.Format("Найдена задача {0} для ИБ {1}. Попытка удаления", interruptCommand.reportGuid, interruptCommand.baseName), LogLevel.Information);
@@ -118,10 +119,10 @@ namespace Ugoria.URBD.RemoteService
             if (configurationManager == null) // задачи будут копиться до тех пор, пока не появится конфигурация
                 return;
             // убивать процессы больше суток <--параметр из БД
-            lock (((ICollection)queueTask).SyncRoot)
+            lock (queueTasks)
             {
                 LogHelper.Write2Log("Проверка наличия задач в очереди", LogLevel.Information);
-                if (queueTask.Count == 0)
+                if (queueTasks.Count == 0)
                     return; // нет задач - нет запусков
                 LogHelper.Write2Log("Задачи есть", LogLevel.Information);
                 IConfiguration mainCfg = null;
@@ -135,32 +136,31 @@ namespace Ugoria.URBD.RemoteService
                 {
                     LogHelper.Write2Log("Поиск свободной очереди", LogLevel.Information);
                     // проверка, есть ли свободные потоки в каждом из пулов. Если занять хотя бы один пул, задача не будет выполнена
-                    KeyValuePair<ExecuteCommand, ReportAsyncCallback> taskKey = queueTask.FirstOrDefault(
-                        t => t.Key.pools.Max( // прогон по ожидающим заданиям
+                    ExecuteCommand waitingTask = queueTasks.FirstOrDefault(
+                        t => t.pools.Max( // прогон по ожидающим заданиям
                             p => executedProcess.Count( // прогон по выполняющимся заданиям, занимающим определенные пулы
                                 e => e.Command.pools.Any(p2 => p2 == p))) < maxThreads // превышение хотя бы по одному пулу не дает возможность задаче выполниться
                         );
                     // баз не найдено
-                    if (taskKey.Key == null)
+                    if (waitingTask == null)
                         return;
-                    LogHelper.Write2Log("Есть свободные потоки в пулах для ИБ " + taskKey.Key.baseName, LogLevel.Information);
-                    queueTask.Remove(taskKey.Key);
-                    ExecuteCommand command = taskKey.Key;
-                    ReportAsyncCallback callback = taskKey.Value;
+                    LogHelper.Write2Log("Есть свободные потоки в пулах для ИБ " + waitingTask.baseName, LogLevel.Information);
+                    queueTasks.Remove(waitingTask);
+                    ExecuteCommand command = waitingTask;
 
                     ICommandStrategy commandStrategy = BuildCommandStrategy(command);
 
                     TaskExecute taskExecute = new TaskExecute(command, commandStrategy);
                     executedProcess.Add(taskExecute);
 
-                    Action<TaskExecute, ReportAsyncCallback> taskLaunch = TaskLaunch;
-                    taskLaunch.BeginInvoke(taskExecute, callback, r => taskLaunch.EndInvoke(r), null);
+                    Action<TaskExecute> taskLaunch = TaskLaunch;
+                    taskLaunch.BeginInvoke(taskExecute, r => taskLaunch.EndInvoke(r), null);
                 }
             }
         }
 
         // Wintellect.Threading AsyncEnumerator, не плодим методы обратного вызова
-        private void TaskLaunch(TaskExecute task, ReportAsyncCallback callback)
+        private void TaskLaunch(TaskExecute task)
         {
             // Запуск процесса
             LogHelper.Write2Log(String.Format("Запуск процесса {0}. ИБ: {1}. Время команды: {2:HH:mm:ss dd.MM.yyyy}. Тип: {3}", task.Command.reportGuid, task.Command.baseName, task.Command.commandDate, task.Command, task.Command.GetType()), LogLevel.Information);
@@ -175,7 +175,8 @@ namespace Ugoria.URBD.RemoteService
                 while (!launchComplete && !strategy.IsInterrupt)
                 {
                     strategy.StartLaunch();
-                    callback(messageHandler.GetLaunchReport(task.Command, task.CommandStrategy));
+                    if(TaskExecuted!=null)
+                    TaskExecuted(messageHandler.GetLaunchReport(task.Command, task.CommandStrategy));
 
                     launchComplete = strategy.EndLaunch();
                 }
@@ -192,7 +193,8 @@ namespace Ugoria.URBD.RemoteService
             }
             OperationReport report = messageHandler.GetOperationReport(task.Command, strategy);
             report.message = string.Join(". ", new string[] { report.message, message }.Where(s => !string.IsNullOrEmpty(s)));
-            callback(report);
+            if(TaskExecuted!=null)
+            TaskExecuted(report);
 
             LogHelper.Write2Log(String.Format("Процесс {0} для ИБ {1} завершен", task.Command.reportGuid, task.Command.baseName), LogLevel.Information);
 
@@ -214,11 +216,11 @@ namespace Ugoria.URBD.RemoteService
             return commandStrategy;
         }
 
-        public void AddOperation(ExecuteCommand command, ReportAsyncCallback reportCallback)
+        public void AddOperation(ExecuteCommand command)
         {
-            lock (((ICollection)queueTask).SyncRoot)
+            lock (queueTasks)
             {
-                queueTask.Add(command, reportCallback);
+                queueTasks.Add(command);
             }
             ChangeQueue();
         }

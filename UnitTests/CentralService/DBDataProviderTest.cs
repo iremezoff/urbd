@@ -197,7 +197,7 @@ namespace UnitTests
         public void GetPreparedCommandTest()
         {
             // Negative test
-            DataTable actual = target.GetPreparedCommand(baseId, "Exchange");
+            DataTable actual = target.GetPreparedCommand(baseId, "Exchange").Tables[0];
             Assert.IsTrue(actual.Rows.Count > 0);
             Assert.AreEqual(exchGuid, actual.Rows[0]["guid"]);
             Assert.AreEqual(DBNull.Value, actual.Rows[0]["date_complete"]);
@@ -212,7 +212,7 @@ namespace UnitTests
             DataRow actual;
 
             // Exchange
-            actual = target.GetLaunchReport(baseId, "Exchange");
+            actual = target.GetLaunchReport(baseId, "Exchange").Tables[0].Rows[0];
             Assert.IsNotNull(actual);
             Assert.AreEqual(exchGuid, actual["report_guid"]);
             Assert.AreEqual(lGuid1, actual["launch_guid"]);
@@ -220,7 +220,7 @@ namespace UnitTests
             Assert.IsTrue(((DateTime)actual["date_start"] - launchDate1).TotalSeconds < 1);
 
             // ExtDirectories
-            actual = target.GetLaunchReport(baseId, "ExtDirectories");
+            actual = target.GetLaunchReport(baseId, "ExtDirectories").Tables[0].Rows[0];
             Assert.IsNotNull(actual);
             Assert.AreEqual(extGuid, actual["report_guid"]);
             Assert.AreEqual(lGuid2, actual["launch_guid"]);
@@ -322,7 +322,7 @@ namespace UnitTests
 
             Guid guid = "Exchange".Equals(Convert.ToString(testContextInstance.DataRow["Component"])) ? exchGuid : extGuid;
 
-            target.SetReport(guid, completeDate, status, message, mdRelease, releaseDate);
+            target.SetReport(guid, completeDate, status, message);//, mdRelease, releaseDate);
 
             using (SqlConnection conn = target.Connection)
             {

@@ -27,7 +27,7 @@ namespace Ugoria.URBD.RemoteService
         private ChannelFactory<ICentralService> channelFactory;
         private DateTime configurationChangeDate = DateTime.MinValue;
         private volatile bool isUpdateRequire = false;
-        private List<Guid> interruptedTask = new List<Guid>();
+        private List<Guid> interruptedTask = new List<Guid>(); // накопление задач, прерванных из-за необходимости обновления сервиса
         private volatile bool isFailedConfig = false;
 
         public URBDRemoteWorker()
@@ -43,6 +43,7 @@ namespace Ugoria.URBD.RemoteService
 
             remoteConfigurationManager = new RemoteConfigurationManager();
             queueManager = new QueueExecuteManager(remoteConfigurationManager);
+            queueManager.TaskExecuted += OperationCallback;
 
             service = new Ugoria.URBD.RemoteService.Services.RemoteService();
             service.CommandSended += ServiceCommandSender;
@@ -82,7 +83,7 @@ namespace Ugoria.URBD.RemoteService
             }
 
             LogHelper.Write2Log(String.Format("Постановка задачи в очередь ИБ {0}, время команды: {1:HH:mm:ss dd.MM.yyyy}", args.Command.baseName, args.Command.commandDate), LogLevel.Information);
-            queueManager.AddOperation(args.Command, OperationCallback);
+            queueManager.AddOperation(args.Command);
         }
 
         public void ServiceInterrupt(IRemoteService service, CommandEventArgs e)

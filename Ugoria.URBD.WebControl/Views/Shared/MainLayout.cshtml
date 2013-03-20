@@ -3,13 +3,14 @@
 @{
     IUser user = SessionStore.GetCurrentUser();
     bool isAdmin = user.IsAdmin;
+    string skin =(Request.Cookies["skin"]??new HttpCookie("skin", "default")).Value;
 }
 <!DOCTYPE html>
 <html>
 <head>
     <title>@ViewBag.Title</title>
-    <link href="../../Content/Site.css" rel="stylesheet" type="text/css" />
-    <link href="../../Content/jquery-ui-1.10.0.custom.css" rel="stylesheet" type="text/css" />
+    <link href="@Url.Content("~/Content/main.css")" rel="stylesheet" type="text/css"/>
+    <link href="@Url.Content(string.Format("~/Content/themes/{0}/jquery-ui.css", skin))" rel="stylesheet" type="text/css" id="skin" />
     <script src="@Url.Content("~/Scripts/jquery-1.9.1.min.js")" type="text/javascript"></script>
     <script src="@Url.Content("~/Scripts/jquery-migrate-1.1.0.min.js")" type="text/javascript"></script>
     <script src="@Url.Content("~/Scripts/jquery-ui-1.10.0.min.js")" type="text/javascript"></script>
@@ -21,6 +22,21 @@
     <script src="@Url.Content("~/Scripts/jquery.timeentry.min.js")" type="text/javascript"></script>
     <script src="@Url.Content("~/Scripts/jquery-ui-i18n.min.js")" type="text/javascript"></script>
     <script src="@Url.Content("~/Scripts/jquery.jeditable.mini.js")" type="text/javascript"></script>
+    <script language="javascript" type="text/javascript">
+        $( document ).ready( function ()
+        {            
+            $( "#gear" ).button( { icons: {
+                primary: "ui-icon-gear"
+            },
+                text: false
+            } );
+            $("select#skin").change(function() {
+            console.log($(this).val());
+                $.cookie("skin", $(this).val(), {path: '/'});
+                location.reload();            
+            });
+        } );
+    </script>
 </head>
 <body>
     <div class="page">
@@ -30,8 +46,9 @@
         </div>
         <div class="menu">
             Пользователь: <b>@user.UserName</b>
-            @if (isAdmin == true) { 
-                @Html.ActionLink("Общие настройки", "Edit", "Settings")
+            @if (isAdmin == true)
+            { 
+                @Html.ActionLink("Общие настройки", "Index", "Control", new { }, new { id = "gear" })
             }
         </div>
         <div id="main">
@@ -41,6 +58,6 @@
     </div>
     <div class="footer">
         Департамент Эксплуатации Дирекции Информационных Технологий ОАО «ГСК «Югория», 2012-@DateTime.Now.Year<br />
-        <a href="mailto:remezovis@ugsk.ru">Поддержка</a></div>
+        <a href="mailto:remezovis@ugsk.ru">Поддержка</a> Скин: @Html.DropDownList("skin", ((IEnumerable<string>)AppState["skins"]).Select(s => new SelectListItem { Value = s, Text = s, Selected = skin.Equals(s) }))</div>
 </body>
 </html>

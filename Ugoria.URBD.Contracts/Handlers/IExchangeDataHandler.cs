@@ -11,6 +11,6 @@ namespace Ugoria.URBD.Contracts.Handlers
     public interface IExchangeDataHandler : IDataHandler
     {
         ExchangeCommand GetPreparedExchangeCommand(ExchangeCommand command);
-        ReportStatus SetReport(ExchangeReport report);
+        void SetReport(ExchangeReport report);
     }
 }

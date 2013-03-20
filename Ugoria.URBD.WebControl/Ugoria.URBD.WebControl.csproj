@@ -98,8 +98,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\BaseController.cs" />
-    <Compile Include="Controllers\SettingsController.cs" />
+    <Compile Include="Controllers\ControlController.cs" />
     <Compile Include="Controllers\UsersController.cs" />
+    <Compile Include="Filters\ComponentAttribute.cs" />
     <Compile Include="Filters\HandleErrorLoggerAttribute.cs" />
     <Compile Include="Exceptions\AccessPermissionDenied.cs" />
     <Compile Include="Controllers\MainController.cs" />
@@ -117,6 +118,7 @@
     <Compile Include="Helpers\ReportRenderer.cs" />
     <Compile Include="Helpers\UserHelper.cs" />
     <Compile Include="Models\BaseReports.cs" />
+    <Compile Include="Models\Components.cs" />
     <Compile Include="Models\Services.cs" />
     <Compile Include="Models\Settings.cs" />
     <Compile Include="Models\UnitOfWork.cs" />
@@ -132,22 +134,23 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\images\ui-bg_diagonals-small_25_c5ddfc_40x40.png" />
-    <Content Include="Content\images\ui-bg_diagonals-thick_20_362400_40x40.png" />
-    <Content Include="Content\images\ui-bg_diagonals-thick_20_e69700_40x40.png" />
-    <Content Include="Content\images\ui-bg_diagonals-thick_20_ec3f0e_40x40.png" />
-    <Content Include="Content\images\ui-bg_diagonals-thick_22_1484e6_40x40.png" />
-    <Content Include="Content\images\ui-bg_diagonals-thick_26_2293f7_40x40.png" />
-    <Content Include="Content\images\ui-bg_flat_0_e69700_40x100.png" />
-    <Content Include="Content\images\ui-bg_flat_0_e6b900_40x100.png" />
-    <Content Include="Content\images\ui-bg_highlight-soft_100_f9f9f9_1x100.png" />
-    <Content Include="Content\images\ui-bg_inset-hard_100_eeeeee_1x100.png" />
-    <Content Include="Content\images\ui-icons_0a82eb_256x240.png" />
-    <Content Include="Content\images\ui-icons_0b54d5_256x240.png" />
-    <Content Include="Content\images\ui-icons_5fa5e3_256x240.png" />
-    <Content Include="Content\images\ui-icons_fcdd4a_256x240.png" />
-    <Content Include="Content\images\ui-icons_ffffff_256x240.png" />
-    <Content Include="Content\jquery-ui-1.10.0.custom.css" />
+    <Content Include="Content\images\ajax-loader.gif" />
+    <Content Include="Content\themes\default\images\ui-bg_diagonals-small_25_c5ddfc_40x40.png" />
+    <Content Include="Content\themes\default\images\ui-bg_diagonals-thick_20_362400_40x40.png" />
+    <Content Include="Content\themes\default\images\ui-bg_diagonals-thick_20_e69700_40x40.png" />
+    <Content Include="Content\themes\default\images\ui-bg_diagonals-thick_20_ec3f0e_40x40.png" />
+    <Content Include="Content\themes\default\images\ui-bg_diagonals-thick_22_1484e6_40x40.png" />
+    <Content Include="Content\themes\default\images\ui-bg_diagonals-thick_26_2293f7_40x40.png" />
+    <Content Include="Content\themes\default\images\ui-bg_flat_0_e69700_40x100.png" />
+    <Content Include="Content\themes\default\images\ui-bg_flat_0_e6b900_40x100.png" />
+    <Content Include="Content\themes\default\images\ui-bg_highlight-soft_100_f9f9f9_1x100.png" />
+    <Content Include="Content\themes\default\images\ui-bg_inset-hard_100_eeeeee_1x100.png" />
+    <Content Include="Content\themes\default\images\ui-icons_0a82eb_256x240.png" />
+    <Content Include="Content\themes\default\images\ui-icons_0b54d5_256x240.png" />
+    <Content Include="Content\themes\default\images\ui-icons_5fa5e3_256x240.png" />
+    <Content Include="Content\themes\default\images\ui-icons_fcdd4a_256x240.png" />
+    <Content Include="Content\themes\default\images\ui-icons_ffffff_256x240.png" />
+    <Content Include="Content\themes\default\jquery-ui.css" />
     <Content Include="Content\open-flash-chart.swf" />
     <Content Include="Content\themes\base\images\animated-overlay.gif" />
     <Content Include="Content\themes\base\images\ui-bg_flat_0_aaaaaa_40x100.png" />
@@ -211,6 +214,24 @@
     <Content Include="Content\themes\base\minified\jquery.ui.tabs.min.css" />
     <Content Include="Content\themes\base\minified\jquery.ui.theme.min.css" />
     <Content Include="Content\themes\base\minified\jquery.ui.tooltip.min.css" />
+    <Content Include="Content\themes\humanity\images\animated-overlay.gif" />
+    <Content Include="Content\themes\humanity\images\ui-bg_flat_75_aaaaaa_40x100.png" />
+    <Content Include="Content\themes\humanity\images\ui-bg_glass_100_f5f0e5_1x400.png" />
+    <Content Include="Content\themes\humanity\images\ui-bg_glass_25_cb842e_1x400.png" />
+    <Content Include="Content\themes\humanity\images\ui-bg_glass_70_ede4d4_1x400.png" />
+    <Content Include="Content\themes\humanity\images\ui-bg_highlight-hard_100_f4f0ec_1x100.png" />
+    <Content Include="Content\themes\humanity\images\ui-bg_highlight-hard_65_fee4bd_1x100.png" />
+    <Content Include="Content\themes\humanity\images\ui-bg_highlight-hard_75_f5f5b5_1x100.png" />
+    <Content Include="Content\themes\humanity\images\ui-bg_inset-soft_100_f4f0ec_1x100.png" />
+    <Content Include="Content\themes\humanity\images\ui-icons_c47a23_256x240.png" />
+    <Content Include="Content\themes\humanity\images\ui-icons_cb672b_256x240.png" />
+    <Content Include="Content\themes\humanity\images\ui-icons_f08000_256x240.png" />
+    <Content Include="Content\themes\humanity\images\ui-icons_f35f07_256x240.png" />
+    <Content Include="Content\themes\humanity\images\ui-icons_ff7519_256x240.png" />
+    <Content Include="Content\themes\humanity\images\ui-icons_ffffff_256x240.png" />
+    <Content Include="Content\themes\humanity\jquery-ui.css" />
+    <Content Include="Content\themes\humanity\jquery-ui.min.css" />
+    <Content Include="Content\themes\humanity\jquery.ui.theme.css" />
     <Content Include="README.jQuery.vsdoc.txt" />
     <Content Include="Scripts\FixedHeader.js" />
     <Content Include="Scripts\FixedHeader.min.js" />
@@ -239,13 +260,6 @@
     <Content Include="Global.asax" />
     <Content Include="Scripts\modernizr-1.7.js" />
     <Content Include="Scripts\modernizr-1.7.min.js" />
-    <Content Include="Views\Base\__Edit.aspx" />
-    <Content Include="Views\Main\__ExtDirectories.aspx" />
-    <Content Include="Views\Service\__Edit.aspx" />
-    <Content Include="Views\Service\__Logs.aspx" />
-    <Content Include="Views\Shared\__AccessDenied.aspx" />
-    <Content Include="Views\Shared\__CommError.aspx" />
-    <Content Include="Views\Shared\__ServiceBaseMenu.ascx" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -253,20 +267,18 @@
     <Content Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </Content>
-    <Content Include="Content\Site.css" />
+    <Content Include="Content\main.css" />
     <Content Include="Scripts\jquery.unobtrusive-ajax.js" />
     <Content Include="Scripts\jquery.unobtrusive-ajax.min.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\MicrosoftMvcValidation.js" />
     <Content Include="Scripts\MicrosoftMvcValidation.debug.js" />
-    <Content Include="Views\Main\__Index.aspx" />
-    <Content Include="Views\Shared\__Error.aspx" />
-    <Content Include="Views\Shared\__Site.Master" />
     <Content Include="Views\Web.config" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Views\Users\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
@@ -291,22 +303,35 @@
     </EntityDeploy>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Code\RazorHelpers.cshtml" />
     <None Include="Scripts\jquery-1.9.1.min.map" />
-    <Content Include="Views\Settings\Edit.cshtml" />
+    <Content Include="Views\Control\Settings.cshtml" />
     <Content Include="Views\Shared\MainLayout.cshtml" />
     <Content Include="Views\Shared\InformationBlock.cshtml" />
     <Content Include="Views\Base\Edit.cshtml" />
     <Content Include="Views\Shared\ServiceBaseMenu.cshtml" />
     <Content Include="Views\Shared\ErrorBlock.cshtml" />
-    <Content Include="Views\Main\Index.cshtml" />
+    <Content Include="Views\Main\Exchange.cshtml" />
     <Content Include="Views\Main\ExtDirectories.cshtml" />
     <Content Include="Views\Service\Edit.cshtml" />
     <Content Include="Views\Service\Logs.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\CommError.cshtml" />
     <Content Include="Views\Shared\AccessDenied.cshtml" />
-    <Content Include="Views\Users\Index.cshtml" />
+    <Content Include="Views\Control\Users.cshtml" />
     <Content Include="Views\Shared\ViewUserControl1.cshtml" />
+    <Content Include="Views\Shared\ComponentMenu.cshtml" />
+    <Content Include="Views\Shared\SortMenu.cshtml" />
+    <Content Include="Views\Main\MlgCollect.cshtml" />
+    <Content Include="Views\Control\Index.cshtml" />
+    <Content Include="Views\Control\ExtDirectories.cshtml" />
+    <Content Include="Views\Base\Parameters.cshtml" />
+    <Content Include="Views\Base\Permissions.cshtml" />
+    <Content Include="Views\Base\Notifications.cshtml" />
+    <Content Include="Views\Base\ExchangeReport.cshtml" />
+    <Content Include="Views\Base\ExtDirectoryReport.cshtml" />
+    <Content Include="Views\Base\MlgCollectReport.cshtml" />
+    <Content Include="Views\Main\MlgCollectSearch.cshtml" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" />
@@ -325,7 +350,7 @@
         <WebProjectProperties>
           <UseIIS>False</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>9754</DevelopmentServerPort>
+          <DevelopmentServerPort>25197</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
           <IISUrl>
           </IISUrl>

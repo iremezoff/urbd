@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Ugoria.URBD.Contracts.Services;
+using Ugoria.URBD.WebControl.Models;
 
 namespace Ugoria.URBD.WebControl.ViewModels
 {
@@ -37,6 +38,7 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public IEnumerable<PacketViewModel> PacketList { get; set; }
         public IEnumerable<ScheduleExchangeViewModel> ScheduleExchangeList { get; set; }
         public IEnumerable<ScheduleExtDirectoriesViewModel> ScheduleExtDirectoriesList { get; set; }
+        public IEnumerable<ScheduleMlgCollectViewModel> ScheduleMlgCollectList { get; set; }
         public IEnumerable<ExtDirectoryViewModel> ExtDirectoriesList { get; set; }
     }
 
@@ -48,9 +50,9 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public bool AllowConfigure { get; set; }
     }
 
-    public class ExtDirectoryViewModel
+    public class ExtDirectoryViewModel : IExtDirectory
     {
-        public int ExtDirectoryId { get; set; }
+        public int DirId { get; set; }
         public string LocalPath { get; set; }
         public string FtpPath { get; set; }
     }
@@ -75,6 +77,12 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public string Time { get; set; }
     }
 
+    public class ScheduleMlgCollectViewModel
+    {
+        public int ScheduleId { get; set; }
+        public string Time { get; set; }
+    }
+
     public class ReportViewModel
     {
         public int ReportId { get; set; }
@@ -86,7 +94,45 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public IEnumerable<ReportPacketViewModel> PacketList { get; set; }
         public IEnumerable<LaunchViewModel> LaunchList { get; set; }
         public IEnumerable<ExtDirectoriesFileViewModel> Files { get; set; }
+        public DateTime? DateMlgDate { get; set; }
     }
+
+    public class ExchangeReportView
+    {
+        public int ReportId { get; set; }
+        public DateTime? CommandDate { get; set; }
+        public DateTime? CompleteDate { get; set; }
+        public string Status { get; set; }
+        public string Message { get; set; }
+        public string User { get; set; }
+        public IEnumerable<ReportPacket> PacketList { get; set; }
+        public IEnumerable<Launch1C> LaunchList { get; set; }
+    }
+
+    public class ExtDirectoryReportView
+    {
+        public int ReportId { get; set; }
+        public DateTime? CommandDate { get; set; }
+        public DateTime? CompleteDate { get; set; }
+        public string Status { get; set; }
+        public string Message { get; set; }
+        public string User { get; set; }
+        public IEnumerable<Launch1C> LaunchList { get; set; }
+        public IEnumerable<ExtDirectoryFile> Files { get; set; }
+    }
+
+    public class MlgCollectReportView
+    {
+        public int ReportId { get; set; }
+        public DateTime? CommandDate { get; set; }
+        public DateTime? CompleteDate { get; set; }
+        public string Status { get; set; }
+        public string Message { get; set; }
+        public string User { get; set; }
+        public IEnumerable<Launch1C> LaunchList { get; set; }
+        public DateTime? DateMlgDate { get; set; }
+    }
+    
 
     public class ExtDirectoriesFileViewModel
     {
@@ -102,6 +148,11 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public PacketViewModel Packet { get; set; }
         public DateTime? CreatedDate { get; set; }
         public long? Size { get; set; }
+    }
+
+    public class ReportLogViewModel
+    {
+
     }
 
     public class LaunchViewModel

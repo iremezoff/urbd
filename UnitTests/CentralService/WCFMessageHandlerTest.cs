@@ -89,7 +89,7 @@ namespace UnitTests
                 baseId = exchCommand.baseId,
                 commandDate = exchCommand.commandDate,
                 dateComplete = DateTime.Now,
-                status = ExchangeReportStatus.Warning,
+                status = ReportStatus.Warning,
                 dateRelease = DateTime.Now.AddDays(-1),
                 mdRelease = "1.99",
                 message = "super good",
@@ -101,7 +101,7 @@ namespace UnitTests
                 baseId = extCommand.baseId,
                 commandDate = extCommand.commandDate,
                 dateComplete = DateTime.Now,
-                status = ExtDirectoriesReportStatus.Fail,
+                status = ReportStatus.Fail,
                 message = "super good ext",
                 reportGuid = extCommand.reportGuid,
                 files = new List<Ugoria.URBD.Contracts.Data.ExtDirectoriesFile>()
@@ -162,13 +162,13 @@ namespace UnitTests
         {
             List<DataHandler> handlers = new List<DataHandler>();
             WCFMessageHandler target = new WCFMessageHandler(handlers);
-            ReportStatus actual;
+            //ReportStatusType actual;
 
             // Negative tests
             // LaunchReport
             try
             {
-                actual = target.HandleReport(launchReport);
+                target.HandleReport(launchReport);
             }
             catch (Exception ex)
             {
@@ -177,7 +177,7 @@ namespace UnitTests
             // ExchangeReport
             try
             {
-                actual = target.HandleReport(exchReport);
+                target.HandleReport(exchReport);
             }
             catch (Exception ex)
             {
@@ -187,7 +187,7 @@ namespace UnitTests
             // ExtReport
             try
             {
-                actual = target.HandleReport(extReport);
+                target.HandleReport(extReport);
             }
             catch (Exception ex)
             {
@@ -199,16 +199,16 @@ namespace UnitTests
             target = new WCFMessageHandler(handlers);
 
             // LaunchReport
-            actual = target.HandleReport(launchReport);
-            Assert.IsNotNull(actual);
+            target.HandleReport(launchReport);
+            //Assert.IsNotNull(actual);
 
             // ExchangeReport
-            actual = target.HandleReport(exchReport);
-            Assert.IsNotNull(actual);
+            target.HandleReport(exchReport);
+            //Assert.IsNotNull(actual);
 
             // ExtReport
-            actual = target.HandleReport(extReport);
-            Assert.IsNotNull(actual);
+           target.HandleReport(extReport);
+            //Assert.IsNotNull(actual);
         }
     }
 }

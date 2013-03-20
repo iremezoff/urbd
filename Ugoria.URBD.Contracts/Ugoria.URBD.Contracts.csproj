@@ -85,11 +85,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\Commands\ExecuteCommand.cs" />
+    <Compile Include="Data\Commands\MlgCollectCommand.cs" />
     <Compile Include="Data\ExtDirectoryFile.cs" />
+    <Compile Include="Data\MLGMessage.cs" />
+    <Compile Include="Data\Reports\MlgCollectReport.cs" />
     <Compile Include="Handlers\IExtDirectoryDataHandler.cs" />
     <Compile Include="Handlers\IDataHandler.cs" />
     <Compile Include="Handlers\Strategy\IExtDirectoryStrategyBuilder.cs" />
     <Compile Include="Handlers\Strategy\IExchangeStrategyBuilder.cs" />
+    <Compile Include="Handlers\IMlgCollectDataHandler.cs" />
+    <Compile Include="Handlers\Strategy\IMlgCollectStrategyBuilder.cs" />
     <Compile Include="Handlers\Strategy\IStrategyBuilder.cs" />
     <Compile Include="Handlers\Strategy\ICommandStrategy.cs" />
     <Compile Include="Handlers\Strategy\Exchange\IMode.cs" />
@@ -101,7 +106,6 @@
     <Compile Include="Data\Commands\CheckCommand.cs" />
     <Compile Include="Data\Commands\ExchangeCommand.cs" />
     <Compile Include="Data\Commands\ExtDirectoryCommand.cs" />
-    <Compile Include="Data\MLGMessage.cs" />
     <Compile Include="Data\Packet.cs" />
     <Compile Include="Data\RemoteConfiguration.cs" />
     <Compile Include="Data\Reports\ExtDirectoryReport.cs" />

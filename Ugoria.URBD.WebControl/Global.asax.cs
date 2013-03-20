@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
 using Ugoria.URBD.WebControl.Helpers;
+using System.IO;
 
 namespace Ugoria.URBD.WebControl
 {
@@ -17,7 +18,7 @@ namespace Ugoria.URBD.WebControl
         {
             filters.Add(new HandleErrorLoggerAttribute() { ExceptionType = typeof(AccessPermissionDeniedException), View = "AccessDenied", Order = 1 });
             filters.Add(new HandleErrorLoggerAttribute());
-            filters.Add(new SecurityAccessAttribute());
+            //filters.Add(new SecurityAccessAttribute());
             //filters.Add()
         }
 
@@ -42,6 +43,15 @@ namespace Ugoria.URBD.WebControl
 
             ModelBinders.Binders.Add(typeof(DateTime), new DateTimeBinder());
             ModelBinders.Binders.Add(typeof(DateTime?), new DateTimeBinder());
+
+            List<string> skins = new List<string>();
+            
+            foreach (DirectoryInfo skinDir in new DirectoryInfo(HttpContext.Current.Server.MapPath("~/Content/themes")).GetDirectories())
+            {
+                skins.Add(skinDir.Name);
+            }
+
+            Application["skins"] = skins;
         }
     }
 }

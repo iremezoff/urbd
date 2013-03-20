@@ -20,6 +20,7 @@ namespace Ugoria.URBD.WebControl.Controllers
         private ChannelFactory<IRemoteService> remoteChannelFactory = new ChannelFactory<IRemoteService>(new NetTcpBinding(SecurityMode.None));
         private URBD2Entities dataContext = new URBD2Entities();
         private IServiceRepository serviceRepo;
+        private IUser currentUser = SessionStore.GetCurrentUser();
 
         public BaseController()
         {
@@ -31,12 +32,114 @@ namespace Ugoria.URBD.WebControl.Controllers
             return RedirectToAction("Index", "Service");
         }
 
-        public JsonResult ReportData(DateTime dateStart, DateTime dateEnd, SystemComponent component)
+        [HttpPost]
+        [SecurityAccess(typeof(IBase), IsChange = true)]
+        public ActionResult Parameters(BaseViewModel @base)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+            if (baseId == 0)
+                throw new HttpException(404, "ИБ не найдена");
+
+            if (string.IsNullOrEmpty(@base.Path))
+                ModelState.AddModelError("base.Path", "пустой путь не допускается");
+            if (string.IsNullOrEmpty(@base.Name))
+                ModelState.AddModelError("base.Name", "пустое название не допускается");
+            if (string.IsNullOrEmpty(@base.Username))
+                ModelState.AddModelError("base.Username", "пустое имя пользователя не допускается");
+            foreach (PacketViewModel packetVM in @base.PacketList)
+            {
+                if (!string.IsNullOrEmpty(packetVM.FileName))
+                    continue;
+                ModelState.AddModelError("base.PacketList.FileName", "Имена пакетов не могут быть пустыми");
+                break;
+            }
+
+            TempData["success"] = false;
+            if (ModelState.IsValid)
+            {
+                // сохраняем, если конфигруация прошла
+                using (UnitOfWork unitOfWork = new UnitOfWork())
+                {
+                    serviceRepo = new ServiceRepository(unitOfWork.DataContext);
+                    serviceRepo.SaveBase(@base);
+
+                    unitOfWork.Commit();
+                }
+                TempData["success"] = true;
+                try
+                {
+                    // конфигурируем
+                    IControlService controlService = channelFactory.CreateChannel();
+                    ICommunicationObject commControlObject = (ICommunicationObject)controlService;
+                    commControlObject.Open();
+                    controlService.ReconfigureBaseOfService(@base.BaseId);
+                    commControlObject.Close();
+                }
+                catch (Exception ex)
+                {
+                    TempData["ReconfigureFail"] = "Произошла ошибка при конфигурировании центрального сервиса. Причина: " + ex.Message;
+                }
+                return RedirectToActionPermanent("Parameters", new { id = @base.BaseId });
+            }
+            ViewData["base"] = @base;
+            return Parameters();
+        }
+
+        public PartialViewResult Parameters()
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+
+            BaseViewModel baseVM = ViewData["base"] == null ? serviceRepo.GetBaseById(baseId) : (BaseViewModel)ViewData["base"];
+
+            if (TempData["ReconfigureFail"] != null)
+                ModelState.AddModelError("ReconfigureFail", (string)TempData["ReconfigureFail"]);
+
+            ViewData["service"] = serviceRepo.GetServiceById(baseVM.ServiceId);
+            ViewData["extdirectories"] = serviceRepo.GetExtDirectories();
+            ViewData["success"] = TempData["success"];
+            return PartialView(baseVM);
+        }
+
+        public PartialViewResult ExchangeReport(DateTime? dateStart, DateTime? dateEnd)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+            IServiceRepository serviceRepo = new ServiceRepository(new URBD2Entities());
+
+            var reports = serviceRepo.GetExchangeReportsByBaseId(baseId, dateStart.Value.Date, dateEnd.Value.Date);
+            ViewData["dateStart"] = dateStart.Value.Date;
+            ViewData["dateEnd"] = dateEnd.Value.Date;
+            return PartialView(reports);
+        }
+
+        public PartialViewResult ExtDirectoryReport(DateTime? dateStart, DateTime? dateEnd)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+            IServiceRepository serviceRepo = new ServiceRepository(new URBD2Entities());
+
+            var reports = serviceRepo.GetExtDirectoriesReportsByBaseId(baseId, dateStart.Value.Date, dateEnd.Value.Date);
+            ViewData["dateStart"] = dateStart.Value.Date;
+            ViewData["dateEnd"] = dateEnd.Value.Date;
+            return PartialView(reports);
+        }
+
+        public PartialViewResult MlgCollectReport(DateTime? dateStart, DateTime? dateEnd)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+            IServiceRepository serviceRepo = new ServiceRepository(new URBD2Entities());
+
+            var reports = serviceRepo.GetMlgCollectReportsByBaseId(baseId, dateStart.Value.Date, dateEnd.Value.Date);
+            ViewData["dateStart"] = dateStart.Value.Date;
+            ViewData["dateEnd"] = dateEnd.Value.Date;
+            return PartialView(reports);
+        }
+
+
+        /*public JsonResult ReportData(DateTime dateStart, DateTime dateEnd, string componentName)
         {
             int baseId = int.Parse(RouteData.Values["id"].ToString());
             IServiceRepository serviceRepo = new ServiceRepository(dataContext);
 
-            if (component == SystemComponent.Exchange)
+            if ("Exchange".Equals(componentName))
             {
                 IEnumerable<ReportViewModel> reports = serviceRepo.GetExchangeReportsByBaseId(baseId, dateStart, dateEnd);
                 int count = reports.Count();
@@ -51,6 +154,23 @@ namespace Ugoria.URBD.WebControl.Controllers
                    string.Join("<br/>", r.PacketList.Where(p=>p.Packet.Type[0]==(char)PacketType.Load).Select(pl => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", pl.Packet.FileName, pl.Size / 1024f, pl.CreatedDate))), 
                    string.Join("<br/>", r.PacketList.Where(p=>p.Packet.Type[0]==(char)PacketType.Unload).Select(pl => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", pl.Packet.FileName, pl.Size / 1024f, pl.CreatedDate))), 
                    r.User 
+                })
+                }, JsonRequestBehavior.AllowGet);
+            }
+            else if ("MlgCollect".Equals(componentName))
+            {
+                IEnumerable<ReportViewModel> reports = serviceRepo.GetMlgCollectReportsByBaseId(baseId, dateStart, dateEnd);
+                int count = reports.Count();
+
+                return Json(new
+                {
+                    aaData = reports.Select(r => new string[] { 
+                    r.CommandDate!=null&& r.CommandDate.HasValue?r.CommandDate.Value.ToString("dd.MM.yyyy HH:mm:ss"):"",
+                    r.CompleteDate!=null && r.CompleteDate.HasValue?r.CompleteDate.Value.ToString("dd.MM.yyyy HH:mm:ss"):"",
+                    r.Status,                     
+                    r.Message??"", 
+                    r.DateMlgDate!=null&& r.DateMlgDate.HasValue?r.DateMlgDate.Value.ToString("dd.MM.yyyy HH:mm:ss"):"",
+                    r.User 
                 })
                 }, JsonRequestBehavior.AllowGet);
             }
@@ -71,26 +191,51 @@ namespace Ugoria.URBD.WebControl.Controllers
                 })
                 }, JsonRequestBehavior.AllowGet);
             }
+        }*/
+
+        [HttpPost]
+        public ActionResult Notifications(IEnumerable<ReportNotificationViewModel> notifies, int userId)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+
+            using (UnitOfWork unitOfWork = new UnitOfWork())
+            {
+                serviceRepo = new ServiceRepository(unitOfWork.DataContext);
+                foreach (var notify in notifies)
+                {
+                    serviceRepo.SaveNotification(notify, baseId, userId);
+                }
+                unitOfWork.Commit();
+            }
+            TempData["success"] = true;
+            return RedirectToActionPermanent("Notifications", new { id = RouteData.Values["id"], userId = userId });
+        }
+
+        public PartialViewResult Notifications(int? userId)
+        {
+            int baseId = int.Parse(RouteData.Values["id"].ToString());
+
+            userId = (currentUser.IsAdmin && userId != null) ? userId : SessionStore.GetCurrentUser().UserId;
+
+            var statuses = serviceRepo.GetComponentReportStatusByUserId(userId.Value, baseId);
+
+            if (currentUser.IsAdmin)
+            {
+                var permissions = serviceRepo.GetBasePermissions(baseId);
+                if (permissions.Count()==0)
+                    statuses = new List<ComponentReportStatusView>();
+                ViewData["permissions"] = permissions;
+            }
+            ViewData["success"] = TempData["success"];
+            ViewData["user_id"] = userId.Value;
+            return PartialView(statuses);
         }
 
         [HttpPost]
-        public ActionResult EditNotification(IEnumerable<ReportNotificationViewModel> notifies)
+        [SecurityAccess(IsAdmin = true)]
+        public ActionResult Permissions(IEnumerable<PermissionViewModel> permissions)
         {
             int baseId = int.Parse(RouteData.Values["id"].ToString());
-            if (baseId == 0)
-                throw new HttpException(404, "ИБ не найдена");
-
-            serviceRepo.SaveNotification(notifies, baseId, SessionStore.GetCurrentUser().UserId);
-            return RedirectToAction("Edit", new { id = RouteData.Values["id"] });
-        }
-
-        [HttpPost]
-        [SecurityAccess(IsAdmin=true)]
-        public ActionResult EditPermissions(IEnumerable<PermissionViewModel> permissions)
-        {
-            int baseId = int.Parse(RouteData.Values["id"].ToString());
-            if (baseId == 0)
-                throw new HttpException(404, "ИБ не найдена");
 
             using (UnitOfWork unitOfWork = new UnitOfWork())
             {
@@ -101,61 +246,21 @@ namespace Ugoria.URBD.WebControl.Controllers
                 }
                 unitOfWork.Commit();
             }
-            return RedirectToAction("Edit", new { id = RouteData.Values["id"] });
+            TempData["success"] = true;
+            return RedirectToActionPermanent("Permissions", new { id = RouteData.Values["id"] });
         }
 
-        [HttpPost]
-        [SecurityAccess(typeof(IBase), IsChange=true)]
-        public ActionResult Edit(BaseViewModel @base = null)
+        [SecurityAccess(IsAdmin = true)]
+        public PartialViewResult Permissions()
         {
             int baseId = int.Parse(RouteData.Values["id"].ToString());
-            if (baseId == 0)
-                throw new HttpException(404, "ИБ не найдена");
 
-            if (string.IsNullOrEmpty(@base.Path))
-                ModelState.AddModelError("base.Path", "пустой путь не допускается");
-            if (string.IsNullOrEmpty(@base.Name))
-                ModelState.AddModelError("base.Name", "пустое название не допускается");
-            if (string.IsNullOrEmpty(@base.Username))
-                ModelState.AddModelError("base.Username", "пустое имя пользователя не допускается");
-            foreach (PacketViewModel packetVM in @base.PacketList)
-            {
-                if (!string.IsNullOrEmpty(packetVM.FileName))
-                    continue;
-                ModelState.AddModelError("base.PacketList.FileName", "Имена пакетов не могут быть пустыми");
-                break;
-            }
-            IDictionary<string, string> validateReport = null;
-            IRemoteService remoteService = remoteChannelFactory.CreateChannel(new EndpointAddress(string.Format("net.tcp://{0}/URBDRemoteService", @base.ServiceAddress)));
-            try { }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("ServiceError", "Не удалось подключиться к удаленному сервису, попробуйте позже");
-            }
+            BaseViewModel baseVM = ViewData["base"] == null ? serviceRepo.GetBaseById(baseId) : (BaseViewModel)ViewData["base"];
 
-            TempData["success"] = false;
-            if (ModelState.IsValid)
-            {
-                // сохраняем, если конфигруация прошла
-                serviceRepo.SaveBase(@base);
-                TempData["success"] = true;
-                try
-                {
-                    // конфигурируем
-                    IControlService controlService = channelFactory.CreateChannel();
-                    ICommunicationObject commControlObject = (ICommunicationObject)controlService;
-                    commControlObject.Open();
-                    controlService.ReconfigureBaseOfService(@base.BaseId);
-                    commControlObject.Close();
-                }
-                catch (Exception ex)
-                {
-                    TempData["ReconfigureFail"] = "Произошла ошибка при конфигурировании центрального сервиса. Причина: " + ex.Message;
-                }
-                return RedirectToActionPermanent("Edit");
-            }
-            ViewData["base"] = @base;
-            return Edit();
+            ViewData["success"] = TempData["success"];
+            var permissions = serviceRepo.GetBasePermissions(baseId);
+
+            return PartialView(permissions);
         }
 
         public ActionResult Edit()
@@ -170,14 +275,14 @@ namespace Ugoria.URBD.WebControl.Controllers
             ViewData["base"] = @base;
             IUser user = SessionStore.GetCurrentUser();
             ViewData["bases"] = serviceRepo.GetBasesByServiceId(@base.ServiceId, user.UserId, user.IsAdmin);
-            ViewData["extdirectories"] = serviceRepo.GetExtDirectories();
+
             ViewData["reports"] = new List<ReportViewModel>();
             ViewData["report_statuses"] = serviceRepo.GetComponentReportStatusByUserId(SessionStore.GetCurrentUser().UserId, baseId);
             IEnumerable<ServiceViewModel> services = serviceRepo.GetServices();
             ServiceViewModel service = services.Where(s => s.ServiceId == @base.ServiceId).Single();
             ViewData["services"] = services;
             ViewData["service"] = service;
-            ViewData["permissions"] = serviceRepo.GetBasePermissions(baseId);
+
 
             return View();
         }

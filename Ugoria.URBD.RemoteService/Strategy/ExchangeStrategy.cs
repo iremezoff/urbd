@@ -223,11 +223,6 @@ namespace Ugoria.URBD.RemoteService.Strategy
             }
             finally
             {
-                FileInfo fi = new FileInfo(context.BasePath + @"\" + "test.log");
-                using (StreamWriter sw = new StreamWriter(fi.Create()))
-                {
-                    sw.WriteLine("test");
-                }
                 if (netConn != null)
                     netConn.Dispose();
             }

@@ -7,6 +7,26 @@
     ViewBag.Title = "Управление распределенными базами данных";
     Layout = "~/Views/Shared/MainLayout.cshtml";
 }
+@helper Button(int baseId, int serviceId, string status)
+    {
+    <div style="white-space: nowrap">
+        @if ("Busy".Equals(status))
+        {
+            @Html.ActionLink("Отмена", "ExchangeInterrupt", new { id = baseId }, new { @class = "interrupt" })
+        }
+        else
+        {
+            @Html.ActionLink("Обмен", "ExchangeGo", new { id = baseId }, new { @class = "go" })
+        }
+        @Html.ActionLink("Menu", "#")
+    </div>
+    <ul class="func_menu">
+        <li>@Html.ActionLink("Параметры ИБ", "Edit", "Base", new { id = baseId }, new object())</li>
+        <li>@Html.ActionLink("Параметры сервиса", "Edit", "Service", new { id = serviceId }, new object())</li>
+        <li>@Html.ActionLink("Логи сервиса", "Logs", "Service", new { id = serviceId }, new object())</li>
+        <li><a href="@(Url.Action("Edit", "Base", new { id = baseId }))#exchange">Отчёты обмена</a></li>
+    </ul>
+}
 <script type="text/javascript">
         var groupColumn = @(!TableGrouper.group.Equals(ViewData["sort"]) ? !TableGrouper.service.Equals(ViewData["sort"]) ? 2 : 4 : 6);
         $(document).ready(function () {
@@ -22,7 +42,7 @@
 
             $("a.interrupt").addClass("ui-state-default-other");
             
-            $("a.exchange, a.interrupt")
+            $("a.go, a.interrupt")
                 .button()
                 .click(function() {
                     $.cookie("scroll_position", $(window).scrollTop());
@@ -89,8 +109,7 @@
     .parent()
     .next()
       .hide()
-      .menu()
-      .parent();
+      .menu();
       
       $("ul.func_menu li a").click(function (event, ui) {
        var location = $(this).attr("href");
@@ -193,40 +212,10 @@
         });
 </script>
 <h2 class="component">
-    Обмен пакетами</h2>
-<span><a href="#" id="component_menu">Компоненты</a></span><ul class="func_menu">
-    <li>@(Html.ActionLink("Обновление расширенных директорий", "ExtDirectories", "Main"))</li></ul>
+    @ViewBag.ComponentHead</h2>
+@Html.Partial("ComponentMenu")
 <br />
-Группировать по <b>
-    @if (!TableGrouper.filial.Equals(ViewData["sort"]))
-    {
-        @Html.ActionLink("филиалу", "Index", new { sort = TableGrouper.filial })
-    }
-    else
-    {
-        <text> филиалу
-        </text>
-    }
-</b>, <b>
-    @if (!TableGrouper.service.Equals(ViewData["sort"]))
-    {
-        @Html.ActionLink("сервису", "Index", new { sort = TableGrouper.service })
-    }
-    else
-    {
-        <text> сервису
-        </text>
-    }
-</b>, <b>
-    @if (!TableGrouper.group.Equals(ViewData["sort"]))
-    { 
-        @Html.ActionLink("группе", "Index", new { sort = TableGrouper.group })
-    }
-    else
-    {
-        <text> группе
-        </text>
-    }</b>
+@Html.Partial("SortMenu")
 @(Html.Grid<IBaseReportView>("bases").Columns(column =>
 {
     column.For(b => b.BaseId).HeaderAttributes(width => "2%").Named("#");
@@ -236,27 +225,11 @@
     column.Custom(b => String.Format("{0} ({1})", b.ServiceAddress, b.ServiceName)).HeaderAttributes(width => "8%").Named("Адрес сервиса");
     column.For(b => b.DateComplete).HeaderAttributes(width => "8%").Named("Дата последнего обмена").Format("{0:dd.MM.yyyy HH:mm:ss}");
     column.For(b => b.GroupName).Encode(false).Named("Группа");
-    column.Custom(b => "").Attributes(new Func<GridRowViewData<IBaseReportView>, Dictionary<string, object>>(item => new Dictionary<string, object>(){{"class",
-    "Critical".Equals(item.Item.Status)
-    ?"critical"
-        :"Fail".Equals(item.Item.Status)
-            ? "fail"
-            : "Warning".Equals(item.Item.Status)
-                ? "warning"
-                : "Success".Equals(item.Item.Status)
-                    ? "success"
-                    : "Busy".Equals(item.Item.Status)
-                        ? "busy"
-                        : "Interrupt".Equals(item.Item.Status)
-                            ?"interrupt"
-                            :"blank"}})).HeaderAttributes(width => "5");
+    column.Custom(b => string.Empty).Attributes(new Func<GridRowViewData<IBaseReportView>, Dictionary<string, object>>(item => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(item.Item.Status) } })).HeaderAttributes(width => "5");
     column.For(b => b.Message).HeaderAttributes(width => "23%").Named("Отчёт");
     column.Custom(b => string.Join("<br/>", b.Packets.Where(p => p.Packet.Type[0] == (char)PacketType.Load).Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Packet.FileName, c.Size / 1024f, c.CreatedDate)))).Named("Последние загруженные пакеты").HeaderAttributes(width => "20%");
     column.Custom(b => string.Join("<br/>", b.Packets.Where(p => p.Packet.Type[0] == (char)PacketType.Unload).Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Packet.FileName, c.Size / 1024f, c.CreatedDate)))).Named("Последние выгруженные пакеты").HeaderAttributes(width => "20%");
-    column.Custom(b => "<div style='white-space: nowrap'>" + ("Busy".Equals(b.Status) ?
-        Html.ActionLink("Отмена", "Interrupt", new { id = b.BaseId }, new { @class = "interrupt", id = "func" }) :
-        Html.ActionLink("Обмен", "Exchange", new { id = b.BaseId }, new { @class = "exchange", id = "func" })) + Html.ActionLink("Menu", "#") + "</div><ul class=\"func_menu\"><li>" + Html.ActionLink("Параметры ИБ", "Edit", "Base", new { id = b.BaseId }, new object()) + "</li><li>" + Html.ActionLink("Параметры сервиса", "Edit", "Service", new { id = b.ServiceId }, new object()) + "</li><li>" + Html.ActionLink("Логи сервиса", "Logs", "Service", new { id = b.ServiceId }, new object()) + "</li><li><a href=\"" + Url.Action("Edit", "Base", new { id = b.BaseId }) + "#exchange\">Отчёты обмена</a></li></ul>").HeaderAttributes(width => "8%");
-    //column.For(b => 1).HeaderAttributes(width => "2%");
+    column.Custom(b => Button(b.BaseId, b.ServiceId, b.Status)).HeaderAttributes(width => "8%");
 }).Attributes(id => "data", width => "100%"))
 <br />
 <table style="border: 0px;">
@@ -299,14 +272,14 @@
     </tr>
 </table>
 <div id="exchange_dialog" title="Режим обмена">
-    @{Html.BeginForm("Exchange", "Main", FormMethod.Get);}
+    @{Html.BeginForm("ExchangeGo", "Main", FormMethod.Get);}
     <div id="modeset">
         @Html.RadioFromEnum("mode", ModeType.Normal, new Dictionary<string, object>())
     </div>
     @{Html.EndForm();}
 </div>
 <div id="interrupt_confirm" title="Подтверждение отмены операции" style="display: none">
-    @{Html.BeginForm("Interrupt", "Main", FormMethod.Get);}
+    @{Html.BeginForm("ExchangeInterrupt", "Main", FormMethod.Get);}
     <div id="dialog-confirm">
         <b>Осторожно!</b> Процесс 1С может быть "убит" и потребуется запуск обмена вручную
         непосредественно на сервере

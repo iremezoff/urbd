@@ -20,15 +20,15 @@ namespace Ugoria.URBD.WebControl
             if (isAdmin && !user.IsAdmin)
                 throw new AccessPermissionDeniedException("Отсутствуют права администратора для пользователя " + HttpContext.Current.User.Identity.Name);
 
-            if (!isAdmin)
+            int entityId = 0;
+            if (!int.TryParse((string)filterContext.RouteData.Values["id"], out entityId) && entityType!=typeof(void))
+                throw new HttpException(404, "Отсутствует ID");
+
+            if (!user.IsAdmin)
             {
                 filterContext.Controller.ViewData["IsAdmin"] = false;
-                // Проверка на доступ к управлению ИБ
-                int entityId = 0;
-                if (!int.TryParse((string)filterContext.RouteData.Values["id"], out entityId))
-                    throw new HttpException(404, "Отсутствует ID");
+                // Проверка на доступ к управлению ИБ                
                 bool allow = false;
-
                 if ((entityType == typeof(IBase) && !(allow = SessionStore.IsAllowedBase(user, entityId, isChange))))
                     throw new AccessPermissionDeniedException("Недостаточно разрешений для доступа к запрошенной ИБ у пользователя " + user.UserName);
                 else if ((entityType == typeof(IService) && !(allow = SessionStore.IsAllowedService(user, entityId, isChange))))

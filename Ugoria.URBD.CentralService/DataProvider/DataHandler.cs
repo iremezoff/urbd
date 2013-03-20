@@ -9,51 +9,83 @@ using System.Data;
 using Ugoria.URBD.Contracts;
 using Ugoria.URBD.Contracts.Handlers;
 using Ugoria.URBD.Contracts.Services;
+using System.Transactions;
 
 namespace Ugoria.URBD.CentralService.DataProvider
 {
     public abstract class DataHandler : IDataHandler
     {
-        public abstract LaunchReport GetLaunchReport(ExecuteCommand command);
-        public abstract ExecuteCommand GetPreparedCommand(ExecuteCommand command);
+        protected DBDataProvider dataProvider = new DBDataProvider();
+        protected DataSet cache;
+        protected readonly string COMPONENT_NAME;
 
-        public abstract ReportStatus SetReport(OperationReport report);
-        /*{
-            using (DBDataProvider dataProvider = new DBDataProvider())
-            {
-                dataProvider.SetReport(report.reportGuid, report.dateComplete, ReportStatus.Interrupt.ToString(), report.message, null, null, null);
-            }
-            return ReportStatus.Fail;
-        }*/
-
-        public ReportStatus SetLaunchReport(LaunchReport launchReport)
+        protected DataHandler(string componentName)
         {
-            using (DBDataProvider dataProvider = new DBDataProvider())
+            COMPONENT_NAME = componentName;
+        }
+        
+        public abstract DataHandler Clone();
+
+        public virtual LaunchReport GetLaunchReport(ExecuteCommand command)
+        {
+            cache = dataProvider.GetLaunchReport(command.baseId, COMPONENT_NAME);
+            if (cache == null || cache.Tables.Count == 0 || cache.Tables[0].Rows.Count == 0)
+                return null;
+            DataRow dataRow = cache.Tables[0].Rows[0];
+            return new LaunchReport
             {
-                dataProvider.SetPID1C(launchReport.reportGuid, launchReport.launchGuid, launchReport.startDate, launchReport.pid);
-            }
-            return ReportStatus.Information;
+                baseId = (int)dataRow["base_id"],
+                baseName = (string)dataRow["base_name"],
+                commandDate = dataRow["date_command"] != DBNull.Value ? (DateTime)dataRow["date_command"] : DateTime.MinValue,
+                startDate = dataRow["date_start"] != DBNull.Value ? (DateTime)dataRow["date_start"] : DateTime.MinValue,
+                launchGuid = dataRow["launch_guid"] != DBNull.Value ? (Guid)dataRow["launch_guid"] : Guid.Empty,
+                reportGuid = dataRow["report_guid"] != DBNull.Value ? (Guid)dataRow["report_guid"] : Guid.Empty,
+                pid = dataRow["pid"] != DBNull.Value ? (int)dataRow["pid"] : 0,
+            };
         }
 
-        public virtual ExecuteCommand SetCommandReport(ExecuteCommand command)
+        public virtual ExecuteCommand GetPreparedCommand(ExecuteCommand command)
         {
-            this.SetCommandReport(command, string.Empty, 1);
+            cache = dataProvider.GetPreparedCommand(command.baseId, COMPONENT_NAME);
+            if (cache.Tables.Count == 0 || cache.Tables[0].Rows.Count == 0)
+                return null;
+            bool isFullRequire = true;
+            foreach (DataRow dataRow in cache.Tables[0].Rows)
+            {
+                if (isFullRequire)
+                {
+                    command.baseId = command.baseId;
+                    command.commandDate = dataRow["date_complete"] == DBNull.Value ? DateTime.MinValue : DateTime.Now; // не закончена предыдущая операция, поэтому новая команда отправлена быть не может
+                    command.reportGuid = dataRow["date_complete"] == DBNull.Value ? (Guid)dataRow["guid"] : Guid.NewGuid(); // не закончена предыдущая команда, значит пресваиваем guid этой команды, иначе новый
+                    command.baseName = (string)dataRow["base_name"];
+                    command.configurationChangeDate = dataRow["date_change"] != DBNull.Value ? (DateTime)dataRow["date_change"] : DateTime.MinValue;
+                    command.pools = new List<int>();
+                    isFullRequire = false;
+                }
+                // добавляем принадлежность к пулу
+                command.pools.Add((int)dataRow["pool_id"]);
+            }
             return command;
         }
 
-        public virtual ExecuteCommand SetCommandReport(ExecuteCommand command, int userId)
+        public virtual void SetReport(OperationReport report)
         {
-            this.SetCommandReport(command, string.Empty, userId);
-            return command;
+            dataProvider.SetReport(report.reportGuid, report.dateComplete, report.status.ToString(), report.message);
         }
 
-        public virtual ExecuteCommand SetCommandReport(ExecuteCommand command, string component, int userId)
+        public void SetLaunchReport(LaunchReport launchReport)
         {
-            using (DBDataProvider dataProvider = new DBDataProvider())
-            {
-                dataProvider.SetCommandReport(userId, command.reportGuid, command.baseId, command.commandDate, component);
-            }
-            return command;
+            dataProvider.SetPID1C(launchReport.reportGuid, launchReport.launchGuid, launchReport.startDate, launchReport.pid);
+        }
+
+        public virtual void SetCommandReport(ExecuteCommand command)
+        {
+            this.SetCommandReport(command, 1);
+        }
+
+        public virtual void SetCommandReport(ExecuteCommand command, int userId)
+        {
+            dataProvider.SetCommandReport(userId, command.reportGuid, command.baseId, command.commandDate, COMPONENT_NAME);
         }
     }
 }

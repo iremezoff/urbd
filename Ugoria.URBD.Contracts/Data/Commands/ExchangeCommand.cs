@@ -6,7 +6,6 @@ using Ugoria.URBD.Contracts.Services;
 
 namespace Ugoria.URBD.Contracts.Data.Commands
 {
-    [Serializable]
     [DataContract]
     [CommandHandler(HandlerType = typeof(IExchangeDataHandler), StrategyBuilder = typeof(IExchangeStrategyBuilder))]
     public class ExchangeCommand : ExecuteCommand

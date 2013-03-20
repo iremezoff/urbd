@@ -1,0 +1,7 @@
+﻿@using Ugoria.URBD.WebControl.Models
+<span><a href="#" id="component_menu">Компоненты</a></span><ul class="func_menu">
+    @foreach (IComponent component in ViewBag.Components)
+    {
+        <li>@(Html.ActionLink(component.Description, component.Name, "Main"))</li>
+    }
+</ul>

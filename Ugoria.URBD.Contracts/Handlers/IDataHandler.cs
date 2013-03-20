@@ -7,14 +7,14 @@ using Ugoria.URBD.Contracts.Data.Reports;
 
 namespace Ugoria.URBD.Contracts.Handlers
 {
-    public enum ReportStatus { Information, Fail, Warning, Interrupt, Critical}
+    //public enum ReportStatusType { Information, Fail, Warning, Interrupt, Critical}
 
     public interface IDataHandler
     {
-        ReportStatus SetReport(OperationReport report);
+        void SetReport(OperationReport report);
         ExecuteCommand GetPreparedCommand(ExecuteCommand command);
         LaunchReport GetLaunchReport(ExecuteCommand command);
-        ReportStatus SetLaunchReport(LaunchReport report);
-        ExecuteCommand SetCommandReport(ExecuteCommand command);
+        void SetLaunchReport(LaunchReport report);
+        void SetCommandReport(ExecuteCommand command);
     }
 }

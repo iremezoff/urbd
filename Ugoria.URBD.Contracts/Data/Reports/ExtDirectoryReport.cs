@@ -8,15 +8,12 @@ using Ugoria.URBD.Contracts.Data.Commands;
 
 namespace Ugoria.URBD.Contracts.Data.Reports
 {
-    public enum ExtDirectoriesReportStatus { Unknown, Interrupt, Success, Fail, Warning };
+    //public enum ExtDirectoriesReportStatus { Unknown, Interrupt, Success, Fail, Warning };
 
     [DataContract]
     [ReportHandler(CommandType = typeof(ExtDirectoriesCommand))]
     public class ExtDirectoriesReport : OperationReport
     {
-        [DataMember]
-        public ExtDirectoriesReportStatus status;
-
         [DataMember]
         public List<ExtDirectoriesFile> files;
     }

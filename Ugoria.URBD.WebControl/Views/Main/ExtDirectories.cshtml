@@ -7,6 +7,27 @@
     ViewBag.Title = "Управление распределенными базами данных";
     Layout = "~/Views/Shared/MainLayout.cshtml";
 }
+@helper Button(int baseId, int serviceId, string status)
+    {
+    <div style="white-space: nowrap">
+        @if ("Busy".Equals(status))
+        {
+            @Html.ActionLink("Отмена", "ExtDirectoriesInterrupt", new { id = baseId }, new { @class = "interrupt" })
+        }
+        else
+        {
+            @Html.ActionLink("Обновить", "ExtDirectoriesGo", new { id = baseId }, new { @class = "go" })
+        }
+        @Html.ActionLink("Menu", "#")
+    </div>
+    <ul class="func_menu">
+        <li>@Html.ActionLink("Параметры ИБ", "Edit", "Base", new { id = baseId }, new object())</li>
+        <li>@Html.ActionLink("Параметры сервиса", "Edit", "Service", new { id = serviceId }, new object())</li>
+        <li>@Html.ActionLink("Логи сервиса", "Logs", "Service", new { id = serviceId }, new object())</li>
+        <li><a href="@(Url.Action("Edit", "Base", new { id = baseId }))#extdirectories">Отчёты
+            обновления</a></li>
+    </ul>
+}
 <script type="text/javascript">
 			var groupColumn = @(!TableGrouper.group.Equals(ViewData["sort"]) ? !TableGrouper.service.Equals(ViewData["sort"]) ? 2 : 3 : 5);
 		$(document).ready(function () {
@@ -22,7 +43,7 @@
 
 			$("a.interrupt").addClass("ui-state-default-other");
 			
-			$("a.extupdate, a.interrupt")
+			$("a.go, a.interrupt")
 				.button()
 				.click(function() {
 					$.cookie("scroll_position", $(window).scrollTop());
@@ -85,8 +106,7 @@
 	.parent()
 	.next()
 	  .hide()
-	  .menu()
-	  .parent().css("display","inline-block");
+	  .menu();
 
 			$("ul.func_menu li a").click(function (event, ui) {
 				var location = $(this).attr("href");
@@ -173,50 +193,11 @@
 			$.cookie("scroll_position", null);
 		});
 </script>
-<div id="interrupt_confirm" title="Подтверждение отмены операции">
-    @{Html.BeginForm("Interrupt", "Main", FormMethod.Get); }
-    <div id="dialog-confirm">
-        <b>Осторожно!</b> Некоторые файлы могут быть не скопированы до конца, что понесет
-        дестабилизацию работы 1С у пользователей!
-    </div>
-    @{Html.EndForm();}
-</div>
 <h2 class="component">
-    Обновление расширенных директорий</h2>
-<span><a href="#" id="component_menu">Компоненты</a></span><ul class="func_menu">
-    <li>@Html.ActionLink("Обмен пакетами", "Index", "Main")</li></ul>
+    @ViewBag.ComponentHead</h2>
+@Html.Partial("ComponentMenu")
 <br />
-Группировать по <b>
-    @if (!TableGrouper.filial.Equals(ViewData["sort"]))
-    {
-        @Html.ActionLink("филиалу", "Index", new { sort = TableGrouper.filial })
-    }
-    else
-    {
-        <text> филиалу
-        </text>
-    }
-</b>, <b>
-    @if (!TableGrouper.service.Equals(ViewData["sort"]))
-    {
-        @Html.ActionLink("сервису", "Index", new { sort = TableGrouper.service })
-    }
-    else
-    {
-        <text> сервису
-        </text>
-    }
-</b>, <b>
-    @if (!TableGrouper.group.Equals(ViewData["sort"]))
-    { 
-        @Html.ActionLink("группе", "Index", new { sort = TableGrouper.group })
-    }
-    else
-    {
-        <text> группе
-        </text>
-    }
-</b>
+@Html.Partial("SortMenu")
 @(Html.Grid<IBaseReportView>("bases").Columns(column =>
 {
     column.For(b => b.BaseId).HeaderAttributes(width => "2%").Named("#");
@@ -225,25 +206,10 @@
     column.Custom(b => String.Format("{0} ({1})", b.ServiceAddress, b.ServiceName)).HeaderAttributes(width => "8%").Named("Адрес сервиса");
     column.For(b => b.DateComplete).HeaderAttributes(width => "8%").Named("Дата последнего обновления").Format("{0:dd.MM.yyyy HH:mm:ss}");
     column.For(b => b.GroupName).Encode(false).Named("Группа");
-    column.Custom(b => "").Attributes(new Func<GridRowViewData<IBaseReportView>, Dictionary<string, object>>(item => new Dictionary<string, object>(){{"class",
-	"Critical".Equals(item.Item.Status)
-		?"critical"
-		:"Fail".Equals(item.Item.Status)
-			? "fail"
-			: "Warning".Equals(item.Item.Status)
-				? "warning"
-				: "Success".Equals(item.Item.Status)
-					? "success"
-					: "Busy".Equals(item.Item.Status)
-						? "busy"
-						: "Interrupt".Equals(item.Item.Status)
-							?"interrupt"
-							:"blank"}})).HeaderAttributes(width => "5");
-    column.Custom(b => (b.Message ?? "").Replace("\r\n", "<br/>")).HeaderAttributes(width => "23%").Named("Отчёт");
+    column.Custom(b => "").Attributes(new Func<GridRowViewData<IBaseReportView>, Dictionary<string, object>>(item => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(item.Item.Status) } })).HeaderAttributes(width => "5");
+    column.Custom(b => (b.Message ?? "").Replace("\r\n", "<br/>")).HeaderAttributes(width => "25%").Named("Отчёт");
     column.Custom(b => string.Join("<br/>", b.Files.Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Filename, c.Size / 1024f, c.DateCopied)))).Named("Последние загруженные файлы").HeaderAttributes(width => "40%");
-    column.Custom(b => "<div style='white-space: nowrap'>" + ("Busy".Equals(b.Status) ?
-        Html.ActionLink("Отмена", "InterruptExtUpdate", new { id = b.BaseId }, new { @class = "interrupt" }).ToHtmlString() :
-        Html.ActionLink("Обновление", "ExtUpdate", new { id = b.BaseId }, new { @class = "extupdate" }).ToHtmlString()) + Html.ActionLink("Menu", "#") + "</div><ul class=\"func_menu\"><li>" + Html.ActionLink("Параметры ИБ", "Edit", "Base", new { id = b.BaseId }, new object()) + "</li><li>" + Html.ActionLink("Параметры сервиса", "Edit", "Service", new { id = b.ServiceId }, new object()) + "</li><li>" + Html.ActionLink("Логи сервиса", "Logs", "Service", new { id = b.ServiceId }, new object()) + "</li><li><a href=\"" + Url.Action("Edit", "Base", new { id = b.BaseId }) + "#extdirectories\">Отчёты обновления</a></li></ul>").HeaderAttributes(width => "8%");
+    column.Custom(b => Button(b.BaseId, b.ServiceId, b.Status)).HeaderAttributes(width => "8%");
 }).Attributes(id => "data", width => "100%"))
 <br />
 <table style="border: 0px;">
@@ -280,3 +246,11 @@
         </td>
     </tr>
 </table>
+<div id="interrupt_confirm" title="Подтверждение отмены операции">
+    @{Html.BeginForm("InterruptExtDirectories", "Main", FormMethod.Get); }
+    <div id="dialog-confirm">
+        <b>Осторожно!</b> Некоторые файлы могут быть не скопированы до конца, что понесет
+        дестабилизацию работы 1С у пользователей!
+    </div>
+    @{Html.EndForm();}
+</div>

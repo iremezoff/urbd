@@ -1,0 +1,54 @@
+﻿@using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Helpers
+@using Ugoria.URBD.WebControl.ViewModels
+@using Ugoria.URBD.Contracts.Services
+@model IEnumerable<ExtDirectoryReportView>
+<script language="javascript" type="text/javascript">
+    $( document ).ready( function ()
+    {
+        $( "input.date" ).datepicker( {
+            defaultDate: null
+        } )
+        .mask( "99.99.9999" );
+
+        $( "input:submit" ).button();
+
+        var reportTable = $("table.report").dataTable({
+            "bJQueryUI": true,
+            "bAutoWidth":false,
+            "aaSorting": [],
+            "bLengthChange": false,
+            "aaSorting": [[0, "desc"]],
+            "bDestroy": true,
+            "bPaginate": false,
+            "bFilter": false,
+            "aoColumnDefs": [
+                { "bSearchable": false, "bSortable":false, "aTargets": [ 2 ] },
+                { "sType": "date-eu", "aTargets": [ 0, 1 ] }                        
+                ],
+            "oLanguage": {
+                "sUrl": "@(Url.Content("~/Scripts/ru_RU.txt"))"
+                }
+            });
+    } );
+</script>
+<h4>
+    Отчеты обновления</h4>
+<div>
+    @{Html.BeginForm((string)ViewContext.RouteData.Values["action"], (string)ViewContext.RouteData.Values["controller"], FormMethod.Get);}
+    С даты
+    <input type="text" name="dateStart" class="date" value="@ViewBag.dateStart.ToString("dd.MM.yyyy")"/>
+    по:
+    <input type="text" name="dateEnd" class="date" value="@ViewBag.dateEnd.ToString("dd.MM.yyyy")"/>
+    <input type="submit" name="view_reports" class="view_reports" value="Показать" />
+    @{Html.EndForm();}
+</div>
+@(Html.Grid(Model).Columns(c =>
+{
+    c.For(r => r.CommandDate).Named("Дата команды").HeaderAttributes(width => "10%");
+    c.For(r => r.CompleteDate).Named("Дата выполнения").HeaderAttributes(width => "10%");
+    c.Custom(r => string.Empty).Attributes(new Func<GridRowViewData<ExtDirectoryReportView>, Dictionary<string, object>>(item => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(item.Item.Status) } })).HeaderAttributes(width => "2");
+    c.For(r => r.Message).Named("Сообщение").HeaderAttributes(width => "30%");
+    c.Custom(r => string.Join("<br/>", r.Files.Select(f => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", f.filename, f.size / 1024f, f.date_copied)))).Named("Загруженные файлы").HeaderAttributes(width => "44%");
+    c.For(r => r.User).Named("Пользователь").HeaderAttributes(width => "7%");
+}).Attributes(@class=>"report").RenderUsing(new CustomRenderer<ExtDirectoryReportView>()))

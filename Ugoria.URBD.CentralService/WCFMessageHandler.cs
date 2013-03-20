@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Ugoria.URBD.Shared.DataProvider;
 using Ugoria.URBD.Contracts.Data.Reports;
 using Ugoria.URBD.Contracts.Data.Commands;
 using Ugoria.URBD.Contracts;
@@ -22,21 +21,20 @@ namespace Ugoria.URBD.CentralService
             this.handlerStore.AddRange(handlers);
         }
 
-        public ReportStatus HandleReport(Report report)
+        public void HandleReport(Report report)
         {
             try
             {
                 if (report is LaunchReport)
                 {
                     DataHandler dataHandler = handlerStore.First();
-                    return dataHandler.SetLaunchReport((LaunchReport)report);
+                    dataHandler.SetLaunchReport((LaunchReport)report);
                 }
                 else if (report is OperationReport)
                 {
                     DataHandler dataHandler = GetHandler(report);
-                    return dataHandler.SetReport((OperationReport)report);
+                    dataHandler.SetReport((OperationReport)report);
                 }
-                return ReportStatus.Fail;
             }
             catch (InvalidOperationException ex)
             {
@@ -45,19 +43,19 @@ namespace Ugoria.URBD.CentralService
             }
         }
 
-        public Command SetCommandReport(ExecuteCommand command)
+        public void SetCommandReport(ExecuteCommand command)
         {
-            return SetCommandReport(command, 1);
+            SetCommandReport(command, 1);
         }
 
-        public Command SetCommandReport(ExecuteCommand command, int userId)
+        public void SetCommandReport(ExecuteCommand command, int userId)
         {
             DataHandler dataHandler = GetHandler(command.GetType());
 
             if (dataHandler == null)
-                return null;
+                return;
 
-            return dataHandler.SetCommandReport(command, userId);
+            dataHandler.SetCommandReport(command, userId);
         }
 
         private DataHandler GetHandler(Report report)
@@ -73,8 +71,9 @@ namespace Ugoria.URBD.CentralService
             CommandHandlerAttribute commandAttr = (CommandHandlerAttribute)attr;
 
             DataHandler dataHandler = null;
+            
             dataHandler = handlerStore.First(h => commandAttr.HandlerType.IsAssignableFrom(h.GetType())); // <------ проверить
-            return dataHandler;
+            return dataHandler.Clone(); // берем прототип и клонируем его, дабы кеш никак не пересекался
         }
 
         public LaunchReport GetLaunchReport(ExecuteCommand command)

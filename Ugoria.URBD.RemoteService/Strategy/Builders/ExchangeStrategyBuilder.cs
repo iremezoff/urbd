@@ -40,7 +40,7 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
             exchangeContext.Command = command;
             exchangeContext.DateRelease = command.releaseUpdate;
             exchangeContext.Path1C = (string)context.Configuration.GetParameter("service.1c_path");
-            exchangeContext.BasePath = (string)context.Configuration.GetParameter("base.1c_database");
+            exchangeContext.BasePath = new FileInfo((string)context.Configuration.GetParameter("base.1c_database")).FullName;
             exchangeContext.Username = (string)context.Configuration.GetParameter("main.username");
             exchangeContext.Password = (string)context.Configuration.GetParameter("main.password");
             exchangeContext.User1C = (string)context.Configuration.GetParameter("base.1c_username");
@@ -55,7 +55,7 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
             exchangeContext.Packets = ((List<Hashtable>)context.Configuration.GetParameter("base.packet_list")).Select<Hashtable, ReportPacket>(p => new ReportPacket { type = (PacketType)p["packet.type"], filename = (string)p["packet.filename"] }).ToList();
             exchangeContext.PrmFile = String.Format(@"{0}\PrmURBD\configuration.prm", (string)context.Configuration.GetParameter("base.1c_database"));
             exchangeContext.Mode = (DefaultMode)CreateMode(context);
-            
+
             ICommandStrategy commandStrategy = new ExchangeStrategy(exchangeContext);
             return commandStrategy;
         }
@@ -89,7 +89,7 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
 
             WindowsIdentity identity = new WindowsIdentity(SecureHelper.ConvertUserdomainToClassic((string)configuration.configuration["main.username"]));
             //RegistryKey userRegistryKey = Registry.Users.CreateSubKey(identity.User.Value);
-            RegistryKey userRegistryKey = Registry.Users.CreateSubKey(@".DEFAULT");
+            RegistryKey userRegistryKey = Registry.Users.CreateSubKey(WindowsIdentity.GetCurrent().User.Value);
             // Создание ветки 1С
 
             if (userRegistryKey.OpenSubKey(@"Software\1C\1Cv7\7.7\Titles") == null)
@@ -131,7 +131,7 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
                             if (!packetFileInfo.Directory.Exists)
                                 packetFileInfo.Directory.Create();
                         }
-                    }                    
+                    }
                 }
                 finally
                 {
@@ -155,27 +155,27 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
             };
             if (strategy.IsInterrupt)
             {
-                report.status = ExchangeReportStatus.Interrupt;
+                report.status = ReportStatus.Interrupt;
                 report.message = "Процесс был прерван вручную";
             }
             else if (!strategy.IsComplete)
             {
-                // Критические проблемы                
+                // Критические проблемы
                 if ((strategy.Context.Command.isReleaseUpdated && string.IsNullOrEmpty(strategy.Context.MDRelease))
                     || CRITICAL_ERRORS.Any(e => strategy.Context.Mode.Message.IndexOf(e) >= 0))
-                    report.status = ExchangeReportStatus.Critical;
+                    report.status = ReportStatus.Critical;
                 else
-                    report.status = ExchangeReportStatus.Fail;
+                    report.status = ReportStatus.Fail;
                 report.message = strategy.Context.Mode.Message;
             }
             else
             {
                 if (strategy.Context.Mode.IsWarning)
-                    report.status = ExchangeReportStatus.Warning;
+                    report.status = ReportStatus.Warning;
                 else if (strategy.Context.Mode.IsSuccess)
-                    report.status = ExchangeReportStatus.Success;
+                    report.status = ReportStatus.Success;
                 else
-                    report.status = ExchangeReportStatus.Fail;
+                    report.status = ReportStatus.Fail;
                 report.message = strategy.Context.Mode.Message;
             }
             foreach (ReportPacket reportPacket in strategy.Context.Packets)

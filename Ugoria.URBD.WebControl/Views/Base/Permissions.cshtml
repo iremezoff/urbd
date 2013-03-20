@@ -1,0 +1,142 @@
+﻿@model IEnumerable<Ugoria.URBD.WebControl.Models.UserBasesPermission>
+<script language="javascript" type="text/javascript">
+               $(document).ready(function () {
+
+               $.editable.addInputType('radio', {
+                element : function(settings, original) {
+                    var hidden = $('<input type="hidden"/>');
+                    $(this).append(hidden);
+                    return(hidden);
+                },           
+                content : function(data, settings, original) {
+                    if (String == data.constructor) {      
+                        eval ('var json = ' + data);
+                    } else {                    
+                        var json = data;
+                    }
+                    var div = $("<div>");                    
+                    var form = this;
+                    $(this).append(div);
+                    
+                    for (var key in json) {
+                        if (!json.hasOwnProperty(key)) {
+                            continue;
+                        }
+                        if ('checked' == key) {
+                            continue;
+                        }
+                        var option = $('<input type="radio"/>').attr("name", $(original).attr("id")).attr("id", $(original).attr("id")+"_"+key).val(key).append(json[key]).one("click",function() {                        
+                            $(':hidden', form).val($(this).val());  
+                            form.submit();
+                            return false;
+                            });
+                        var label = $('<label>').attr('for', $(original).attr("id")+"_"+key).val(key).append(json[key]);
+                        $('div', this).append(option).append(label);    
+                    }
+                    $('div', this).children("input").each(function() {
+                        if (//$(this).val() == data.checked || 
+                            $(this).text() == $.trim(original.revert)) {
+                                $(this).attr('checked', 'checked');
+                        }
+                    });                    
+                    $(form).buttonset(); 
+                }
+            });
+
+
+               $("input:submit").button().click(function() {
+        
+            $(this).val("Сохранение...").after('<img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/> ');
+            return false;
+        });
+
+               $("table#base_permissions tbody").on("changerows", function() {
+                var trs = $("tr:not(.new-row)", this);
+                $("input.PermissionId:hidden", trs).attr("name", function(index) { return "permissions["+index+"].PermissionId"});
+                $("input.UserId:hidden", trs).attr("name", function(index) { return "permissions["+index+"].UserId"});
+                $("input.AllowConfigure:hidden", trs).attr("name", function(index) { return "permissions["+index+"].AllowConfigure"});
+
+                $(".user", this).editable(function(value, settings) {
+                        $(this).prev().attr("value", value); 
+			            return($("option:selected",this).text()); 
+                        }, {
+                    loadurl:"@(Url.Action("UsersList", "Control"))",
+                    type: 'select',
+                    submit: 'OK',
+                    placeholder: 'Выбрать...'
+                }).css("cursor","pointer");
+
+                $(".allow_configure").editable(function(value, settings) {
+                    $(this).prev().attr("value", value); 
+			        return(settings.data[value]); 
+                    },  {
+                        type: 'radio',
+                        data: {'True':'Разрешить', "False":'Запретить'}                   
+                }).attr("id", function(arr) {return "packet"+arr;}).css("cursor","pointer");
+                deleteRow(this, ".PermissionId");
+            }).trigger("changerows");
+
+            $("a.addrow").click(function() {
+                var table = $(this).prev();
+                var newRow = $("tr.new-row", table).clone(false).removeClass("new-row"); 
+                $(":disabled", newRow).removeAttr("disabled");
+                $("tbody", table).append(newRow).trigger("changerows");
+                return false;
+            }).button({ icons: {
+                primary: "ui-icon-plusthick"
+                },
+                text: false
+            });
+               });           
+</script>
+<h4>
+    Права доступа</h4>
+@{Html.BeginForm();}
+<table id="base_permissions">
+    <thead>
+        <tr>
+            <th class="ui-state-default">
+                Пользователь
+            </th>
+            <th class="ui-state-default">
+                Право на изменение
+            </th>
+            <th class="ui-state-default">
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="new-row">
+            @Html.Hidden(String.Format("permissions[].PermissionId"), 0, new { @class = "PermissionsId" })
+            @Html.Hidden(String.Format("permissions[].UserId"), 0, new { @class = "UserId" })
+            <td class="user">
+            </td>
+            @Html.Hidden(String.Format("permissions[].AllowConfigure"), false, new { @class = "AllowConfigure" })
+            <td class="allow_configure">
+                Запретить
+            </td>
+            <td>
+                @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+            </td>
+        </tr>
+        @{int rbp = 0;        }
+        @foreach (var permission in @Model)
+        {
+            <tr>
+                @Html.Hidden(String.Format("permissions[{0}].PermissionId", rbp), permission.PermissionId, new { @class = "PermissionId" })
+                @Html.Hidden(String.Format("permissions[{0}].UserId", rbp), permission.UserId, new { @class = "UserId" })
+                <td class="user">@permission.User.UserName
+                </td>
+                @Html.Hidden(String.Format("permissions[{0}].AllowConfigure", rbp++), permission.AllowConfigure, new { @class = "AllowConfigure" })
+                <td class="allow_configure">@(permission.AllowConfigure ? "Разрешить" : "Запретить")
+                </td>
+                <td>
+                    @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<a href="#" class="addrow">добавить</a><br />
+<input type="submit" value="Сохранить" />
+@{Html.EndForm();}

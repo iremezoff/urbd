@@ -11,6 +11,7 @@ namespace Ugoria.URBD.Shared
     public enum URBDComponent { Central, Remote, Web }
     public enum LogLevel { Error, Information, Warning }
 
+    public delegate void AsyncLogWriter(URBDComponent component, string message, LogLevel level);
     public static class LogHelper
     {
         private static object objLock = new object();
@@ -53,10 +54,8 @@ namespace Ugoria.URBD.Shared
                 Directory.CreateDirectory(logDir);
         }
 
-        public static void Write2Log(URBDComponent component, string message, LogLevel level)
+        private static void AsyncWrite2Log(URBDComponent component, string message, LogLevel level)
         {
-            if (!LogEnabled)
-                return;
             lock (objLock)
             {
                 string outputMsg = String.Format("[{0:dd.MM.yyyy HH:mm:ss}, {1}] {2}", DateTime.Now, level, message);
@@ -88,6 +87,20 @@ namespace Ugoria.URBD.Shared
                     }
                 }
             }
+        }
+
+        private static void AsyncWrite2LogCallback(IAsyncResult result)
+        {
+            AsyncLogWriter action = (AsyncLogWriter)result.AsyncState;
+            action.EndInvoke(result);
+        }
+
+        public static void Write2Log(URBDComponent component, string message, LogLevel level)
+        {
+            if (!LogEnabled)
+                return;
+            AsyncLogWriter action = AsyncWrite2Log;
+            action.BeginInvoke(component, message, level, AsyncWrite2LogCallback, action);
         }
 
         public static void Write2Log(string message, LogLevel level)

@@ -90,9 +90,11 @@ namespace Ugoria.URBD.CentralService
             serviceHost = new ServiceHost(centralService);
 
             Uri centralUri = new Uri((string)centralServiceConguration["main.service_central_address"]);
+            NetTcpBinding binding = new NetTcpBinding(SecurityMode.None);
+            binding.MaxReceivedMessageSize = 1024*1024;
             serviceHost.AddServiceEndpoint(typeof(ICentralService),
-                new NetTcpBinding(SecurityMode.None),
-                centralUri);
+                binding,
+                centralUri);            
         }
 
         private RemoteConfiguration RemoteRequestConfiguartion(ICentralService sender, RequestConfigureEventArgs args)
@@ -134,7 +136,8 @@ namespace Ugoria.URBD.CentralService
 
             if (handler == null)
                 return;
-            ReportStatus status = handler.HandleReport(args.Report);
+            handler.HandleReport(args.Report);
+            ReportStatus status = args.Report.status;
 
             string alarmMesage = "Получен отчет о выполнении операции<br/><br/><b>Тип отчета:</b> {0}<br/><b>ИБ:</b> {1}<br/><b>Статус:</b> {2}<br/><b>Время завершения:</b> {3:HH:mm:ss dd.MM.yyyy}";
 
@@ -142,13 +145,14 @@ namespace Ugoria.URBD.CentralService
             {
                 switch (status)
                 {
-                    case ReportStatus.Information:
+                    case ReportStatus.Success:
                         if (logger != null)
                             logger.Information(args.Uri, String.Format("Получен отчет {0} об успешном выполнении операции на ИБ {1}", args.Report.GetType().Name, args.Report.baseName));
                         if (alarmer != null)
                             alarmer.Alarm(args.Report.reportGuid, String.Format(alarmMesage, args.Report.GetType().Name, args.Report.baseName, "успешно", args.Report.dateComplete));
                         break;
                     case ReportStatus.Warning:
+                    case ReportStatus.Interrupt:
                         if (logger != null)
                             logger.Warning(args.Uri, String.Format("Получен отчет {0} с предупреждением во время выполнения операции на ИБ {1}", args.Report.GetType().Name, args.Report.baseName));
                         if (alarmer != null)
@@ -293,7 +297,6 @@ namespace Ugoria.URBD.CentralService
             // Не проверяем завершенные задачи
             if (launchReport == null)
                 return;
-
             CheckCommand checkCommand = new CheckCommand
             {
                 reportGuid = launchReport.reportGuid,

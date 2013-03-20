@@ -158,7 +158,7 @@ namespace UnitTests
         public void SetCommandReportTest()
         {
             ExecuteCommand actual;
-            actual = target.SetCommandReport(command, userId);
+            target.SetCommandReport(command, userId);
 
             using (SqlConnection conn = DB.Instance.Connection)
             {
@@ -194,7 +194,7 @@ namespace UnitTests
                 baseId = command.baseId,
                 commandDate = command.commandDate,
                 dateComplete = DateTime.Now,
-                status = ExtDirectoriesReportStatus.Fail,
+                status = ReportStatus.Fail,
                 message = "super good ext",
                 reportGuid = command.reportGuid,
                 files = new List<ExtDirectoriesFile>() { new ExtDirectoriesFile { createdDate = DateTime.Now.AddMinutes(-3), fileName = "test1", fileSize = DateTime.Now.Ticks },
@@ -202,9 +202,9 @@ namespace UnitTests
             };
             ReportStatus expected = ReportStatus.Fail; // TODO: Initialize to an appropriate value
             ReportStatus actual;
-            actual = target.SetReport(report);
+            target.SetReport(report);
 
-            Assert.AreEqual(expected, actual);
+            //Assert.AreEqual(expected, actual);
 
             using (SqlConnection conn = DB.Instance.Connection)
             {
@@ -221,7 +221,7 @@ namespace UnitTests
 
                 // Positive test
                 target.SetCommandReport(command, userId);
-                actual = target.SetReport(report);
+                target.SetReport(report);
                 adapter.Fill(dataTable);
                 Assert.IsTrue(dataTable.Rows.Count > 0);
 
