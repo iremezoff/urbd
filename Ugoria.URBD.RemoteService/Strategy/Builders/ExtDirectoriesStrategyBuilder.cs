@@ -96,7 +96,8 @@ namespace Ugoria.URBD.RemoteService.Strategy.ExtDirectory
                 launchGuid = strategy.Context.LaunchGuid,
                 pid = Process.GetCurrentProcess().Id,
                 reportGuid = strategy.Context.Command.reportGuid,
-                startDate = strategy.Context.StartTime
+                startDate = strategy.Context.StartTime,
+                componentName = "ExtDirectories"
             };
         }
 
@@ -139,7 +140,7 @@ namespace Ugoria.URBD.RemoteService.Strategy.ExtDirectory
                 else if (report.files.Count > 0)
                 {
                     report.status = ReportStatus.Success;
-                    report.message = "Обновление расширенных директорий прошло успешно";
+                    report.message = "Обновление расширенных директорий прошло успешно. Добавлено файлов: " + report.files.Count;
                 }
                 else
                 {

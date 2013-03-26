@@ -10,14 +10,14 @@ namespace Ugoria.URBD.WebControl.ViewModels
 {
     public interface IPermission
     {
-        int PermissionId { get; }
+        int EntityId { get; }
         int UserId { get; }
         bool AllowConfigure { get; }
     }
 
     public class PermissionViewModel : IPermission
     {
-        public int PermissionId { get; set; }
+        public int EntityId { get; set; }
         public int UserId { get; set; }
         public bool AllowConfigure { get; set; }
     }

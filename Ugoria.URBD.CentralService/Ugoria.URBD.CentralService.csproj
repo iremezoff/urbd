@@ -111,6 +111,7 @@
     <Compile Include="Logger\Logger.cs" />
     <Compile Include="Scheduler\Jobs\CheckJob.cs" />
     <Compile Include="Scheduler\TriggerListener.cs" />
+    <Compile Include="Services\WebServiceProxy.cs" />
     <Compile Include="Services\NoticeEventArgs.cs" />
     <Compile Include="Services\ControlService.cs" />
     <Compile Include="Scheduler\Jobs\CommandJob.cs" />

@@ -66,7 +66,7 @@ namespace Ugoria.URBD.WebControl.Models
 
     public partial class UserBasesPermission : IPermission
     {
-        public int PermissionId
+        public int EntityId
         {
             get { return permission_id; }
         }
@@ -84,7 +84,7 @@ namespace Ugoria.URBD.WebControl.Models
 
     public partial class UserServicesPermission : IPermission
     {
-        public int PermissionId
+        public int EntityId
         {
             get { return permission_id; }
         }
@@ -157,8 +157,8 @@ namespace Ugoria.URBD.WebControl.Models
                     UserId = u.user_id,
                     UserName = u.user_name,
                     IsAdmin = u.is_admin.HasValue && u.is_admin.Value,
-                    BasePermissions = u.UserBasesPermission.Select(p => new PermissionViewModel { PermissionId = p.base_id, AllowConfigure = p.allow_configure.HasValue && p.allow_configure.Value }),
-                    ServicePermissions = u.UserServicesPermission.Select(p => new PermissionViewModel { PermissionId = p.service_id, AllowConfigure = p.allow_configure.HasValue && p.allow_configure.Value })
+                    BasePermissions = u.UserBasesPermission.Select(p => new PermissionViewModel { EntityId = p.base_id, AllowConfigure = p.allow_configure.HasValue && p.allow_configure.Value }),
+                    ServicePermissions = u.UserServicesPermission.Select(p => new PermissionViewModel { EntityId = p.service_id, AllowConfigure = p.allow_configure.HasValue && p.allow_configure.Value })
                 });
 
             System.Diagnostics.Trace.WriteLine(((ObjectQuery)query).ToTraceString());

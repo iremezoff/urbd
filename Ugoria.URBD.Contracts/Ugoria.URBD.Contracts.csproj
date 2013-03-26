@@ -99,6 +99,7 @@
     <Compile Include="Handlers\Strategy\ICommandStrategy.cs" />
     <Compile Include="Handlers\Strategy\Exchange\IMode.cs" />
     <Compile Include="Context\IContext.cs" />
+    <Compile Include="Service\IWebService.cs" />
     <Compile Include="URBDException.cs" />
     <Compile Include="Context\StrategyContext.cs" />
     <Compile Include="Data\Base.cs" />

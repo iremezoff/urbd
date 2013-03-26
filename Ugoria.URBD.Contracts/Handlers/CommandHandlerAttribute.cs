@@ -8,7 +8,6 @@ namespace Ugoria.URBD.Contracts.Handlers
     public class CommandHandlerAttribute : Attribute
     {
         private Type handlerType;
-
         public Type HandlerType
         {
             get { return handlerType; }
@@ -16,7 +15,6 @@ namespace Ugoria.URBD.Contracts.Handlers
         }
 
         private Type reportType;
-
         public Type ReportType
         {
             get { return reportType; }
@@ -24,12 +22,10 @@ namespace Ugoria.URBD.Contracts.Handlers
         }
 
         private Type strategyBuilder;
-
         public Type StrategyBuilder
         {
             get { return strategyBuilder; }
             set { strategyBuilder = value; }
         }
-
     }
 }

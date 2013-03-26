@@ -898,13 +898,13 @@ namespace Ugoria.URBD.WebControl.Models
         {
             if (ubpCache == null)
                 ubpCache = GetBasePermissions(baseId);
-            if (permissionVM.PermissionId == 0)
+            if (permissionVM.EntityId == 0)
             {
                 if (permissionVM.UserId != 0)
                     dataContext.UserBasesPermission.AddObject(new UserBasesPermission { base_id = baseId, user_id = permissionVM.UserId, allow_configure = permissionVM.AllowConfigure });
                 return;
             }
-            UserBasesPermission permission = ubpCache.Where(p => p.permission_id == permissionVM.PermissionId).SingleOrDefault();
+            UserBasesPermission permission = ubpCache.Where(p => p.permission_id == permissionVM.EntityId).SingleOrDefault();
             if (permission == null)
                 return;
             else if (permissionVM.UserId == 0)

@@ -20,6 +20,8 @@ namespace Ugoria.URBD.CentralService
 {
     class RemoteServicesManager
     {
+        public event Action<ExecuteCommand> CommandSended;
+        public event Action<Report> ReportReceived;
         private string uriPattern = "net.tcp://{0}:{1}/URBDRemoteService";
         //private string centralAddr = "net.tcp://localhost:8000/URBDCentralService";
 
@@ -91,10 +93,10 @@ namespace Ugoria.URBD.CentralService
 
             Uri centralUri = new Uri((string)centralServiceConguration["main.service_central_address"]);
             NetTcpBinding binding = new NetTcpBinding(SecurityMode.None);
-            binding.MaxReceivedMessageSize = 1024*1024;
+            binding.MaxReceivedMessageSize = 1024 * 1024;
             serviceHost.AddServiceEndpoint(typeof(ICentralService),
                 binding,
-                centralUri);            
+                centralUri);
         }
 
         private RemoteConfiguration RemoteRequestConfiguartion(ICentralService sender, RequestConfigureEventArgs args)
@@ -126,6 +128,8 @@ namespace Ugoria.URBD.CentralService
 
             if (handler != null)
                 handler.HandleReport(args.LaunchReport);
+            if (ReportReceived != null)
+                ReportReceived(args.LaunchReport);
             if (logger != null)
                 logger.Information(args.Uri, String.Format("Запущен автообмен процессом 1С pid: {0}", args.LaunchReport.pid));
         }
@@ -138,6 +142,9 @@ namespace Ugoria.URBD.CentralService
                 return;
             handler.HandleReport(args.Report);
             ReportStatus status = args.Report.status;
+
+            if (ReportReceived != null)
+                ReportReceived(args.Report);
 
             string alarmMesage = "Получен отчет о выполнении операции<br/><br/><b>Тип отчета:</b> {0}<br/><b>ИБ:</b> {1}<br/><b>Статус:</b> {2}<br/><b>Время завершения:</b> {3:HH:mm:ss dd.MM.yyyy}";
 
@@ -220,6 +227,8 @@ namespace Ugoria.URBD.CentralService
                 if (proxy.IsSuccess)
                 {
                     handler.SetCommandReport(preparedCommand, userId);
+                    if (CommandSended != null)
+                        CommandSended(preparedCommand);
                     if (logger != null)
                         logger.Information(remoteServiceEndpoint.Uri, message);
                 }

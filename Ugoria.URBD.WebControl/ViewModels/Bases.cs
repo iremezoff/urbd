@@ -132,6 +132,14 @@ namespace Ugoria.URBD.WebControl.ViewModels
         public IEnumerable<Launch1C> LaunchList { get; set; }
         public DateTime? DateMlgDate { get; set; }
     }
+
+    public class BaseReportViewModel
+    {
+        public int baseId;
+        public int serviceId;
+        public string component;
+        public string status;
+    }
     
 
     public class ExtDirectoriesFileViewModel

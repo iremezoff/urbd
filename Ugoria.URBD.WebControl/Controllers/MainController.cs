@@ -32,7 +32,7 @@ namespace Ugoria.URBD.WebControl.Controllers
 
         public ActionResult Exchange(TableGrouper? sort)
         {
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
 
             TableGrouper grouper = TableGrouper.group;
 
@@ -45,7 +45,7 @@ namespace Ugoria.URBD.WebControl.Controllers
                 grouper = (TableGrouper)Enum.Parse(typeof(TableGrouper), HttpContext.Request.Cookies["sort"].Value);
 
             //TableGrouper grouper = sort ?? TableGrouper.group;
-            ViewData["bases"] = baseRepo.GetBases(grouper, "Exchange");
+            ViewData["bases"] = baseRepo.GetBases(grouper, "Exchange", (currentUser.IsAdmin)?0:currentUser.UserId);
             ViewData["sort"] = grouper;
 
             return View();
@@ -53,7 +53,7 @@ namespace Ugoria.URBD.WebControl.Controllers
 
         public ActionResult ExtDirectories(TableGrouper? sort)
         {
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
 
             TableGrouper grouper = TableGrouper.group;
 
@@ -66,7 +66,7 @@ namespace Ugoria.URBD.WebControl.Controllers
                 grouper = (TableGrouper)Enum.Parse(typeof(TableGrouper), HttpContext.Request.Cookies["sort"].Value);
 
             //TableGrouper grouper = sort ?? TableGrouper.group;
-            ViewData["bases"] = baseRepo.GetBases(grouper, "ExtDirectories");
+            ViewData["bases"] = baseRepo.GetBases(grouper, "ExtDirectories", (currentUser.IsAdmin) ? 0 : currentUser.UserId);
             ViewData["sort"] = grouper;
 
             return View();
@@ -74,7 +74,7 @@ namespace Ugoria.URBD.WebControl.Controllers
 
         public ActionResult MlgCollect(TableGrouper? sort)
         {
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
 
             TableGrouper grouper = TableGrouper.group;
 
@@ -87,7 +87,7 @@ namespace Ugoria.URBD.WebControl.Controllers
                 grouper = (TableGrouper)Enum.Parse(typeof(TableGrouper), HttpContext.Request.Cookies["sort"].Value);
 
             //TableGrouper grouper = sort ?? TableGrouper.group;
-            ViewData["bases"] = baseRepo.GetBases(grouper, "MlgCollect");
+            ViewData["bases"] = baseRepo.GetBases(grouper, "MlgCollect", (currentUser.IsAdmin) ? 0 : currentUser.UserId);
             ViewData["sort"] = grouper;
             ViewData["object_types"] = baseRepo.GetObjectTypes();
             ViewData["base_codes"] = baseRepo.GetBaseCodes();
@@ -98,7 +98,7 @@ namespace Ugoria.URBD.WebControl.Controllers
         [HttpPost]
         public ActionResult MlgCollect(string number, string baseCode, int type, DateTime? startDate, DateTime? endDate)
         {
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
             IEnumerable<ReportLog> logs = baseRepo.GetReportLogByObject(type, baseCode, number, startDate.Value.Date, endDate.Value.Date);
             ViewData["logs"] = logs;
             ViewData["object_types"] = baseRepo.GetObjectTypes();
@@ -118,7 +118,7 @@ namespace Ugoria.URBD.WebControl.Controllers
             int baseId = -1;
             int.TryParse((string)RouteData.Values["id"], out baseId);
 
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
 
             IBaseReportView baseView = baseRepo.GetBaseById(baseId, "MlgCollect");
 
@@ -140,7 +140,7 @@ namespace Ugoria.URBD.WebControl.Controllers
 
             int.TryParse((string)RouteData.Values["id"], out baseId);
 
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
 
             IBaseReportView baseView = baseRepo.GetBaseById(baseId, "Exchange");
 
@@ -161,7 +161,7 @@ namespace Ugoria.URBD.WebControl.Controllers
             int baseId = -1;
             int.TryParse((string)RouteData.Values["id"], out baseId);
 
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
 
             IBaseReportView baseView = baseRepo.GetBaseById(baseId, "Exchange");
 
@@ -182,7 +182,7 @@ namespace Ugoria.URBD.WebControl.Controllers
             int baseId = -1;
             int.TryParse((string)RouteData.Values["id"], out baseId);
 
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
 
             IBaseReportView baseView = baseRepo.GetBaseById(baseId, "ExtDirectories");
 
@@ -204,7 +204,7 @@ namespace Ugoria.URBD.WebControl.Controllers
 
             int.TryParse((string)RouteData.Values["id"], out baseId);
 
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
 
             IBaseReportView baseView = baseRepo.GetBaseById(baseId, "Exchange");
 
@@ -226,7 +226,7 @@ namespace Ugoria.URBD.WebControl.Controllers
 
             int.TryParse((string)RouteData.Values["id"], out baseId);
 
-            IBaseRepository baseRepo = new BaseRepository(dataContext, currentUser.UserId, currentUser.IsAdmin);
+            IBaseRepository baseRepo = new BaseRepository(dataContext);
 
             IBaseReportView baseView = baseRepo.GetBaseById(baseId, "ExtDirectories");
 

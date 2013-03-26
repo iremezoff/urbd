@@ -11,11 +11,9 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
         var packetTypes = {@(Html.Raw(string.Join(",", ((PacketType[])Enum.GetValues(typeof(PacketType))).Select(e => string.Format("'{0}': '{1}'", (char)e, e.ToString())))))};
         var modeTypes = {@(Html.Raw(string.Join(",", ((ModeType[])Enum.GetValues(typeof(ModeType))).Select(e => string.Format("'{0}': '{1}'", (char)e, e.ToString())))))};
      
-    $(document).ready(function () { 
-               
+    $(document).ready(function () {
 
-        $("input:submit").button().click(function() {
-        
+        $("input:submit").button().click(function() {        
             $(this).val("Сохранение...").after('<img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/> ');
             return false;
         });

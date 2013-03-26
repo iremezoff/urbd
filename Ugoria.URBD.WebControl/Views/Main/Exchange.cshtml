@@ -4,20 +4,14 @@
 @using Ugoria.URBD.WebControl.Controllers
 @using Ugoria.URBD.Contracts.Services
 @{
-    ViewBag.Title = "Управление распределенными базами данных";
-    Layout = "~/Views/Shared/MainLayout.cshtml";
+    Layout = "~/Views/Main/_LayoutTable.cshtml";
 }
 @helper Button(int baseId, int serviceId, string status)
     {
     <div style="white-space: nowrap">
-        @if ("Busy".Equals(status))
-        {
-            @Html.ActionLink("Отмена", "ExchangeInterrupt", new { id = baseId }, new { @class = "interrupt" })
-        }
-        else
-        {
-            @Html.ActionLink("Обмен", "ExchangeGo", new { id = baseId }, new { @class = "go" })
-        }
+        @{bool isBusy = "Busy".Equals(status);}
+        @Html.ActionLink("Обмен", "ExchangeGo", new { id = baseId }, new { @class = "go", style = !isBusy ? "display: inline-block" : "display: none" })
+        @Html.ActionLink("Отмена", "ExchangeInterrupt", new { id = baseId }, new { @class = "interrupt", style = isBusy ? "display: inline-block" : "display: none" })
         @Html.ActionLink("Menu", "#")
     </div>
     <ul class="func_menu">
@@ -28,261 +22,119 @@
     </ul>
 }
 <script type="text/javascript">
-        var groupColumn = @(!TableGrouper.group.Equals(ViewData["sort"]) ? !TableGrouper.service.Equals(ViewData["sort"]) ? 2 : 4 : 6);
-        $(document).ready(function () {
-            $("input:submit, button").button();
-            $("#modeset").buttonset();
-            $("#withMD").button();
+    var groupColumn = @(!TableGrouper.group.Equals(ViewData["sort"]) ? !TableGrouper.service.Equals(ViewData["sort"]) ? 2 : 4 : 6);
+    var component = "Exchange";
+    function go_action(button)
+    {
+        $( '#go_dialog' ).dialog( 'option', 'title', "Обмен для ИБ: " + $( button ).closest( "tr" ).find( "td.base_name" ).text() );
+    }
+    
+    function send_report( tr, packet )
+    {
+        $( "td.release", tr ).html( packet.md_release );
+        $( "td.load_packets", tr ).html( packet.load_packets );
+        $( "td.unload_packets", tr ).html( packet.unload_packets );
+    }
 
-            $("a.edit-button").button({icons: {
-                    primary: "ui-icon-wrench"
-                },
-                text:false
-            });
-
-            $("a.interrupt").addClass("ui-state-default-other");
-            
-            $("a.go, a.interrupt")
-                .button()
-                .click(function() {
-                    $.cookie("scroll_position", $(window).scrollTop());
-                    if($(this).hasClass("exchange")) {
-                        $('#exchange_dialog').dialog('open');
-                        $('#exchange_dialog').dialog('option', 'title', "Режим обмена для ИБ: "+$(this).parents("tr").find("td").eq(1).html());
-                        $('#exchange_dialog form').attr('action', $(this).attr('href'));
-                        //$(this).click();
-                        //$('.ui-dialog-titlebar span').html("Режим обмена для ИБ: "+$(this).parents("tr").find("td").eq(1).html());
-                    }
-                    else if ($(this).hasClass("interrupt")) {                        
-                        var base_name=$(this).parents("tr").find("td").eq(1).html();
-                        $('#interrupt_confirm').dialog('open');
-                        $('#interrupt_confirm form').attr('action', $(this).attr('href'));
-                        $('#interrupt_confirm div').html('Отменить операцию обмена для ИБ <b>'+base_name+'</b>?<br/>' +
-                                    '<b>Осторожно!</b> Процесс 1С может быть "убит" и потребуется запуск обмена вручную непосредественно на сервере');
-                        //$(this).click();
-                        //$('.ui-dialog-titlebar span').html("Режим обмена для ИБ: "+$(this).parents("tr").find("td").eq(1).html());
-                    }
-                    return false;
-                })
-                .next()
-      .button( {
-        text: false,
-        icons: {
-          primary: "ui-icon-triangle-1-s"
-        }
-      })
-      .click( function() {
-        var menu = $(this).parent().next().toggle().position({
-          my: "right top",
-          at: "right bottom",
-          of: this
-        });
-        $(document).one("click", function() {
-          menu.hide();
-        });
-        return false;
-      })
-    .parent()
-      .buttonset()
-    .next()
-      .hide()
-      .menu();
-
-      $("a#component_menu")
-      .button( {
-        text: false,
-        icons: {
-          primary: "ui-icon-triangle-1-s"
-        }
-      })
-      .click( function() {
-        var menu = $(this).parent().next().toggle().position({
-          my: "right top",
-          at: "right bottom",
-          of: this
-        });
-        $(document).one("click", function() {
-          menu.hide();
-        });
-        return false;
-      })
-    .parent()
-    .next()
-      .hide()
-      .menu();
-      
-      $("ul.func_menu li a").click(function (event, ui) {
-       var location = $(this).attr("href");
-       window.location = location;
-       });
-
-            $("#exchange_dialog" ).dialog({
-                autoOpen:false,
-			    resizable: false,
-                width: 370,
-			    modal: true,
-			    buttons: {
-			    	"Выполнить": function() {
-                        $('#exchange_dialog form').submit();
-			    		$(this).dialog("close");                   
-			    	},
-			    	"Отмена": function() {
-			    		$( this ).dialog( "close" );
-			    	}
-			    }
-		    });            
-                
-		$( "#interrupt_confirm" ).dialog({
-            autoOpen:false,
-			resizable: false,
-            width:370,
-			modal: true,
-			buttons: {
-				"Да": function() {
-                $('#interrupt_confirm form').submit();
-					$( this ).dialog( "close" );
-				},
-				"Отмена": function() {
-					$( this ).dialog( "close" );
-				}
-			}
-		});
+    $( document ).ready( function ()
+    {
+        $( "#modeset" ).buttonset();
         
-            var oTable = $('#data').dataTable({
-                "bJQueryUI": true,
-                "sPaginationType": "full_numbers",
-                "aaSorting": [],
-                "bLengthChange": false,
-                "bPaginate": false,        
-                "aoColumnDefs": [
-                        { "bSearchable": false, "bVisible": false, "aTargets": [ groupColumn,2 ] },
-                        { "bSearchable": false, "bSortable":false, "aTargets": [ 7,9,10,11 ] },
-                        { "sType": "date-eu", "aTargets": [ 5 ] }
+        var oTable = $( '#data' ).dataTable( {
+            "bJQueryUI": true,
+            "sPaginationType": "full_numbers",
+            "aaSorting": [],
+            "bLengthChange": false,
+            "bPaginate": false,
+            "aoColumnDefs": [
+                        { "bSearchable": false, "bVisible": false, "aTargets": [groupColumn, 2] },
+                        { "bSearchable": false, "bSortable": false, "aTargets": [7, 9, 10, 11] },
+                        { "sType": "date-eu", "aTargets": [5] }
                     ],
-                "oLanguage": {
-                    "sInfo": "Всего информационных баз: _TOTAL_ ",
-                    "sSearch": "Поиск: "
-                },
-                "oColVis": {
-                    "sAlign": "left"
-                },
-                "fnDrawCallback": function (oSettings) {
-                    if (oSettings.aiDisplay.length == 0) {
-                        return;
-                    }
-                    var nTrs = $('#data tbody tr');
-                    var iColspan = nTrs[0].getElementsByTagName('td').length;
-                    var sLastGroup = "";
-                    var groupNum = 0;
-                    var selectoName = "";
-                    for (var i = 0; i < nTrs.length; i++) {
-                        var iDisplayIndex = oSettings._iDisplayStart + i;
-                        var sGroup = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[groupColumn];
-                        
-                          if (sGroup != sLastGroup) {
-                            groupNum++;
-
-                            selectoName = "group_"+groupColumn+"_"+groupNum;
-                            var cookie = $.cookie(selectoName);
-                            var nGroup = document.createElement('tr');
-                            var nCell = document.createElement('th');
-                            var aLink = $(document.createElement('a')).attr("href", "#"+selectoName).addClass("group_toggle").html(cookie!="none" && cookie!=null?"свернуть":"развернуть");
-                            $(nCell).addClass("group").html(sGroup).append(" (").append(aLink).append(")").attr("colspan", iColspan);
-                            $(nGroup).wrapInner(nCell);
-                            $(nTrs[i]).before(nGroup);
-                            sLastGroup = sGroup;                            
-                        }
-                        $(nTrs[i]).addClass(selectoName).toggle(cookie!="none" && cookie!=null);
-                    }
+            "oLanguage": {
+                "sInfo": "Всего информационных баз: _TOTAL_ ",
+                "sSearch": "Поиск: "
+            },
+            "oColVis": {
+                "sAlign": "left"
+            },
+            "fnDrawCallback": function ( oSettings )
+            {
+                if ( oSettings.aiDisplay.length == 0 )
+                {
+                    return;
                 }
-            });
-            new FixedHeader(oTable);
+                var nTrs = $( '#data tbody tr' );
+                var iColspan = nTrs[0].getElementsByTagName( 'td' ).length;
+                var sLastGroup = "";
+                var groupNum = 0;
+                var selectoName = "";
+                for ( var i = 0; i < nTrs.length; i++ )
+                {
+                    var iDisplayIndex = oSettings._iDisplayStart + i;
+                    var sGroup = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[groupColumn];
 
-            $("a.group_toggle").on("click",function(){
-                var groupName = $(this).attr("href").substring(1);
-                var display = $("table#data tr."+groupName).toggle().css("display");
-                $.cookie(groupName, display);
-                $(this).html(display=="none"?"развернуть":"свернуть");
-                return false;
-            });
+                    if ( sGroup != sLastGroup )
+                    {
+                        groupNum++;
 
-            if($.cookie("scroll_position")!=null)
-                $("html").scrollTop($.cookie("scroll_position"));
-            $.cookie("scroll_position", null);
-        });
+                        selectoName = "group_" + groupColumn + "_" + groupNum;
+                        var cookie = $.cookie( selectoName );
+                        var nGroup = document.createElement( 'tr' );
+                        var nCell = document.createElement( 'th' );
+                        var aLink = $( document.createElement( 'a' ) ).attr( "href", "#" + selectoName ).addClass( "group_toggle" ).html( cookie != "none" && cookie != null ? "свернуть" : "развернуть" );
+                        $( nCell ).addClass( "group" ).html( sGroup ).append( " (" ).append( aLink ).append( ")" ).attr( "colspan", iColspan );
+                        $( nGroup ).wrapInner( nCell );
+                        $( nTrs[i] ).before( nGroup );
+                        sLastGroup = sGroup;
+                    }
+                    $( nTrs[i] ).addClass( selectoName ).toggle( cookie != "none" && cookie != null );
+                }
+            }
+        } );
+        new FixedHeader( oTable );
+
+        $( "a.group_toggle" ).on( "click", function ()
+        {
+            var groupName = $( this ).attr( "href" ).substring( 1 );
+            var display = $( "table#data tr." + groupName ).toggle().css( "display" );
+            $.cookie( groupName, display );
+            $( this ).html( display == "none" ? "развернуть" : "свернуть" );
+            return false;
+        } );
+    } );
 </script>
-<h2 class="component">
-    @ViewBag.ComponentHead</h2>
-@Html.Partial("ComponentMenu")
-<br />
-@Html.Partial("SortMenu")
+@{int index = 1;}
 @(Html.Grid<IBaseReportView>("bases").Columns(column =>
 {
-    column.For(b => b.BaseId).HeaderAttributes(width => "2%").Named("#");
-    column.For(b => b.BaseName).HeaderAttributes(width => "8%").Named("Имя ИБ");
+    column.Custom(b => index++).HeaderAttributes(width => "2%").Named("#");
+    column.For(b => b.BaseName).HeaderAttributes(width => "8%").Named("Имя ИБ").Attributes(@class => "base_name"); ;
     column.For(b => b.ParentBaseName).HeaderAttributes(width => "8%").Named("Имя родительской ИБ");
-    column.For(b => b.MDRelease).HeaderAttributes(width => "5%").Named("Релиз");
+    column.For(b => b.MDRelease).HeaderAttributes(width => "5%").Named("Релиз").Attributes(@class => "release");
     column.Custom(b => String.Format("{0} ({1})", b.ServiceAddress, b.ServiceName)).HeaderAttributes(width => "8%").Named("Адрес сервиса");
-    column.For(b => b.DateComplete).HeaderAttributes(width => "8%").Named("Дата последнего обмена").Format("{0:dd.MM.yyyy HH:mm:ss}");
+    column.For(b => b.DateComplete).HeaderAttributes(width => "8%").Named("Дата крайнего обмена").Format("{0:dd.MM.yyyy HH:mm:ss}").Attributes(@class => "date_complete");
     column.For(b => b.GroupName).Encode(false).Named("Группа");
-    column.Custom(b => string.Empty).Attributes(new Func<GridRowViewData<IBaseReportView>, Dictionary<string, object>>(item => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(item.Item.Status) } })).HeaderAttributes(width => "5");
-    column.For(b => b.Message).HeaderAttributes(width => "23%").Named("Отчёт");
-    column.Custom(b => string.Join("<br/>", b.Packets.Where(p => p.Packet.Type[0] == (char)PacketType.Load).Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Packet.FileName, c.Size / 1024f, c.CreatedDate)))).Named("Последние загруженные пакеты").HeaderAttributes(width => "20%");
-    column.Custom(b => string.Join("<br/>", b.Packets.Where(p => p.Packet.Type[0] == (char)PacketType.Unload).Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Packet.FileName, c.Size / 1024f, c.CreatedDate)))).Named("Последние выгруженные пакеты").HeaderAttributes(width => "20%");
-    column.Custom(b => Button(b.BaseId, b.ServiceId, b.Status)).HeaderAttributes(width => "8%");
-}).Attributes(id => "data", width => "100%"))
+    column.Custom(b => string.Empty).Attributes(br => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(br.Item.Status) + " status" } }).HeaderAttributes(width => "5");
+    column.For(b => b.Message).HeaderAttributes(width => "23%").Named("Отчёт").Attributes(@class => "message");
+    column.Custom(b => string.Join("<br/>", b.Packets.Where(p => p.Packet.Type[0] == (char)PacketType.Load).Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Packet.FileName, c.Size / 1024f, c.CreatedDate)))).Named("Последние загруженные пакеты").HeaderAttributes(width => "20%").Attributes(@class => "load_packets");
+    column.Custom(b => string.Join("<br/>", b.Packets.Where(p => p.Packet.Type[0] == (char)PacketType.Unload).Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Packet.FileName, c.Size / 1024f, c.CreatedDate)))).Named("Последние выгруженные пакеты").HeaderAttributes(width => "20%").Attributes(@class => "unload_packets");
+    column.Custom(b => Button(b.BaseId, b.ServiceId, b.Status)).HeaderAttributes(width => "8%").Attributes(@class => "button");
+}).Attributes(id => "data", width => "100%").RowAttributes(br => new Dictionary<string, object>() { { "id", "row" + br.Item.BaseId } }))
 <br />
-<table style="border: 0px;">
-    <tr>
-        <td colspan="12">
-            Легенда:
-        </td>
-    </tr>
-    <tr>
-        <td class="success" width="10">
-        </td>
-        <td>
-            - Успешно
-        </td>
-        <td class="fail" width="10">
-        </td>
-        <td>
-            - Сбой
-        </td>
-        <td class="critical" width="10">
-        </td>
-        <td>
-            - Серьезный сбой
-        </td>
-        <td class="warning" width="10">
-        </td>
-        <td>
-            - Предупреждение
-        </td>
-        <td class="busy" width="10">
-        </td>
-        <td>
-            - Идет процесс
-        </td>
-        <td class="interrupt" width="10">
-        </td>
-        <td>
-            - Прервано
-        </td>
-    </tr>
-</table>
-<div id="exchange_dialog" title="Режим обмена">
+<div id="go_dialog" style="display: none">
     @{Html.BeginForm("ExchangeGo", "Main", FormMethod.Get);}
-    <div id="modeset">
+    Режим обмена: <div id="modeset">
         @Html.RadioFromEnum("mode", ModeType.Normal, new Dictionary<string, object>())
     </div>
     @{Html.EndForm();}
+    <div id="go_status"></div>
 </div>
-<div id="interrupt_confirm" title="Подтверждение отмены операции" style="display: none">
+<div id="interrupt_dialog" style="display: none">
     @{Html.BeginForm("ExchangeInterrupt", "Main", FormMethod.Get);}
     <div id="dialog-confirm">
         <b>Осторожно!</b> Процесс 1С может быть "убит" и потребуется запуск обмена вручную
         непосредественно на сервере
     </div>
     @{Html.EndForm();}
+        <div id="interrupt_status"></div>
 </div>

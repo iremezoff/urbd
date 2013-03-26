@@ -197,7 +197,8 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
                 launchGuid = strategy.Context.LaunchGuid,
                 pid = strategy.Context.Pid,
                 reportGuid = strategy.Context.Command.reportGuid,
-                startDate = strategy.Context.StartTime
+                startDate = strategy.Context.StartTime,
+                componentName = "Exchange"
             };
         }
 

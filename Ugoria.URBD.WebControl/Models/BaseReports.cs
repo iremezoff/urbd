@@ -393,7 +393,7 @@ namespace Ugoria.URBD.WebControl.Models
     public enum TableGrouper { group, service, filial }
     public interface IBaseRepository
     {
-        IEnumerable<IBaseReportView> GetBases(TableGrouper grouper, string component);
+        IEnumerable<IBaseReportView> GetBases(TableGrouper grouper, string component, int userId = 0);
         IBaseReportView GetBaseById(int baseId, string component);
         IEnumerable<IObjectType> GetObjectTypes();
         IEnumerable<string> GetBaseCodes();
@@ -403,19 +403,17 @@ namespace Ugoria.URBD.WebControl.Models
     public class BaseRepository : IBaseRepository
     {
         private readonly URBD2Entities dataContext;
-        private int userId;
-        private bool isAdminAccess = false;
 
         public IEnumerable<ReportLog> GetReportLogByObject(int typeId, string baseCode, string identifier, DateTime startDate, DateTime endDate)
         {
-            var query = dataContext.ReportLog.Where(o=>o.date_message >= startDate && o.date_message <= endDate);
+            var query = dataContext.ReportLog.Where(o => o.date_message >= startDate && o.date_message <= endDate);
             if (!string.IsNullOrEmpty(identifier))
                 query = query.Where(o => o.Object.identifier.Equals(identifier));
             if (typeId > 0)
                 query = query.Where(o => o.Object.type_id == typeId);
             if (!string.IsNullOrEmpty(baseCode))
                 query = query.Where(o => o.Object.base_code.Equals(baseCode));
-            return query.Include(l => l.Object).Include(l => l.EventType.EventGroup).Include(l=>l.Report.Base).OrderByDescending(l=>l.date_message).ToList();
+            return query.Include(l => l.Object).Include(l => l.EventType.EventGroup).Include(l => l.Report.Base).OrderByDescending(l => l.date_message).ToList();
         }
 
         public IEnumerable<IObjectType> GetObjectTypes()
@@ -427,43 +425,93 @@ namespace Ugoria.URBD.WebControl.Models
             return dataContext.Object.GroupBy(o => o.base_code).Select(x => x.Key);
         }
 
-        public IBaseReportView GetBaseById(int baseId, string componentName)
+        private BaseReportView GenericSelector(BaseReportList x)
         {
-            var query = (isAdminAccess
-                ? dataContext.BaseReportList
-                    .Where(x => x.component_name.Equals(componentName))
-                : dataContext.UserBasesPermission
-                    .Where(p => p.user_id == userId)
-                    .Join(dataContext.BaseReportList.Where(x => x.component_name.Equals(componentName)).Select(b => b), p => p.base_id, b => b.base_id, (p, b) => b))
-                    .Where(b => b.base_id == baseId);
-
-            var query2 = query.Select<BaseReportList, IBaseReportView>(new Func<BaseReportList, BaseReportView>(x => new BaseReportView
-             {
-                 BaseId = x.base_id,
-                 GroupId = x.group_id,
-                 BaseName = x.base_name,
-                 DateCommand = x.date_command,
-                 DateComplete = x.date_complete,
-                 Message = x.message,
-                 ParentBaseId = x.parent_base_id,
-                 ParentBaseName = x.parent_base_name,
-                 ServiceId = x.service_id,
-                 ServiceAddress = x.service_address,
-                 GroupName = x.group_name,
-                 MDRelease = x.md_release,
-                 ServiceName = x.service_name,
-                 Status = x.status
-             }));
-            //System.Diagnostics.Trace.WriteLine(((ObjectQuery)query2).ToTraceString() + " " + query2.Count());
-            System.Diagnostics.Trace.WriteLine(query.Count());
-            if (query2.Count() == 0)
-                return null;
-            return query2.Single();
+            return new BaseReportView
+            {
+                BaseId = x.base_id,
+                GroupId = x.group_id,
+                BaseName = x.base_name,
+                DateCommand = x.date_command,
+                DateComplete = x.date_complete,
+                Message = x.message,
+                ParentBaseId = x.parent_base_id,
+                ParentBaseName = x.parent_base_name,
+                ServiceId = x.service_id,
+                ServiceAddress = x.service_address,
+                GroupName = x.group_name,
+                MDRelease = x.md_release,
+                ServiceName = x.service_name,
+                Status = x.status,
+                DateMlgLog = x.mlg_date_log
+            };
         }
 
-        public IEnumerable<IBaseReportView> GetBases(TableGrouper grouper, string componentName)
+        private BaseReportView ExchangeSelector(BaseReportList x)
         {
-            var query = isAdminAccess
+            BaseReportView baseReportView = GenericSelector(x);
+            baseReportView.Packets = dataContext.Packet.Join(dataContext.ReportPacket,
+                       p => p.packet_id,
+                       rp => rp.packet_id,
+                       (p, rp) =>
+                           new
+                           {
+                               packet = p,
+                               reportPacket = rp
+                           }).Where(rp => rp.packet.base_id == x.base_id && rp.reportPacket.rp_id == dataContext.ReportPacket.Where(rp2 => rp2.packet_id == rp.reportPacket.packet_id).Max(m => m.rp_id)).Select(rp =>
+                               new ReportPacketViewModel
+                                   {
+                                       CreatedDate = rp.reportPacket.date_created.Value,
+                                       Packet = new PacketViewModel { FileName = rp.packet.filename, PacketId = rp.packet.packet_id, Type = rp.packet.type },
+                                       Size = rp.reportPacket.size.Value
+                                   });
+            return baseReportView;
+        }
+
+        private IBaseReportView ExtDirectorySelector(BaseReportList x)
+        {
+            BaseReportView baseReportView = GenericSelector(x);
+            baseReportView.Files = dataContext.ExtDirectoryFile.Where(f => f.report_id == dataContext.ExtDirectoryFile.Where(f2 => f2.Report.base_id == x.base_id).Max(f2 => f2.report_id)).Select(f =>
+                    new ExtDirectoriesFileViewModel
+                    {
+                        FileId = f.file_id,
+                        Filename = f.filename,
+                        Size = f.size,
+                        DateCopied = f.date_copied
+                    });
+            return baseReportView;
+        }
+
+        private IBaseReportView MlgCollectSelector(BaseReportList x)
+        {
+            return GenericSelector(x);
+        }
+
+        public IBaseReportView GetBaseById(int baseId, string componentName)
+        {
+            var query = dataContext.BaseReportList.Where(x => x.component_name.Equals(componentName) && x.base_id == baseId);
+
+            if ("Exchange".Equals(componentName))
+            {
+                return query.Select(ExchangeSelector).SingleOrDefault();
+            }
+            else if ("MlgCollect".Equals(componentName))
+            {
+                return query.Select(MlgCollectSelector).SingleOrDefault();
+            }
+            else if ("ExtDirectories".Equals(componentName))
+            {
+                return query.Select(ExtDirectorySelector).SingleOrDefault();
+            }
+            else
+            {
+                return query.Select(GenericSelector).SingleOrDefault();
+            }
+        }
+
+        public IEnumerable<IBaseReportView> GetBases(TableGrouper grouper, string componentName, int userId = 0)
+        {
+            var query = (userId == 0)
                 ? dataContext.BaseReportList
                     .Where(x => x.component_name.Equals(componentName))
                 : dataContext.UserBasesPermission
@@ -563,11 +611,9 @@ namespace Ugoria.URBD.WebControl.Models
             }
         }
 
-        public BaseRepository(URBD2Entities dataContext, int userId, bool isAdminAccess = false)
+        public BaseRepository(URBD2Entities dataContext)
         {
-            this.userId = userId;
             this.dataContext = dataContext;
-            this.isAdminAccess = isAdminAccess;
         }
     }
 }

@@ -53,7 +53,8 @@ namespace Ugoria.URBD.RemoteService.Strategy.Builders
                 launchGuid = strategy.Context.LaunchGuid,
                 pid = Process.GetCurrentProcess().Id,
                 reportGuid = strategy.Context.Command.reportGuid,
-                startDate = strategy.Context.StartTime
+                startDate = strategy.Context.StartTime,
+                componentName = "MlgCollect"
             };
         }
 

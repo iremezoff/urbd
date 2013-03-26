@@ -17,5 +17,8 @@ namespace Ugoria.URBD.Contracts.Data.Reports
 
         [DataMember]
         public DateTime startDate;
+
+        [DataMember]
+        public string componentName;
     }
 }

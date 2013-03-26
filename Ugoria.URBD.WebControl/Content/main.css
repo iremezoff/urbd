@@ -366,17 +366,6 @@ ul.func_menu
     min-width:150px;
 }
 
-div#exchange_dialog
-{
-    /*text-align: center;*/
-    width: auto;
-}
-div#exchange_dialog div
-{
-    padding: 5px;
-    width: auto;
-}
-
 div.footer 
 {
     text-align:center;

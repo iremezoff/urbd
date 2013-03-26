@@ -5,8 +5,8 @@
 @using MvcContrib.UI.Grid
 @{
     ServiceViewModel service = (ServiceViewModel)ViewData["service"];
-    ViewBag.Title = string.Format("Сервис {0} ({1}) - УРБД 2.5", service.Name, service.Address);
-    Layout = "~/Views/Shared/MainLayout.cshtml";    
+    ViewBag.Title = string.Format("Сервис {0} ({1})", service.Name, service.Address);
+    Layout = "~/Views/Shared/_MainLayout.cshtml";    
 }
 <script language="javascript" type="text/javascript">
         $(document).ready(function () {

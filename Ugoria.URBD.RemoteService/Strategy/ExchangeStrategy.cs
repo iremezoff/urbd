@@ -275,7 +275,7 @@ namespace Ugoria.URBD.RemoteService.Strategy
             catch (WebException ex)
             {
                 LogHelper.Write2Log(ex);
-                throw new URBDException(string.Format("Загрузка с FTP: {0} ({1})", ex.Message, ex.Response.ResponseUri), ex);
+                throw new URBDException(string.Format("Загрузка с FTP: {0} ({1})", ex.Message, ex.Response!=null?ex.Response.ResponseUri.ToString():string.Empty), ex);
             }
             catch (ZipException ex)
             {

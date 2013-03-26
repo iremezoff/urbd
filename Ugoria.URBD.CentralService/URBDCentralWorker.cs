@@ -16,6 +16,8 @@ using System.Reflection;
 using System.Collections.Generic;
 using Ugoria.URBD.Contracts.Handlers;
 using Ugoria.URBD.CentralService.Alarming;
+using Ugoria.URBD.Contracts.Data.Reports;
+using Ugoria.URBD.Contracts.Service;
 
 namespace Ugoria.URBD.CentralService
 {
@@ -25,6 +27,7 @@ namespace Ugoria.URBD.CentralService
         private SchedulerManager schedulerManager;
         private ServiceHost controlHost;
         private CentralConfigurationManager confManager;
+        private ChannelFactory<IWebService> webChannelFactory = new ChannelFactory<IWebService>(new NetTcpBinding(SecurityMode.None), new EndpointAddress("net.tcp://localhost:9999/URBDWebService"));
 
         public URBDCentralWorker()
         {
@@ -64,6 +67,8 @@ namespace Ugoria.URBD.CentralService
             {
                 ReconfigureCentralService();
                 remoteServiceManager = new RemoteServicesManager(confManager);
+                remoteServiceManager.CommandSended += CommandSended;
+                remoteServiceManager.ReportReceived += ReportReceived;
 
                 IConfiguration conf = new Configuration(confManager.GetCentralServiceConfiguration());
                 Uri controlUri = new Uri((string)conf.GetParameter("main.service_control_address"));
@@ -152,6 +157,28 @@ namespace Ugoria.URBD.CentralService
 
             remoteServiceManager.SendCommand(command, userId);
             schedulerManager.AddScheduleLaunch(remoteServiceManager.CheckProcess, command);
+        }
+
+        private void CommandSended(ExecuteCommand command)
+        {
+            LogHelper.Write2Log("Оповещение веб-сервиса о успешной отправке команды", LogLevel.Information);
+            using (WebServiceProxy proxy = new WebServiceProxy(webChannelFactory))
+            {
+                proxy.NotifyCommand(command);
+                if (!proxy.IsSuccess)
+                    LogHelper.Write2Log(proxy.Exception);
+            }
+        }
+
+        private void ReportReceived(Report report)
+        {
+            LogHelper.Write2Log("Оповещение веб-сервиса о получении отчета", LogLevel.Information);            
+            using (WebServiceProxy proxy = new WebServiceProxy(webChannelFactory))
+            {
+                proxy.NotifyReport(report);
+                if (!proxy.IsSuccess)
+                    LogHelper.Write2Log(proxy.Exception);
+            }
         }
 
         public void ReconfigureBaseOfService(int baseId)

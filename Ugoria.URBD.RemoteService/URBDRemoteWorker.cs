@@ -32,7 +32,7 @@ namespace Ugoria.URBD.RemoteService
 
         public URBDRemoteWorker()
         {
-            currentVersion = Regex.Match(Assembly.GetExecutingAssembly().FullName, @"Version=([\d+\.]+)+").Groups[1].Value; // извлечение версии из полного имени сборки
+            currentVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString(); // извлечение версии из полного имени сборки
             Init();
         }
 

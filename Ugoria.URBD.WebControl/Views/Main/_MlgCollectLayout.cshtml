@@ -1,0 +1,61 @@
+﻿@using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Models
+@using Ugoria.URBD.WebControl.Helpers
+@using Ugoria.URBD.WebControl.Controllers
+@using Ugoria.URBD.Contracts.Services
+@{
+    Layout = "~/Views/Main/_LayoutTable.cshtml";
+    List<SelectListItem> typeList = new List<SelectListItem>();
+    typeList.Add(new SelectListItem { Selected = true, Text = "---", Value = "0" });
+    typeList.AddRange(((IEnumerable<IObjectType>)ViewData["object_types"]).Select<IObjectType, SelectListItem>(x => new SelectListItem { Text = string.Format("{0} ({1})", x.Type, x.Name), Value = x.TypeId.ToString() }));
+    List<SelectListItem> codeList = new List<SelectListItem>();
+    codeList.AddRange(((IEnumerable<string>)ViewData["base_codes"]).Select<string, SelectListItem>(x => new SelectListItem { Text = x, Value = x }));
+}
+<script language="javascript" type="text/javascript">
+    $( document ).ready( function ()
+    {
+        $.datepicker.setDefaults( $.extend( $.datepicker.regional["ru"] ) );
+
+        $( "input.date" ).datepicker( {
+            defaultDate: null
+        } )
+        .mask( "99.99.9999" );
+    } );
+</script>
+@{Html.BeginForm();}
+<table>
+    <tr>
+        <td class="ui-state-default" colspan="2">
+            Поиск
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Идентификационный номер:
+        </td>
+        <td>@Html.TextBox("number")
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Объект:
+        </td>
+        <td>@Html.DropDownList("type", typeList)
+            Тип объекта (название)
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Префикс ИБ:
+        </td>
+        <td>@Html.DropDownList("baseCode", codeList)
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2">
+            <input type="submit" value="Искать" />
+        </td>
+    </tr>
+</table>
+@{Html.EndForm();}
+@RenderBody()
