@@ -102,7 +102,7 @@
     column.For(b => b.BaseName).HeaderAttributes(width => "8%").Named("Имя ИБ").Attributes(@class => "base_name");
     column.For(b => b.ParentBaseName).HeaderAttributes(width => "8%").Named("Имя родительской ИБ");
     column.Custom(b => String.Format("{0} ({1})", b.ServiceAddress, b.ServiceName)).HeaderAttributes(width => "8%").Named("Адрес сервиса");
-    column.For(b => b.DateComplete).HeaderAttributes(width => "8%").Named("Дата последнего обновления").Format("{0:dd.MM.yyyy HH:mm:ss}").Attributes(@class => "date_complete");
+    column.For(b => b.DateComplete).HeaderAttributes(width => "8%").Named("Дата крайнего обновления").Format("{0:dd.MM.yyyy HH:mm:ss}").Attributes(@class => "date_complete");
     column.For(b => b.GroupName).Encode(false).Named("Группа");
     column.Custom(b => "").Attributes(br => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(br.Item.Status) + " status" } }).HeaderAttributes(width => "5");
     column.Custom(b => (b.Message ?? string.Empty).Replace("\r\n", "<br/>")).HeaderAttributes(width => "25%").Named("Отчёт").Attributes(@class => "message");

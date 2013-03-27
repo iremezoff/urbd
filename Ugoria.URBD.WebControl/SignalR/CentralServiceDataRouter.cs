@@ -45,6 +45,7 @@ namespace Ugoria.URBD.WebControl.SignalR
                 {
                     base_id = report.baseId,
                     type = "launch",
+                    date_complete = ((LaunchReport)report).startDate,
                     message = string.Format("Идет процесс с {0:dd.MM.yyyy HH:mm:ss}. PID: {1} ({2:dd.MM.yyyy HH:mm:ss})", report.commandDate, ((LaunchReport)report).pid, ((LaunchReport)report).startDate),
                     status = "busy",
                 };

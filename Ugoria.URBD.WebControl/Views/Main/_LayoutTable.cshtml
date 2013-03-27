@@ -7,11 +7,9 @@
     ViewBag.Title = "Управление распределенными базами данных";
     Layout = "~/Views/Shared/_MainLayout.cshtml";
 }
-
-    <script src="@Url.Content("~/Scripts/jquery.cookie.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.cookie.js")" type="text/javascript"></script>
 <script src="@Url.Content("~/Scripts/jquery.signalR-1.0.1.min.js")" type="text/javascript"></script>
-
-    <script src="@Url.Content("~/Scripts/FixedHeader.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/FixedHeader.js")" type="text/javascript"></script>
 <script language="javascript" type="text/javascript" src="@Url.Content("~/signalr/hubs")"></script>
 <script type="text/javascript">
     $( document ).ready( function ()
@@ -159,25 +157,26 @@
         $.cookie( "scroll_position", null );
 
         var hub = $.connection.TransferHub;
-        hub.connection.logging = true;
+        //hub.connection.logging = true;
 
         var transport = !window.EventSource ? "longPolling" : "auto";
-        $.connection.hub.start( {transport: transport} ).done( function ()
+        $.connection.hub.start( { transport: transport } ).done( function ()
         {
-            hub.server.subscribeComponent(component);
+            hub.server.subscribeComponent( component );
             console.log( "Now connected!" );
         } )
         .fail( function ()
         {
-        console.log( "Could not Connect!" );
+            console.log( "Could not Connect!" );
         } );
 
-        hub.client.sendCommand= function ( packet )
+        hub.client.sendCommand = function ( packet )
         {
             console.log( packet );
             var tr = $( "#data tr#row" + packet.base_id );
             $( "td.status", tr ).attr( "class", "" ).addClass( "status" ).addClass( packet.status );
             $( "td.message", tr ).text( packet.message );
+            $( "span#last_update" ).text(packet.date_command);
 
             $( "td.button a.go", tr ).css( "display", "none" );
             $( "td.button a.interrupt", tr ).css( "display", "inline-block" );
@@ -187,6 +186,7 @@
             var tr = $( "#data tr#row" + packet.base_id );
             $( "td.status", tr ).attr( "class", "" ).addClass( "status" ).addClass( packet.status );
             $( "td.message", tr ).text( packet.message );
+            $( "span#last_update" ).text( packet.date_complete );
             if ( packet.type && packet.type === "launch" )
             {
                 $( "td.date_complete", tr ).text( "" );
@@ -201,7 +201,7 @@
         }
         window.onbeforeunload = function ()
         {
-            hub.stop();
+            $.connection.hub.stop();
         };
     } );    
     

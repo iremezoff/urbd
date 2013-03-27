@@ -359,6 +359,16 @@ div#title
     text-align: left;
 }
 
+div.info-block 
+{
+    display: inline-block;
+    vertical-align: top;
+}
+div.info-block span
+{
+    font-weight: bold;
+}
+
 ul.func_menu
 {
     position: absolute;

@@ -15,6 +15,7 @@ namespace Ugoria.URBD.WebControl.SignalR
             {
                 base_id = command.baseId,
                 type = command.GetType().Name,
+                date_command = command.commandDate,
                 message = string.Format("Идет процесс с {0:dd.MM.yyyy HH:mm:ss}", command.commandDate),
                 status = "busy"
             };
