@@ -99,8 +99,25 @@ namespace Ugoria.URBD.RemoteService.Strategy
                         CopyFiles(new Uri(String.Format("{0}/{1}", ftpPath, ftpEntry.Name)), new DirectoryInfo(entryLocalPath));
                         continue;
                     }
-                    if (!ftpKit.DownloadFile(ftpEntry, entryLocalPath))
-                        continue;
+                    // попытка скопировать файл
+                    try
+                    {
+                        if (!ftpKit.DownloadFile(ftpEntry, entryLocalPath))
+                            continue;
+                    }
+                    catch (UnauthorizedAccessException ex) // что-то с доступом, попытка изменения атрибутов
+                    {
+                        LogHelper.Write2Log(ex);
+                        FileAttributes attr = File.GetAttributes(entryLocalPath);
+                        if (attr.HasFlag(FileAttributes.ReadOnly)) // файл разрешен только на чтение
+                        {
+                            LogHelper.Write2Log(string.Format("Удаление атрибута \"Только чтение\" у файла {0}", entryLocalPath), LogLevel.Information); 
+                            File.SetAttributes(entryLocalPath, attr & ~FileAttributes.ReadOnly); // удаляем атрибут 
+                            if (!ftpKit.DownloadFile(ftpEntry, entryLocalPath))
+                                continue;
+                        }
+                    }
+
                     // определение архива с файлами (сперва по расширению файла - для экономии времени), для последующей распаковки
                     if (entryLocalPath.EndsWith(".zip", StringComparison.InvariantCultureIgnoreCase) && Regex.IsMatch(entryLocalPath, "pack[0-9]{8}.zip$"))
                     {
@@ -127,7 +144,10 @@ namespace Ugoria.URBD.RemoteService.Strategy
                 catch (Exception ex)
                 {
                     LogHelper.Write2Log(ex);
-                    File.Delete(entryLocalPath);
+                    if (ex is WebException)
+                    {
+                        File.Delete(entryLocalPath);
+                    }
                     context.Files.Add(new ExtDirectoriesFile
                     {
                         fileName = ftpEntry.Uri.ToString(),
@@ -147,15 +167,15 @@ namespace Ugoria.URBD.RemoteService.Strategy
         {
             if (new Uri(context.BasePath).IsUnc)
             {
-                netConn = new NetworkConnection(context.BasePath, new NetworkCredential(context.Username, context.Password));
+                //netConn = new NetworkConnection(context.BasePath, new NetworkCredential(context.Username, context.Password));
             }
         }
 
         public void Conclusion()
         {
             isComplete = true;
-            if (netConn != null)
-                netConn.Dispose();
+            /*if (netConn != null)
+                netConn.Dispose();*/
         }
     }
 }

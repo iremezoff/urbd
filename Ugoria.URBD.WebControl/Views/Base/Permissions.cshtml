@@ -52,7 +52,7 @@
 
                $("table#base_permissions tbody").on("changerows", function() {
                 var trs = $("tr:not(.new-row)", this);
-                $("input.PermissionId:hidden", trs).attr("name", function(index) { return "permissions["+index+"].PermissionId"});
+                $("input.EntityId:hidden", trs).attr("name", function(index) { return "permissions["+index+"].EntityId"});
                 $("input.UserId:hidden", trs).attr("name", function(index) { return "permissions["+index+"].UserId"});
                 $("input.AllowConfigure:hidden", trs).attr("name", function(index) { return "permissions["+index+"].AllowConfigure"});
 
@@ -73,7 +73,7 @@
                         type: 'radio',
                         data: {'True':'Разрешить', "False":'Запретить'}                   
                 }).attr("id", function(arr) {return "packet"+arr;}).css("cursor","pointer");
-                deleteRow(this, ".PermissionId");
+                deleteRow(this, ".EntityId");
             }).trigger("changerows");
 
             $("a.addrow").click(function() {
@@ -107,7 +107,7 @@
     </thead>
     <tbody>
         <tr class="new-row">
-            @Html.Hidden(String.Format("permissions[].PermissionId"), 0, new { @class = "PermissionsId" })
+            @Html.Hidden(String.Format("permissions[].EntityId"), 0, new { @class = "EntityId" })
             @Html.Hidden(String.Format("permissions[].UserId"), 0, new { @class = "UserId" })
             <td class="user">
             </td>
@@ -123,7 +123,7 @@
         @foreach (var permission in @Model)
         {
             <tr>
-                @Html.Hidden(String.Format("permissions[{0}].PermissionId", rbp), permission.PermissionId, new { @class = "PermissionId" })
+                @Html.Hidden(String.Format("permissions[{0}].EntityId", rbp), permission.EntityId, new { @class = "EntityId" })
                 @Html.Hidden(String.Format("permissions[{0}].UserId", rbp), permission.UserId, new { @class = "UserId" })
                 <td class="user">@permission.User.UserName
                 </td>

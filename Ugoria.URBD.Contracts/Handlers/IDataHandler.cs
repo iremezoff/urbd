@@ -16,5 +16,6 @@ namespace Ugoria.URBD.Contracts.Handlers
         LaunchReport GetLaunchReport(ExecuteCommand command);
         void SetLaunchReport(LaunchReport report);
         void SetCommandReport(ExecuteCommand command);
+        Type ReportType { get; }
     }
 }

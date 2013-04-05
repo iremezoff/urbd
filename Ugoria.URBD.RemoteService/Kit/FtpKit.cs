@@ -35,6 +35,7 @@ namespace Ugoria.URBD.RemoteService.Kit
             this.ftpClient = new WebClient();
             ftpClient.BaseAddress = address;
             ftpClient.Credentials = credential;
+            ftpClient.Proxy = null;
         }
 
         public FtpKit(string address, NetworkCredential credential, int waitTime)
@@ -92,10 +93,10 @@ namespace Ugoria.URBD.RemoteService.Kit
                         respStr = sr.ReadToEnd();
                     }
                 }
-
             }
-            catch (WebException) // файл не найден или иная проблема при запросе
+            catch (WebException ex) // файл не найден или иная проблема при запросе
             {
+                LogHelper.Write2Log(ex);
                 return ftpEntrys;
             }
 
@@ -141,7 +142,10 @@ namespace Ugoria.URBD.RemoteService.Kit
         {
             List<FtpEntry> ftpEntrys = GetListEntrys(source);
             if (ftpEntrys.Count == 0)
+            {
+                LogHelper.Write2Log("По адресу " + source + " ничего нет", LogLevel.Information);
                 return false;
+            }
             return DownloadFile(ftpEntrys[0], destination.OriginalString);
         }
 
@@ -150,7 +154,6 @@ namespace Ugoria.URBD.RemoteService.Kit
             FileInfo dnldFile = new FileInfo(destination);
             if (dnldFile.Exists && (source.CreatedTime - dnldFile.LastWriteTime).TotalSeconds < 1 && dnldFile.Length == source.Size)
             {
-                LogHelper.Write2Log("Файл " + dnldFile.FullName + " имеет актуальную версию", LogLevel.Information);
                 return false;
             }
             else if (dnldFile.Exists)

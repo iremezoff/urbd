@@ -6210,7 +6210,23 @@
 				_fnReDraw( oSettings );
 			}
 			return 0;
-		};
+};
+
+this.fnRefreshCache = function ( iCol )
+{
+    var oSettings = _fnSettingsFromNode( this[DataTable.ext.iApiIndex] );
+    var aoData = oSettings.aoData;
+    var aoColumns = oSettings.aoColumns;
+
+    var iVisColumn = _fnColumnIndexToVisible( oSettings, iCol );
+    var sDataType = oSettings.aoColumns[iCol].sSortDataType;
+    if ( typeof DataTable.ext.afnSortData[sDataType] != 'undefined' )
+    {
+        var aData = DataTable.ext.afnSortData[sDataType]( oSettings, iCol, iVisColumn );
+        for ( var j = 0, jLen = aoData.length; j < jLen; j++ )
+            _fnSetCellData( oSettings, j, iCol, aData[j] );
+    }
+};
 		
 		
 		/**

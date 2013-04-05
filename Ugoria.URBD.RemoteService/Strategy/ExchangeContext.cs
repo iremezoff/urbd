@@ -35,5 +35,6 @@ namespace Ugoria.URBD.RemoteService.Strategy
         public DateTime StartTime { get; set; }
         public DateTime CompleteTime { get; set; }
         public IMode Mode { get; set; }
+        public List<string> Messages { get; set; }
     }
 }

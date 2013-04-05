@@ -66,11 +66,11 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange.Mode
                 {
                     isAborted = true;
                     isSuccess = false;
-                    errMessages.Add(String.Format("{0} пакета {1} была прервана.", mlgRecord.Value.type == Contracts.Services.PacketType.Load ? "Загрузка" : "Выгрузка", mlgRecord.Key));
+                    errMessages.Add(String.Format("{0} пакета {1} была прервана", mlgRecord.Value.type == Contracts.Services.PacketType.Load ? "Загрузка" : "Выгрузка", mlgRecord.Key));
                 }
                 else if (!mlgRecord.Value.isSuccess && !string.IsNullOrEmpty(mlgRecord.Value.status))
                 {
-                    if (mlgRecord.Value.status.Contains("Данные из указанного файла переноса данных уже загружались в текущую информационную базу."))
+                    if (mlgRecord.Value.status.Contains("Данные из указанного файла переноса данных уже загружались в текущую информационную базу"))
                         isWarning = true;
                     else
                         isSuccess = false;
@@ -84,11 +84,12 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange.Mode
             {
                 isAborted = true;
                 isSuccess = false;
-                errMessages.Add("Ошибка доступа к метаданным (открыт конфигуратор) или иная причина.");
+                errMessages.Add("Ошибка доступа к метаданным (открыт конфигуратор) или иная причина");
             }
-            message = string.Join(" ", errMessages);
             if (errMessages.Count == 0)
                 message = "Процесс обмена прошел успешно";
+            else
+                message = string.Join(".\r\n", errMessages);
 
             // обмен не прошел, но есть MD, нужен новый запуск
             if (!isSuccess && haveMD && !attempt)

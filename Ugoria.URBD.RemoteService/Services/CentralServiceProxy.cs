@@ -7,6 +7,7 @@ using Ugoria.URBD.Contracts.Data.Reports;
 using System.ServiceModel;
 using Ugoria.URBD.Contracts.Data;
 using System.Threading;
+using System.ServiceModel.Description;
 
 namespace Ugoria.URBD.RemoteService.Services
 {
@@ -32,11 +33,12 @@ namespace Ugoria.URBD.RemoteService.Services
 
         private ICentralService centralService;
 
-        public CentralServiceProxy(ChannelFactory<ICentralService> channelFactory, EndpointAddress endpointAddr)
+        public CentralServiceProxy(ChannelFactory<ICentralService> channelFactory, EndpointAddress endpointAddr, int maxItems=2000000)
         {
             this.channelFactory = channelFactory;
             this.endpointAddr = endpointAddr;
             centralService = channelFactory.CreateChannel(endpointAddr);
+            channelFactory.Endpoint.Contract.Operations.Find("NoticeReport").Behaviors.Find<DataContractSerializerOperationBehavior>().MaxItemsInObjectGraph = maxItems;
             commObj = (ICommunicationObject)centralService;
         }
 

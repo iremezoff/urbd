@@ -74,16 +74,12 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
                 }
             });
         $(".basename, .username, .password, .basepath").editable(function(value, settings) {
-			        $(this).prev().attr("value", value);
-			        return(value);
-		        }, {
+                    $(this).prev().attr("value", value);
+                    return(value);
+                }, {
                     type: 'text',
                     placeholder: 'Нажмите для ввода'
                 }).css("cursor", "pointer").each(function(el) { $(this).html($(this).html().trim());});
-
-                
-        
-                
 
                 $("table#schedulemlgcollect tbody").on("changerows", function() {
                 var trs = $("tr:not(.new-row)", this);
@@ -91,9 +87,9 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
                 $("input.Time:hidden", trs).attr("name", function(index) { return "base.ScheduleMlgCollectList["+index+"].Time"});
 
                 $(".time").editable(function(value, settings) {
-			        $(this).prev().attr("value", value);
-			        return(value);
-		        }).on("click", function() {            
+                    $(this).prev().attr("value", value);
+                    return(value);
+                }).on("click", function() {            
                     $(':text',this).timeEntry({
                         show24Hours: true,
                         spinnerImage: ''
@@ -108,9 +104,9 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
                 $("input.Time:hidden", trs).attr("name", function(index) { return "base.ScheduleExtDirectoriesList["+index+"].Time"});
 
                 $(".time").editable(function(value, settings) {
-			        $(this).prev().attr("value", value);
-			        return(value);
-		        }).on("click", function() {            
+                    $(this).prev().attr("value", value);
+                    return(value);
+                }).on("click", function() {            
                     $(':text',this).timeEntry({
                         show24Hours: true,
                         spinnerImage: ''
@@ -126,9 +122,9 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
                 $("input.Time:hidden", trs).attr("name", function(index) { return "base.ScheduleExchangeList["+index+"].Time"});
                 
                 $(".time").editable(function(value, settings) {
-			        $(this).prev().attr("value", value);
-			        return(value);
-		        }).on("click", function() {            
+                    $(this).prev().attr("value", value);
+                    return(value);
+                }).on("click", function() {            
                     $(':text',this).timeEntry({
                         show24Hours: true,
                         spinnerImage: ''
@@ -137,7 +133,7 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
             
                 $(".mode").editable(function(value, settings) {
                     $(this).prev().attr("value", value); 
-			        return(settings.data[value]); 
+                    return(settings.data[value]); 
                     },  {
                         type: 'radio',
                         data: modeTypes
@@ -156,7 +152,7 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
 
                 $(".packettype", this).editable(function(value, settings) {
                     $(this).prev().attr("value", value); 
-			        return(settings.data[value]); 
+                    return(settings.data[value]); 
                     }, {
                         type: 'radio',
                         data: packetTypes
@@ -164,7 +160,7 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
 
                 $(".packetname").editable(function(value, settings) {
                     $(this).prev().attr("value", value); 
-			        return(value); 
+                    return(value); 
                 }, {
                     type: 'text',
                     placeholder: 'Нажмите для ввода'
@@ -181,7 +177,7 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
                 $(".localpath", this).editable(function(value, settings) {
                     $(this).prev().attr("value", value);
                     $(this).removeClass("localpath").off("click.editable").css("cursor", "default");
-			        return(settings.data[value]); 
+                    return(settings.data[value]); 
                 },  {
                     type: 'select',
                     data: {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData["extdirectories"]).Select(d => string.Format("'{0}': '{1}'", d.DirId, d.LocalPath)))))},
@@ -223,16 +219,15 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
             {
             <text>
             $(".service").editable(function(value, settings) {
-			        $(this).prev().attr("value", value);
-			        return(settings.data[value]);
-		        }, {
+                    $(this).prev().attr("value", value);
+                    return(settings.data[value]);
+                }, {
                     type: 'select',
-                    data: $.extend(services, @Model.ServiceId )
+                    data: $.extend(services, @Model.ServiceId ),
+                    submit: 'Ok'
                 }).css("cursor", "pointer");
                 </text>
             }
-            
-            
             
             $('div#chart_wrap').css('display', 'none');
             $('a.schedule_show').click(function () {
@@ -245,8 +240,7 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
                 return false;
             });           
             
-            $('div#chart_wrap select#scale').change(function () {
-                var hashArr=/\d+/.exec(window.location.hash);
+            $('div#chart_wrap select#scale').change(function () {                
                 var link = '@(Url.Action("BarData", new { id = ViewContext.RequestContext.RouteData.Values["id"] }))?scale='+ $(this).val();                
                 swfobject.embedSWF("@(Url.Content("~/Content/open-flash-chart.swf"))", "schedule_chart", "100%", "200",
                     "9.0.0", "expressInstall.swf", 
@@ -358,20 +352,7 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
                     new SelectListItem { Value = "60", Text="60 мин." }            
                 },
                 new { style = "display: inline-block" }))
-    <div id="reference_chart">
-    </div>
-</div>
-<div id="chart_wrap">
-    Временной интервал:
-    @(Html.DropDownList("scale", new List<SelectListItem>() { new SelectListItem { Value = "1", Text="1 мин." }, 
-                    new SelectListItem { Value = "10", Text="10 мин." },
-                    new SelectListItem { Value = "20", Text="20 мин." },
-                    new SelectListItem { Value = "30", Text="30 мин.", Selected=true },
-                    new SelectListItem { Value = "60", Text="60 мин." }            
-                },
-                new { style = "display: inline-block" }))
-    <div id="schedule_chart">
-    </div>
+    <div id="reference_chart"></div>
 </div>
 <br />
 <div style="display: inline-block">
@@ -508,6 +489,17 @@ var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData
 </div>
 <br />
 <a href="#" class="schedule_show">Посмотреть распределение обменов всего сервиса</a><br />
+<div id="chart_wrap">
+    Временной интервал:
+    @(Html.DropDownList("scale", new List<SelectListItem>() { new SelectListItem { Value = "1", Text="1 мин." }, 
+                    new SelectListItem { Value = "10", Text="10 мин." },
+                    new SelectListItem { Value = "20", Text="20 мин." },
+                    new SelectListItem { Value = "30", Text="30 мин.", Selected=true },
+                    new SelectListItem { Value = "60", Text="60 мин." }            
+                },
+                new { style = "display: inline-block" }))
+<div id="schedule_chart"></div>
+</div>
 <div style="display: inline-block; vertical-align: top">
     <h4>
         Расписание обновления ExtDirectories</h4>

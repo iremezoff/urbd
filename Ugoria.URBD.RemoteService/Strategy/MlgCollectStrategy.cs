@@ -119,15 +119,15 @@ namespace Ugoria.URBD.RemoteService.Strategy
         {
             if (new Uri(context.BasePath).IsUnc)
             {
-                netConn = new NetworkConnection(context.BasePath, new NetworkCredential(context.Username, context.Password));
+                //netConn = new NetworkConnection(context.BasePath, new NetworkCredential(context.Username, context.Password));
             }
         }
 
         public void Conclusion()
         {
             isComplete = true;
-            if (netConn != null)
-                netConn.Dispose();
+            /*if (netConn != null)
+                netConn.Dispose();*/
         }
 
         private static Regex mlgLineRegex = new Regex(@"^([\p{L}\d]+)+/([\p{N}]+)+/(?:\(?([\p{L}\s]+)+\)?)*?([\p{N}]+)+$");

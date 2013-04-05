@@ -19,6 +19,11 @@ namespace Ugoria.URBD.CentralService.DataProvider
         public ExtDirectoriesDataHandler()
             : base("ExtDirectories") { }
 
+        public override Type ReportType
+        {
+            get { return typeof(ExtDirectoriesReport); }
+        }
+
         public ExtDirectoriesCommand GetPreparedExtDirectoriesCommand(ExtDirectoriesCommand command)
         {
                 ExtDirectoriesCommand preparedCommand = new ExtDirectoriesCommand()
@@ -34,7 +39,7 @@ namespace Ugoria.URBD.CentralService.DataProvider
 
         public virtual void SetReport(ExtDirectoriesReport report)
         {
-            using (TransactionScope scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }))
+            using (TransactionScope scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.Snapshot }))
             {
                 base.SetReport(report);
                 // обрабокта сообщений лога работы 1С на стороне удаленного сервиса
@@ -44,6 +49,7 @@ namespace Ugoria.URBD.CentralService.DataProvider
                 }
                 scope.Complete();
             }
+            report.files.Clear(); // большие объемы данных передавать не будут
         }
 
         public override void SetReport(OperationReport report)

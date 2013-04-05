@@ -8,6 +8,7 @@
     ViewBag.Title = string.Format("Сервис {0} ({1})", service.Name, service.Address);
     Layout = "~/Views/Shared/_MainLayout.cshtml";    
 }
+<script src="@Url.Content("~/Scripts/jquery.jeditable.mini.js")" type="text/javascript"></script>
 <script language="javascript" type="text/javascript">
         $(document).ready(function () {
             var hash = window.location.hash;            

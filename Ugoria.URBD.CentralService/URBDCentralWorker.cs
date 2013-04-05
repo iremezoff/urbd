@@ -52,14 +52,12 @@ namespace Ugoria.URBD.CentralService
 
             Assembly currentAssembly = Assembly.GetExecutingAssembly();
 
-            List<DataHandler> dataHandlers = new List<DataHandler>();
+            WCFMessageHandler messageHandler = new WCFMessageHandler();
             foreach (Type exportType in currentAssembly.GetExportedTypes())
             {
                 if (exportType.IsClass && !exportType.IsAbstract && typeof(DataHandler).IsAssignableFrom(exportType))
-                    dataHandlers.Add((DataHandler)Activator.CreateInstance(exportType));
+                    messageHandler.AddHandler((DataHandler)Activator.CreateInstance(exportType));
             }
-
-            WCFMessageHandler messageHandler = new WCFMessageHandler(dataHandlers);
 
             schedulerManager = new SchedulerManager();
 
@@ -91,7 +89,7 @@ namespace Ugoria.URBD.CentralService
                         remoteServiceManager.AddBaseService(baseRow["address"].ToString(), (int)baseRow["base_id"]);
 
                         ExchangeScheduleConfigure(baseRow);
-                        ExtFormsScheduleConfigure(baseRow);
+                        ExtDirectoriesScheduleConfigure(baseRow);
                         MlgCollectScheduleConfigure(baseRow);
                     }
                 }
@@ -106,7 +104,7 @@ namespace Ugoria.URBD.CentralService
         {
             foreach (DataRow schedExchRow in baseRow.GetChildRows("BaseScheduleMlgCollect"))
             {
-                ExecuteCommand command = new ExchangeCommand
+                ExecuteCommand command = new MlgCollectCommand
                 {
                     baseId = (int)schedExchRow["base_id"],
                     baseName = (string)baseRow["base_name"]
@@ -135,9 +133,9 @@ namespace Ugoria.URBD.CentralService
             }
         }
 
-        public void ExtFormsScheduleConfigure(DataRow baseRow)
+        public void ExtDirectoriesScheduleConfigure(DataRow baseRow)
         {
-            foreach (DataRow schedEFRow in baseRow.GetChildRows("BaseScheduleExtForms"))
+            foreach (DataRow schedEFRow in baseRow.GetChildRows("BaseScheduleExtDirectories"))
             {               
                 ExecuteCommand command = new ExtDirectoriesCommand
                 {
@@ -197,7 +195,8 @@ namespace Ugoria.URBD.CentralService
                 schedulerManager.RemoveScheduleLaunch(baseRow["base_id"].ToString());
 
                 ExchangeScheduleConfigure(baseRow);
-                ExtFormsScheduleConfigure(baseRow);
+                ExtDirectoriesScheduleConfigure(baseRow);
+                MlgCollectScheduleConfigure(baseRow);
             }
         }
 

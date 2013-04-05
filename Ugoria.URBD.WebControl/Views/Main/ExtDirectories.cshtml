@@ -55,44 +55,47 @@
                     "sAlign": "left"
                 },
                 "fnDrawCallback": function (oSettings) {
-                    if (oSettings.aiDisplay.length == 0) {
-                        return;
-                    }
-                    var nTrs = $('#data tbody tr');
-                    var iColspan = nTrs[0].getElementsByTagName('td').length;
-                    var sLastGroup = "";
-                    var groupNum = 0;
-                    var selectoName = "";
-                    for (var i = 0; i < nTrs.length; i++) {
-                        var iDisplayIndex = oSettings._iDisplayStart + i;
-                        var sGroup = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[groupColumn];
-                        
-                          if (sGroup != sLastGroup) {
-                            groupNum++;
-
-                            selectoName = "group_"+groupColumn+"_"+groupNum;
-                            var cookie = $.cookie(selectoName);
-                            var nGroup = document.createElement('tr');
-                            var nCell = document.createElement('th');
-                            var aLink = $(document.createElement('a')).attr("href", "#"+selectoName).addClass("group_toggle").html(cookie!="none" && cookie!=null?"свернуть":"развернуть");
-                            $(nCell).addClass("group").html(sGroup).append(" (").append(aLink).append(")").attr("colspan", iColspan);
-                            $(nGroup).wrapInner(nCell);
-                            $(nTrs[i]).before(nGroup);
-                            sLastGroup = sGroup;                            
-                        }
-                        $(nTrs[i]).addClass(selectoName).toggle(cookie!="none" && cookie!=null);
-                    }
+if ( oSettings.aiDisplay.length == 0 )
+                {
+                    return;
                 }
-            });
-            new FixedHeader(oTable);
-            $( "a.group_toggle" ).on( "click", function ()
-        {
-            var groupName = $( this ).attr( "href" ).substring( 1 );
+                var nTrs = $( '#data tbody tr' );
+                var iColspan = nTrs[0].getElementsByTagName( 'td' ).length;
+                var sLastGroup = "";
+                var groupNum = 0;
+                var selectoName = "";
+                for ( var i = 0; i < nTrs.length; i++ )
+                {
+                    var iDisplayIndex = oSettings._iDisplayStart + i;
+                    var sGroup = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[groupColumn];
+
+                    if ( sGroup != sLastGroup )
+                    {
+                        groupNum++;
+                        selectoName = "group_" + groupColumn + "_" + groupNum;
+                        var cookie = $.cookie( selectoName );
+                        var nGroup = $( "<tr></tr>" );                        
+                        var aLink = $('<a></a>').attr("href", "#"+selectoName).addClass("group_toggle").text( cookie != "none" && cookie != null ? "свернуть" : "развернуть" );
+                        var nCell = $( '<th></td>').addClass("group").attr("colspan",iColspan).text( sGroup ).append( " (" ).append( aLink ).append( ")" );
+                        $( nGroup ).wrapInner( nCell );
+                        $( nTrs[i] ).before( nGroup );
+                        sLastGroup = sGroup;
+                    }
+                    $( nTrs[i] ).addClass( selectoName ).toggle( cookie != "none" && cookie != null );
+                }
+                $( "a.group_toggle" ).on( "click", function ()
+                {
+            var href= $( this ).attr( "href" );
+            var groupName = href.substr( href.indexOf("#")+1);
             var display = $( "table#data tr." + groupName ).toggle().css( "display" );
             $.cookie( groupName, display );
             $( this ).html( display == "none" ? "развернуть" : "свернуть" );
             return false;
-        } );
+        } );                    
+                }
+            });
+            new FixedHeader(oTable);
+            
         });
 </script>
 @{int index = 1;}
@@ -107,7 +110,7 @@
     column.Custom(b => "").Attributes(br => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(br.Item.Status) + " status" } }).HeaderAttributes(width => "5");
     column.Custom(b => (b.Message ?? string.Empty).Replace("\r\n", "<br/>")).HeaderAttributes(width => "25%").Named("Отчёт").Attributes(@class => "message");
     column.Custom(b => string.Join("<br/>", b.Files.Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Filename, c.Size / 1024f, c.DateCopied)))).Named("Последние загруженные файлы").HeaderAttributes(width => "40%").Attributes(@class => "files");
-    column.Custom(b => Button(b.BaseId, b.ServiceId, b.Status)).HeaderAttributes(width => "8%").Attributes(@class=>"button");
+    column.Custom(b => Button(b.BaseId, b.ServiceId, b.Status)).HeaderAttributes(width => "8%").Attributes(@class => "button");
 }).Attributes(id => "data", width => "100%").RowAttributes(br => new Dictionary<string, object>() { { "id", "row" + br.Item.BaseId } }))
 <div id="go_dialog" style="display: none">
     @{Html.BeginForm("ExchangeGo", "Main", FormMethod.Get);}

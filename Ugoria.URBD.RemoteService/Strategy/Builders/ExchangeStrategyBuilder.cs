@@ -55,6 +55,7 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
             exchangeContext.Packets = ((List<Hashtable>)context.Configuration.GetParameter("base.packet_list")).Select<Hashtable, ReportPacket>(p => new ReportPacket { type = (PacketType)p["packet.type"], filename = (string)p["packet.filename"] }).ToList();
             exchangeContext.PrmFile = String.Format(@"{0}\PrmURBD\configuration.prm", (string)context.Configuration.GetParameter("base.1c_database"));
             exchangeContext.Mode = (DefaultMode)CreateMode(context);
+            exchangeContext.Messages = new List<string>();
 
             ICommandStrategy commandStrategy = new ExchangeStrategy(exchangeContext);
             return commandStrategy;
@@ -95,8 +96,8 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
             if (userRegistryKey.OpenSubKey(@"Software\1C\1Cv7\7.7\Titles") == null)
             {
                 userRegistryKey.CreateSubKey(@"Software\1C\1Cv7\7.7\Titles");
-                userRegistryKey.CreateSubKey(@"Software\1C\1Cv7\7.7\Options\TIPOTHDAYGLB").SetValue("TipOfTheDayGlobal", "0", RegistryValueKind.String);
             }
+            userRegistryKey.CreateSubKey(@"Software\1C\1Cv7\7.7\Options\TIPOTHDAYGLB").SetValue("TipOfTheDayGlobal", "0", RegistryValueKind.String);
             RegistryKey titleKey = userRegistryKey.OpenSubKey(@"Software\1C\1Cv7\7.7\Titles", true);
             string[] titlesArr = titleKey.GetValueNames();
 
@@ -114,7 +115,7 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
 
                     if (basePathUri.IsUnc)
                     {
-                        netConn = new NetworkConnection(basePathUri.OriginalString, new NetworkCredential((string)configuration.configuration["main.username"], (string)configuration.configuration["main.password"]));
+                        //netConn = new NetworkConnection(basePathUri.OriginalString, new NetworkCredential((string)configuration.configuration["main.username"], (string)configuration.configuration["main.password"]));
                     }
                     string md5HashBaseName = ServiceUtil.GetMd5Hash((string)base1C.Value["base.base_name"]);
                     PrmBuilder prmBuilder = PrmBuilder.Create();
@@ -135,8 +136,8 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
                 }
                 finally
                 {
-                    if (netConn != null)
-                        netConn.Dispose();
+                    //if (netConn != null)
+                        //netConn.Dispose();
                 }
             }
         }
@@ -166,7 +167,10 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
                     report.status = ReportStatus.Critical;
                 else
                     report.status = ReportStatus.Fail;
-                report.message = strategy.Context.Mode.Message;
+                
+                if(!strategy.Context.Mode.IsSuccess)
+                    strategy.Context.Messages.Insert(0, strategy.Context.Mode.Message);
+                report.message = string.Join(".\r\n", strategy.Context.Messages);
             }
             else
             {
@@ -176,14 +180,16 @@ namespace Ugoria.URBD.RemoteService.Strategy.Exchange
                     report.status = ReportStatus.Success;
                 else
                     report.status = ReportStatus.Fail;
-                report.message = strategy.Context.Mode.Message;
+
+                if (report.status!=ReportStatus.Success // добавляем ещё одну ошибку к существующим
+                    || (strategy.Context.Messages.Count == 0 && report.status == ReportStatus.Success)) // всё успешно, добавляем хороший статус
+                {
+                    strategy.Context.Messages.Insert(0, strategy.Context.Mode.Message);
+                }
+                
+                report.message = string.Join(".\r\n",strategy.Context.Mode.Message);
             }
-            foreach (ReportPacket reportPacket in strategy.Context.Packets)
-            {
-                if (reportPacket.fileSize == 0 || reportPacket.datePacket == DateTime.MinValue)
-                    continue;
-                report.packetList.Add(reportPacket);
-            }
+            report.packetList.AddRange(strategy.Context.Packets.Where(p => p.fileSize > 0 && p.datePacket != DateTime.MinValue));
             return report;
         }
 

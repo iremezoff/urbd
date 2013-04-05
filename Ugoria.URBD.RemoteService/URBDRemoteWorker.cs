@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.ServiceModel;
-using System.Text.RegularExpressions;
 using Ugoria.URBD.Contracts.Data;
 using Ugoria.URBD.Contracts.Data.Commands;
 using Ugoria.URBD.Contracts.Data.Reports;
@@ -29,6 +28,7 @@ namespace Ugoria.URBD.RemoteService
         private volatile bool isUpdateRequire = false;
         private List<Guid> interruptedTask = new List<Guid>(); // накопление задач, прерванных из-за необходимости обновления сервиса
         private volatile bool isFailedConfig = false;
+        private int maxGraphObjectItems = 2000000;
 
         public URBDRemoteWorker()
         {
@@ -147,6 +147,7 @@ namespace Ugoria.URBD.RemoteService
                     else
                     {
                         configurationChangeDate = command.configurationChangeDate;
+                        maxGraphObjectItems = int.Parse((string)remoteConfigurationManager.RemoteConfiguration.configuration["main.max_graphobject_items"]);
                         LogHelper.Write2Log("Сервис сконфигурирован", LogLevel.Information);
                     }
                 }
@@ -179,7 +180,7 @@ namespace Ugoria.URBD.RemoteService
         {
             LogHelper.Write2Log(String.Format("Отправка отчета {0} ИБ {1}, время команды {2:HH:mm:ss dd.MM.yyy}", report.GetType().Name, report.baseName, report.commandDate), LogLevel.Information);
 
-            using (CentralServiceProxy proxy = new CentralServiceProxy(channelFactory, new EndpointAddress(service.CentralUri)))
+            using (CentralServiceProxy proxy = new CentralServiceProxy(channelFactory, new EndpointAddress(service.CentralUri), maxGraphObjectItems))
             {
                 if (report is LaunchReport)
                     proxy.NoticePID1C((LaunchReport)report, service.LocalUri);

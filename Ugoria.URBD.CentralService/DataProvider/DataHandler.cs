@@ -23,8 +23,10 @@ namespace Ugoria.URBD.CentralService.DataProvider
         {
             COMPONENT_NAME = componentName;
         }
-        
+
         public abstract DataHandler Clone();
+
+        public abstract Type ReportType { get; }
 
         public virtual LaunchReport GetLaunchReport(ExecuteCommand command)
         {

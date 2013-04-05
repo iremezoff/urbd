@@ -46,12 +46,15 @@ namespace Ugoria.URBD.WebControl.Controllers
                 ModelState.AddModelError("base.Name", "пустое название не допускается");
             if (string.IsNullOrEmpty(@base.Username))
                 ModelState.AddModelError("base.Username", "пустое имя пользователя не допускается");
-            foreach (PacketViewModel packetVM in @base.PacketList)
+            if (@base.PacketList != null)
             {
-                if (!string.IsNullOrEmpty(packetVM.FileName))
-                    continue;
-                ModelState.AddModelError("base.PacketList.FileName", "Имена пакетов не могут быть пустыми");
-                break;
+                foreach (PacketViewModel packetVM in @base.PacketList)
+                {
+                    if (!string.IsNullOrEmpty(packetVM.FileName))
+                        continue;
+                    ModelState.AddModelError("base.PacketList.FileName", "Имена пакетов не могут быть пустыми");
+                    break;
+                }
             }
 
             TempData["success"] = false;

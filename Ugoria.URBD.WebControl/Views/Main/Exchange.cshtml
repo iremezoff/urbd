@@ -59,7 +59,7 @@
                 "sAlign": "left"
             },
             "fnDrawCallback": function ( oSettings )
-            {
+            {            
                 if ( oSettings.aiDisplay.length == 0 )
                 {
                     return;
@@ -77,31 +77,31 @@
                     if ( sGroup != sLastGroup )
                     {
                         groupNum++;
-
                         selectoName = "group_" + groupColumn + "_" + groupNum;
                         var cookie = $.cookie( selectoName );
-                        var nGroup = document.createElement( 'tr' );
-                        var nCell = document.createElement( 'th' );
-                        var aLink = $( document.createElement( 'a' ) ).attr( "href", "#" + selectoName ).addClass( "group_toggle" ).html( cookie != "none" && cookie != null ? "свернуть" : "развернуть" );
-                        $( nCell ).addClass( "group" ).html( sGroup ).append( " (" ).append( aLink ).append( ")" ).attr( "colspan", iColspan );
+                        var nGroup = $( "<tr></tr>" );                        
+                        var aLink = $('<a></a>').attr("href", "#"+selectoName).addClass("group_toggle").text( cookie != "none" && cookie != null ? "свернуть" : "развернуть" );
+                        var nCell = $( '<th></td>').addClass("group").attr("colspan",iColspan).text( sGroup ).append( " (" ).append( aLink ).append( ")" );
                         $( nGroup ).wrapInner( nCell );
                         $( nTrs[i] ).before( nGroup );
                         sLastGroup = sGroup;
                     }
                     $( nTrs[i] ).addClass( selectoName ).toggle( cookie != "none" && cookie != null );
                 }
-            }
-        } );
-        new FixedHeader( oTable );
-
-        $( "a.group_toggle" ).on( "click", function ()
-        {
-            var groupName = $( this ).attr( "href" ).substring( 1 );
+                $( "a.group_toggle" ).on( "click", function ()
+                {
+            var href= $( this ).attr( "href" );
+            var groupName = href.substr( href.indexOf("#")+1);
             var display = $( "table#data tr." + groupName ).toggle().css( "display" );
             $.cookie( groupName, display );
             $( this ).html( display == "none" ? "развернуть" : "свернуть" );
             return false;
         } );
+            }
+        } );
+        new FixedHeader( oTable );
+
+        
     } );
 </script>
 @{int index = 1;}
@@ -123,11 +123,13 @@
 <br />
 <div id="go_dialog" style="display: none">
     @{Html.BeginForm("ExchangeGo", "Main", FormMethod.Get);}
-    Режим обмена: <div id="modeset">
+    Режим обмена:
+    <div id="modeset">
         @Html.RadioFromEnum("mode", ModeType.Normal, new Dictionary<string, object>())
     </div>
     @{Html.EndForm();}
-    <div id="go_status"></div>
+    <div id="go_status">
+    </div>
 </div>
 <div id="interrupt_dialog" style="display: none">
     @{Html.BeginForm("ExchangeInterrupt", "Main", FormMethod.Get);}
@@ -136,5 +138,6 @@
         непосредественно на сервере
     </div>
     @{Html.EndForm();}
-        <div id="interrupt_status"></div>
+    <div id="interrupt_status">
+    </div>
 </div>

@@ -121,6 +121,11 @@ namespace Ugoria.URBD.RemoteService.Strategy
                 LogHelper.Write2Log(ex);
                 Thread.Sleep(new TimeSpan(0, 0, 30)); // ожидание 30 секунд для возможности освобождения файла логов
             }
+            catch (Exception ex)
+            {
+                LogHelper.Write2Log(ex);
+                throw new URBDException(string.Format("Неизвестная ошибка: {0} ({1})", ex.GetType(), ex.Message), ex);
+            }
             return false;
         }
 
@@ -166,10 +171,10 @@ namespace Ugoria.URBD.RemoteService.Strategy
             FileInfo mdFileInfo = new FileInfo(context.BasePath + @"\1cv7.md");
             // для устранения проблемы с погрешностью дат при занесении в БД и извлечении в центральном сервисе (считаем с точностью до секунды)
 
-            if (Math.Abs((mdFileInfo.LastWriteTime - context.DateRelease).TotalSeconds) >= 1)
+            if (Math.Abs((mdFileInfo.LastWriteTimeUtc - context.DateRelease).TotalSeconds) >= 1)
             {
                 context.MDRelease = GetReleaseNumber(mdFileInfo.FullName);
-                context.DateRelease = mdFileInfo.LastWriteTime;
+                context.DateRelease = mdFileInfo.LastWriteTimeUtc;
                 LogHelper.Write2Log(String.Format("Изменение версии MD на {0} у ИБ {1}", context.MDRelease, context.Command.baseName), LogLevel.Information);
             }
 
@@ -188,7 +193,8 @@ namespace Ugoria.URBD.RemoteService.Strategy
                 {
                     FileInfo packetFileInfo = null;
                     Uri ftpPacketUri = null;
-                    ppb.PacketName = reportPacket.filename;
+                    ppb.PacketName = reportPacket.filename.ToUpperInvariant();
+                    bool fileAccessible = false;
                     if (reportPacket.type == PacketType.Load)
                     {
                         Uri[] pathsLoad = ppb.BuildLoadPaths();
@@ -196,42 +202,60 @@ namespace Ugoria.URBD.RemoteService.Strategy
                         ftpPacketUri = pathsLoad[PacketPathBuilder.SOURCE];
                         if (context.HasDeletePacket)
                             ftpKit.DeleteFile(ftpPacketUri);
+                        fileAccessible = true;
                     }
                     else
                     {
                         Uri[] pathsUnload = ppb.BuildUnloadPaths();
                         packetFileInfo = new FileInfo(pathsUnload[PacketPathBuilder.SOURCE].LocalPath);
+                        if (!packetFileInfo.Exists)
+                            continue;
                         ftpPacketUri = pathsUnload[PacketPathBuilder.DEST];
-                        ftpKit.UploadFile(new Uri(packetFileInfo.FullName), ftpPacketUri);
+                        try
+                        {
+                            ftpKit.UploadFile(new Uri(packetFileInfo.FullName), ftpPacketUri);
+                            fileAccessible = true;
+                        }
+                        catch (WebException ex)
+                        {
+                            context.Messages.Add(string.Format("{0}: {1}", "Выгрузка на FTP", ex.Message));
+                            LogHelper.Write2Log(ex);
+                        }
+                        catch (UnauthorizedAccessException ex)
+                        {
+                            context.Messages.Add(string.Format("{0}: {1}", "Доступ к КИБу", ex.Message));
+                            LogHelper.Write2Log(ex);
+                        }
+                        catch (Exception ex)
+                        {
+                            context.Messages.Add(string.Format("{0}: {1}", "Неизвестная ошибка", ex.Message));
+                            LogHelper.Write2Log(ex);
+                        }
                     }
                     bool isSuccessProcessed = mode.Verifier.MlgReport.Any(r => r.Key.Equals(packetFileInfo.Name, StringComparison.InvariantCultureIgnoreCase) && r.Value.isSuccess && r.Value.type == reportPacket.type);
-                    if (isSuccessProcessed)
+                    if (isSuccessProcessed && fileAccessible)
                     {
                         packetFileInfo.LastWriteTime = ftpKit.GetFileDateTime(ftpPacketUri); // синхронизация времени изменения пакета на ftp и в КИБе
                         reportPacket.datePacket = packetFileInfo.LastWriteTime;
                         reportPacket.fileSize = packetFileInfo.Length;
                     }
-                    packetFileInfo.Delete(); // удаление пакета после всех телодвижений
+                    else if (fileAccessible)
+                        packetFileInfo.Delete(); // удаление пакета после всех телодвижений
                 }
                 LogHelper.Write2Log("Процесс выгрузки и сбора информации завершен", LogLevel.Information);
                 isComplete = mode.IsSuccess; // пройден весь жизненный цикл стратегии
             }
-            catch (WebException ex)
-            {
-                LogHelper.Write2Log(ex);
-                throw new URBDException("Выгрузка на FTP: " + ex.Message, ex);
-            }
             finally
             {
-                if (netConn != null)
-                    netConn.Dispose();
+                //if (netConn != null)
+                   // netConn.Dispose();
             }
         }
 
         public void Prepare()
         {
-            if (new Uri(context.BasePath).IsUnc)
-                this.netConn = new NetworkConnection(context.BasePath, new NetworkCredential(context.Username, context.Password));
+           // if (new Uri(context.BasePath).IsUnc)
+            //    this.netConn = new NetworkConnection(context.BasePath, new NetworkCredential(context.Username, context.Password));
             LogHelper.Write2Log("Запуск загрузки файлов", LogLevel.Information);
             PacketPathBuilder ppb = new PacketPathBuilder();
             ppb.FtpCP = context.FtpCenterDir;
@@ -240,48 +264,64 @@ namespace Ugoria.URBD.RemoteService.Strategy
             ppb.FtpAddress = context.FtpAddress;
 
             context.HaveMD = false;
-            try
-            {
-                foreach (ReportPacket reportPacket in context.Packets)
-                {
-                    if (isInterrupt)
-                        break;
-                    ppb.PacketName = reportPacket.filename;
-                    if (reportPacket.type != PacketType.Load)
-                    {
-                        // очистка ранее неудаленных пакетов выгрузки
-                        FileInfo packetFile = new FileInfo(ppb.BuildUnloadPaths()[PacketPathBuilder.SOURCE].LocalPath);
-                        if (packetFile.Exists)
-                            packetFile.Delete();
-                        continue;
-                    }
 
-                    Uri[] paths = ppb.BuildLoadPaths();
-                    // Удаление ранее загруженных пакетов
-                    FileInfo fi = new FileInfo(paths[PacketPathBuilder.DEST].OriginalString);
-                    LogHelper.Write2Log(fi.FullName, LogLevel.Information);
-                    if (fi.Exists)
-                        fi.Delete();
+            foreach (ReportPacket reportPacket in context.Packets)
+            {
+                if (isInterrupt)
+                    break;
+                ppb.PacketName = reportPacket.filename.ToUpperInvariant();
+                if (reportPacket.type != PacketType.Load)
+                {
+                    // очистка ранее неудаленных пакетов выгрузки
+                    FileInfo packetFile = new FileInfo(ppb.BuildUnloadPaths()[PacketPathBuilder.SOURCE].LocalPath);
+                    if (packetFile.Exists)
+                        packetFile.Delete();
+                    continue;
+                }
+
+                Uri[] paths = ppb.BuildLoadPaths();
+                // Удаление ранее загруженных пакетов
+                FileInfo fi = new FileInfo(paths[PacketPathBuilder.DEST].OriginalString);
+                LogHelper.Write2Log(fi.FullName, LogLevel.Information);
+                if (fi.Exists)
+                    fi.Delete();
+                try
+                {
                     if (!ftpKit.DownloadFile(paths[PacketPathBuilder.SOURCE], paths[PacketPathBuilder.DEST]))
                         continue;
+                    fi.Refresh();
                     fi.LastWriteTime = ftpKit.GetFileDateTime(paths[PacketPathBuilder.SOURCE]);
-                    context.HaveMD |= MDInclusion(fi.FullName); // есть ли MD                    
+                    context.HaveMD |= MDInclusion(fi.FullName); // есть ли MD
                 }
-                LogHelper.Write2Log("Загрузка завершена", LogLevel.Information);
+                catch (WebException ex)
+                {
+                    LogHelper.Write2Log(ex);
+                    context.Messages.Add(string.Format("{0}: {1} ({2})", "Загрузка с FTP", ex.Message, ex.Response != null ? ex.Response.ResponseUri.ToString() : string.Empty));
+                    if (fi.Exists)
+                        fi.Delete();
+                }
+                catch (ZipException ex)
+                {
+                    LogHelper.Write2Log(ex);
+                    context.Messages.Add(string.Format("{0}: {1}", "Проверка Zip-архива", ex.Message));
+                    if (fi.Exists)
+                        fi.Delete();
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    LogHelper.Write2Log(ex);
+                    context.Messages.Add(string.Format("{0}: {1}", "Доступ к КИБу", ex.Message));
+                }
+                catch (Exception ex)
+                {
+                    LogHelper.Write2Log(ex);
+                    context.Messages.Add(string.Format("{0}: {1}", "Неизвестная ошибка", ex.Message));
+                }
+            }
+            LogHelper.Write2Log("Загрузка завершена", LogLevel.Information);
 
-                if (context.HaveMD)
-                    LogHelper.Write2Log(context.Command.baseName + ": загрузка с MD", LogLevel.Information);
-            }
-            catch (WebException ex)
-            {
-                LogHelper.Write2Log(ex);
-                throw new URBDException(string.Format("Загрузка с FTP: {0} ({1})", ex.Message, ex.Response!=null?ex.Response.ResponseUri.ToString():string.Empty), ex);
-            }
-            catch (ZipException ex)
-            {
-                LogHelper.Write2Log(ex);
-                throw new URBDException("Проверка Zip-архива: " + ex.Message, ex);
-            }
+            if (context.HaveMD)
+                LogHelper.Write2Log(context.Command.baseName + ": загрузка с MD", LogLevel.Information);
         }
     }
 }

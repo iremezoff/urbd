@@ -187,11 +187,13 @@ namespace Ugoria.URBD.CentralService.DataProvider
             DataSet dataSet = new DataSet();
             try
             {
-                conn.Open();
                 command.Connection = conn;
+                if (conn.State != ConnectionState.Open)
+                    conn.Open();
                 SqlDataAdapter dataAdapter = new SqlDataAdapter(command);
                 dataAdapter.Fill(dataSet);
-                conn.Close();
+                if (conn.State == ConnectionState.Open)
+                    conn.Close();
                 return dataSet;
             }
             catch (SqlException)
@@ -204,10 +206,12 @@ namespace Ugoria.URBD.CentralService.DataProvider
         {
             try
             {
-                conn.Open();
                 command.Connection = conn;
+                if (conn.State != ConnectionState.Open)
+                    conn.Open();
                 command.ExecuteNonQuery();
-                conn.Close();
+                if (conn.State == ConnectionState.Open)
+                    conn.Close();
             }
             catch (SqlException)
             {

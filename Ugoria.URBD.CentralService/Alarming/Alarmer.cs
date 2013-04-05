@@ -53,7 +53,9 @@ namespace Ugoria.URBD.CentralService.Alarming
                 foreach (DataRow dataRow in dataProvider.GetAlarmList(reportGuid).Rows)
                 {
                     if (((bool)dataRow["on_mail"]) && !string.IsNullOrEmpty(dataRow["mail"].ToString()))
-                        mailMessage.To.Add(new MailAddress(dataRow["mail"].ToString()));
+                    {
+                        mailMessage.To.Add(new MailAddress(dataRow["mail"].ToString()));                        
+                    }
                     if (((bool)dataRow["on_phone"]) && !string.IsNullOrEmpty(dataRow["phone"].ToString()))
                         phoneNumberList.Add(dataRow["phone"].ToString());
                 }
@@ -80,7 +82,6 @@ namespace Ugoria.URBD.CentralService.Alarming
                 {
                     using (DBDataProvider dataProvider = new DBDataProvider())
                     {
-
                         dataProvider.SetPhoneMessage(phoneNumberList, smsMessage);
                     }
                 }

@@ -37,8 +37,7 @@
         $( "td.date_last_log", tr ).html( packet.date_last_log );
     }
 
-        $(document).ready(function () {
-            
+        $(document).ready(function () {            
             var oTable = $('#data').dataTable({
                 "bJQueryUI": true,
                 "sPaginationType": "full_numbers",
@@ -59,36 +58,47 @@
                     "sAlign": "left"
                 },
                 "fnDrawCallback": function (oSettings) {
-                    if (oSettings.aiDisplay.length == 0) {
-                        return;
-                    }
-                    var nTrs = $('#data tbody tr');
-                    var iColspan = nTrs[0].getElementsByTagName('td').length;
-                    var sLastGroup = "";
-                    var groupNum = 0;
-                    var selectoName = "";
-                    for (var i = 0; i < nTrs.length; i++) {
-                        var iDisplayIndex = oSettings._iDisplayStart + i;
-                        var sGroup = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[groupColumn];
-                        
-                          if (sGroup != sLastGroup) {
-                            groupNum++;
+                    if ( oSettings.aiDisplay.length == 0 )
+                {
+                    return;
+                }
+                var nTrs = $( '#data tbody tr' );
+                var iColspan = nTrs[0].getElementsByTagName( 'td' ).length;
+                var sLastGroup = "";
+                var groupNum = 0;
+                var selectoName = "";
+                for ( var i = 0; i < nTrs.length; i++ )
+                {
+                    var iDisplayIndex = oSettings._iDisplayStart + i;
+                    var sGroup = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[groupColumn];
 
-                            selectoName = "group_"+groupColumn+"_"+groupNum;
-                            var cookie = $.cookie(selectoName);
-                            var nGroup = document.createElement('tr');
-                            var nCell = document.createElement('th');
-                            var aLink = $(document.createElement('a')).attr("href", "#"+selectoName).addClass("group_toggle").html(cookie!="none" && cookie!=null?"свернуть":"развернуть");
-                            $(nCell).addClass("group").html(sGroup).append(" (").append(aLink).append(")").attr("colspan", iColspan);
-                            $(nGroup).wrapInner(nCell);
-                            $(nTrs[i]).before(nGroup);
-                            sLastGroup = sGroup;                            
-                        }
-                        $(nTrs[i]).addClass(selectoName).toggle(cookie!="none" && cookie!=null);
+                    if ( sGroup != sLastGroup )
+                    {
+                        groupNum++;
+                        selectoName = "group_" + groupColumn + "_" + groupNum;
+                        var cookie = $.cookie( selectoName );
+                        var nGroup = $( "<tr></tr>" );                        
+                        var aLink = $('<a></a>').attr("href", "#"+selectoName).addClass("group_toggle").text( cookie != "none" && cookie != null ? "свернуть" : "развернуть" );
+                        var nCell = $( '<th></td>').addClass("group").attr("colspan",iColspan).text( sGroup ).append( " (" ).append( aLink ).append( ")" );
+                        $( nGroup ).wrapInner( nCell );
+                        $( nTrs[i] ).before( nGroup );
+                        sLastGroup = sGroup;
                     }
+                    $( nTrs[i] ).addClass( selectoName ).toggle( cookie != "none" && cookie != null );
+                }
+                $( "a.group_toggle" ).on( "click", function ()
+                {
+            var href= $( this ).attr( "href" );
+            var groupName = href.substr( href.indexOf("#")+1);
+            var display = $( "table#data tr." + groupName ).toggle().css( "display" );
+            $.cookie( groupName, display );
+            $( this ).html( display == "none" ? "развернуть" : "свернуть" );
+            return false;
+        } );
                 }
             });
             new FixedHeader(oTable);
+
         });
 </script>
 <br />
@@ -96,15 +106,15 @@
 @(Html.Grid<IBaseReportView>("bases").Columns(column =>
 {
     column.Custom(b => index++).HeaderAttributes(width => "2%").Named("#");
-    column.For(b => b.BaseName).HeaderAttributes(width => "8%").Named("Имя ИБ").Attributes(@class=>"base_name");
+    column.For(b => b.BaseName).HeaderAttributes(width => "8%").Named("Имя ИБ").Attributes(@class => "base_name");
     column.For(b => b.ParentBaseName).HeaderAttributes(width => "8%").Named("Имя родительской ИБ");
     column.Custom(b => String.Format("{0} ({1})", b.ServiceAddress, b.ServiceName)).HeaderAttributes(width => "8%").Named("Адрес сервиса");
     column.For(b => b.DateComplete).HeaderAttributes(width => "8%").Named("Дата последнего обновления").Format("{0:dd.MM.yyyy HH:mm:ss}").Attributes(@class => "date_complete");
     column.For(b => b.DateMlgLog).HeaderAttributes(width => "8%").Named("Дата последней записи").Format("{0:dd.MM.yyyy HH:mm:ss}").Attributes(@class => "date_last_log");
     column.For(b => b.GroupName).Named("Группа");
-    column.Custom(b => string.Empty).Attributes(br => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(br.Item.Status) + " status" } }).HeaderAttributes(width => "5");
-    column.Custom(b => (b.Message ?? string.Empty)).HeaderAttributes(width => "56%").Named("Отчёт").Attributes(@class=>"message");
-    column.Custom(b => Button(b.BaseId, b.ServiceId, b.Status)).HeaderAttributes(width => "8%").Attributes(@class=>"button");
+    column.Custom(b => string.Empty).Attributes(br => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(br.Item.Status) + " status" } }).HeaderAttributes(width => "5px");
+    column.Custom(b => (b.Message ?? string.Empty)).HeaderAttributes(width => "56%").Named("Отчёт").Attributes(@class => "message");
+    column.Custom(b => Button(b.BaseId, b.ServiceId, b.Status)).HeaderAttributes(width => "8%").Attributes(@class => "button");
 }).Attributes(id => "data").RowAttributes(br => new Dictionary<string, object>() { { "id", "row" + br.Item.BaseId } }))
 <div id="go_dialog" style="display: none">
     @{Html.BeginForm("MlgCollectGo", "Main", FormMethod.Get);}
@@ -115,9 +125,10 @@
 <div id="interrupt_dialog">
     @{Html.BeginForm("MlgCollectInterrupt", "Main", FormMethod.Get); }
     <div id="dialog-confirm">
-        <b>Осторожно!</b> Файл лога может быть просканирован не до конца, из-за чего данные могут
-        оказаться неактуальными!
+        <b>Осторожно!</b> Файл лога может быть просканирован не до конца, из-за чего данные
+        могут оказаться неактуальными!
     </div>
     @{Html.EndForm();}
-        <div id="interrupt_status"></div>
+    <div id="interrupt_status">
+    </div>
 </div>

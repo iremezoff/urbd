@@ -92,6 +92,9 @@ namespace Ugoria.URBD.WebControl.Controllers
             ViewData["object_types"] = baseRepo.GetObjectTypes();
             ViewData["base_codes"] = baseRepo.GetBaseCodes();
 
+            ViewData["date_start"] = DateTime.Now.ToString("dd.MM.yyyy");
+            ViewData["date_end"] = DateTime.Now.AddDays(-1).ToString("dd.MM.yyyy");
+
             return View();
         }
 
@@ -106,8 +109,8 @@ namespace Ugoria.URBD.WebControl.Controllers
             ViewData["number"] = number;
             ViewData["base_code"] = baseCode;
             ViewData["type"] = type;
-            ViewData["date_start"] = startDate;
-            ViewData["date_end"] = endDate;
+            ViewData["date_start"] = startDate.Value.ToString("dd.MM.yyyy");
+            ViewData["date_end"] = endDate.Value.ToString("dd.MM.yyyy");
 
             return View("MlgCollectSearch");
         }
@@ -130,6 +133,8 @@ namespace Ugoria.URBD.WebControl.Controllers
             controlService.RunTask(SessionStore.GetCurrentUser().UserId, cmd);
             comm.Close();
 
+            if (Request.IsAjaxRequest())
+                return new EmptyResult();
             return RedirectToAction("MlgCollect");
         }
 
@@ -142,7 +147,7 @@ namespace Ugoria.URBD.WebControl.Controllers
 
             IBaseRepository baseRepo = new BaseRepository(dataContext);
 
-            IBaseReportView baseView = baseRepo.GetBaseById(baseId, "Exchange");
+            IBaseReportView baseView = baseRepo.GetBaseById(baseId, "MlgCollect");
 
             IControlService controlService = channelFactory.CreateChannel();
             ICommunicationObject comm = (ICommunicationObject)controlService;
@@ -151,7 +156,8 @@ namespace Ugoria.URBD.WebControl.Controllers
             comm.Open();
             controlService.InterruptTask(cmd);
             comm.Close();
-
+            if (Request.IsAjaxRequest())
+                return new EmptyResult();
             return RedirectToAction("MlgCollect");
         }
 
@@ -172,7 +178,8 @@ namespace Ugoria.URBD.WebControl.Controllers
             comm.Open();
             controlService.RunTask(SessionStore.GetCurrentUser().UserId, cmd);
             comm.Close();
-
+            if (Request.IsAjaxRequest())
+                return new EmptyResult();
             return RedirectToAction("Exchange");
         }
 
@@ -193,7 +200,8 @@ namespace Ugoria.URBD.WebControl.Controllers
             comm.Open();
             controlService.RunTask(SessionStore.GetCurrentUser().UserId, cmd);
             comm.Close();
-
+            if (Request.IsAjaxRequest())
+                return new EmptyResult();
             return RedirectToAction("ExtDirectories");
         }
 
@@ -215,7 +223,8 @@ namespace Ugoria.URBD.WebControl.Controllers
             comm.Open();
             controlService.InterruptTask(cmd);
             comm.Close();
-
+            if (Request.IsAjaxRequest())
+                return new EmptyResult();
             return RedirectToAction("Index");
         }
 
@@ -237,7 +246,8 @@ namespace Ugoria.URBD.WebControl.Controllers
             comm.Open();
             controlService.InterruptTask(cmd);
             comm.Close();
-
+            if (Request.IsAjaxRequest())
+                return new EmptyResult();
             return RedirectToAction("ExtDirectories");
         }
     }

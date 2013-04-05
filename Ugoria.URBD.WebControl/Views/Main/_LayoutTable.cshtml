@@ -7,13 +7,13 @@
     ViewBag.Title = "Управление распределенными базами данных";
     Layout = "~/Views/Shared/_MainLayout.cshtml";
 }
-<script src="@Url.Content("~/Scripts/jquery.cookie.js")" type="text/javascript"></script>
 <script src="@Url.Content("~/Scripts/jquery.signalR-1.0.1.min.js")" type="text/javascript"></script>
 <script src="@Url.Content("~/Scripts/FixedHeader.js")" type="text/javascript"></script>
 <script language="javascript" type="text/javascript" src="@Url.Content("~/signalr/hubs")"></script>
 <script type="text/javascript">
     $( document ).ready( function ()
     {
+        var oldIEbrowser = document.all && !document.querySelector; // любые браузеры, кроме IE7-
         $( "input:submit, button" ).button();
 
         $( "a.interrupt" ).addClass( "ui-state-default-other" );
@@ -96,21 +96,26 @@
                 {
                     var form = $( '#go_dialog form' );
                     var dialog = this;
-                    $.ajax( {
-                        url: $( form ).attr( "action" ),
-                        type: $( form ).attr( "method" ),
-                        data: $( form ).serialize(),
-                        success: function ( result )
-                        {
-                            $( form ).next( "div#go_status" ).html( "<span>Запрос успешно отправлен</span>" );
-                            $( dialog ).dialog( "close" );
-                        },
-                        error: function ()
-                        {
-                            $( form ).next( "div#go_status" ).html( "<span>Сервис недоступен</span>" );
-                        }
-                    } );
-                    $( form ).next( "div#go_status" ).html( $( '<div><img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/><span>Отправка запроса...</span></div>' ) );
+                    if ( oldIEbrowser )
+                        $( form ).submit();
+                    else
+                    {
+                        $.ajax( {
+                            url: $( form ).attr( "action" ),
+                            type: $( form ).attr( "method" ),
+                            data: $( form ).serialize(),
+                            success: function ( result )
+                            {
+                                $( form ).next( "div#go_status" ).html( "<span>Запрос успешно отправлен</span>" );
+                                $( dialog ).dialog( "close" );
+                            },
+                            error: function ()
+                            {
+                                $( form ).next( "div#go_status" ).html( "<span>Сервис недоступен</span>" );
+                            }
+                        } );
+                        $( form ).next( "div#go_status" ).html( $( '<div><img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/><span>Отправка запроса...</span></div>' ) );
+                    }
                 },
                 "Отмена": function ()
                 {
@@ -128,22 +133,27 @@
                 "Да": function ()
                 {
                     var form = $( '#interrupt_dialog form' );
-                    var dialog = this;
-                    $.ajax( {
-                        url: $( form ).attr( "action" ),
-                        type: $( form ).attr( "method" ),
-                        data: $( form ).serialize(),
-                        success: function ( result )
-                        {
-                            $( form ).next( "div#interrupt_status" ).html( "<span>Запрос успешно отправлен</span>" );
-                            $( dialog ).dialog( "close" );
-                        },
-                        error: function ()
-                        {
-                            $( form ).next( "div#interrupt_status" ).html( "<span>Недоступен сервис</span>" );
-                        }
-                    } );
-                    $( form ).next( "div#interrupt_status" ).html( $( '<div><img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/><span>Отправка запроса...</span></div>' ) );
+                    if ( oldIEbrowser )
+                        $( form ).submit();
+                    else
+                    {
+                        var dialog = this;
+                        $.ajax( {
+                            url: $( form ).attr( "action" ),
+                            type: $( form ).attr( "method" ),
+                            data: $( form ).serialize(),
+                            success: function ( result )
+                            {
+                                $( form ).next( "div#interrupt_status" ).html( "<span>Запрос успешно отправлен</span>" );
+                                $( dialog ).dialog( "close" );
+                            },
+                            error: function ()
+                            {
+                                $( form ).next( "div#interrupt_status" ).html( "<span>Недоступен сервис</span>" );
+                            }
+                        } );
+                        $( form ).next( "div#interrupt_status" ).html( $( '<div><img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/><span>Отправка запроса...</span></div>' ) );
+                    }
                 },
                 "Отмена": function ()
                 {
@@ -156,53 +166,61 @@
             $( "html" ).scrollTop( $.cookie( "scroll_position" ) );
         $.cookie( "scroll_position", null );
 
-        var hub = $.connection.TransferHub;
-        //hub.connection.logging = true;
-
-        var transport = !window.EventSource ? "longPolling" : "auto";
-        $.connection.hub.start( { transport: transport } ).done( function ()
+        if ( !oldIEbrowser )
         {
-            hub.server.subscribeComponent( component );
-            console.log( "Now connected!" );
-        } )
+            var hub = $.connection.TransferHub;
+            //hub.connection.logging = true;
+
+            var transport = !window.EventSource ? "longPolling" : "auto";
+            $.connection.hub.start( { transport: transport } ).done( function ()
+            {
+                hub.server.subscribeComponent( component );
+                console.log( "Now connected!" );
+            } )
         .fail( function ()
         {
             console.log( "Could not Connect!" );
         } );
 
-        hub.client.sendCommand = function ( packet )
-        {
-            console.log( packet );
-            var tr = $( "#data tr#row" + packet.base_id );
-            $( "td.status", tr ).attr( "class", "" ).addClass( "status" ).addClass( packet.status );
-            $( "td.message", tr ).text( packet.message );
-            $( "span#last_update" ).text(packet.date_command);
+            hub.client.sendCommand = function ( packet )
+            {
+                var tr = $( "#data tr#row" + packet.base_id );
+                $( "td.status", tr ).attr( "class", "" ).addClass( "status" ).addClass( packet.status );
+                $( "td.message", tr ).text( packet.message );
+                $( "#data" ).dataTable().fnRefreshCache( $( "td.status", tr ).index() );
+                //fnRefreshCache
+                $( "span#last_update" ).text( packet.date_command );
 
-            $( "td.button a.go", tr ).css( "display", "none" );
-            $( "td.button a.interrupt", tr ).css( "display", "inline-block" );
-        }
-        hub.client.sendReport = function ( packet )
-        {
-            var tr = $( "#data tr#row" + packet.base_id );
-            $( "td.status", tr ).attr( "class", "" ).addClass( "status" ).addClass( packet.status );
-            $( "td.message", tr ).text( packet.message );
-            $( "span#last_update" ).text( packet.date_complete );
-            if ( packet.type && packet.type === "launch" )
-            {
-                $( "td.date_complete", tr ).text( "" );
+                $( "td.button a.go", tr ).css( "display", "none" );
+                $( "td.button a.interrupt", tr ).css( "display", "inline-block" );
             }
-            else
+            hub.client.sendReport = function ( packet )
             {
-                $( "td.button a.go", tr ).css( "display", "inline-block" );
-                $( "td.button a.interrupt", tr ).css( "display", "none" );
-                $( "td.date_complete", tr ).text( packet.date_complete )
-                send_report( tr, packet );
+                var table = $( "#data" ).dataTable();
+                var tr = $( "tr#row" + packet.base_id, table );
+                $( "td.status", tr ).attr( "class", "" ).addClass( "status" ).addClass( packet.status );
+                var td = $( "td.message", tr ).text( packet.message );
+                //table.fnRefreshCache( td.index() );
+                $( "span#last_update" ).text( packet.date_complete );
+                if ( packet.type && packet.type === "launch" )
+                {
+                    td = $( "td.date_complete", tr ).text( "" );
+                    //table.fnRefreshCache( td.index() );
+                }
+                else
+                {
+                    $( "td.button a.go", tr ).css( "display", "inline-block" );
+                    $( "td.button a.interrupt", tr ).css( "display", "none" );
+                    td = $( "td.date_complete", tr ).text( packet.date_complete );
+                    //table.fnRefreshCache( td.index() );
+                    send_report( tr, packet );
+                }
             }
+            window.onbeforeunload = function ()
+            {
+                $.connection.hub.stop();
+            };
         }
-        window.onbeforeunload = function ()
-        {
-            $.connection.hub.stop();
-        };
     } );    
     
 </script>

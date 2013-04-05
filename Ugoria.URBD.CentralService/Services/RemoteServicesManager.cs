@@ -15,6 +15,7 @@ using System.Security;
 using System.Collections;
 using System.Reflection;
 using Ugoria.URBD.CentralService.Alarming;
+using System.ServiceModel.Description;
 
 namespace Ugoria.URBD.CentralService
 {
@@ -92,11 +93,12 @@ namespace Ugoria.URBD.CentralService
             serviceHost = new ServiceHost(centralService);
 
             Uri centralUri = new Uri((string)centralServiceConguration["main.service_central_address"]);
-            NetTcpBinding binding = new NetTcpBinding(SecurityMode.None);
-            binding.MaxReceivedMessageSize = 1024 * 1024;
+            int maxPacketSize = int.Parse((string)centralServiceConguration["main.max_wcfpacket_size"]);
+            int maxItemsInGraph = int.Parse((string)centralServiceConguration["main.max_graphobject_items"]);
             serviceHost.AddServiceEndpoint(typeof(ICentralService),
-                binding,
+                new NetTcpBinding(SecurityMode.None) { MaxReceivedMessageSize = 1024 * 1024 * maxPacketSize, ReceiveTimeout = new TimeSpan(0, 10, 0) },
                 centralUri);
+            serviceHost.Description.Endpoints[0].Contract.Operations.Find("NoticeReport").Behaviors.Find<DataContractSerializerOperationBehavior>().MaxItemsInObjectGraph = maxItemsInGraph;
         }
 
         private RemoteConfiguration RemoteRequestConfiguartion(ICentralService sender, RequestConfigureEventArgs args)
@@ -124,19 +126,19 @@ namespace Ugoria.URBD.CentralService
 
         private void RemoteNoticePID1C(ICentralService sender, NoticePID1CArgs args)
         {
-            LogHelper.Write2Log(String.Format("На сервисе {0} запущен автообмен процессом 1С pid: {1}", args.Uri, args.LaunchReport.pid), LogLevel.Information);
+            LogHelper.Write2Log(String.Format("На сервисе {0} {1} запущен процесс с pid: {2}", args.Uri, args.LaunchReport.reportGuid, args.LaunchReport.pid), LogLevel.Information);
 
             if (handler != null)
                 handler.HandleReport(args.LaunchReport);
             if (ReportReceived != null)
                 ReportReceived(args.LaunchReport);
             if (logger != null)
-                logger.Information(args.Uri, String.Format("Запущен автообмен процессом 1С pid: {0}", args.LaunchReport.pid));
+                logger.Information(args.Uri, String.Format("Запущен процесс pid: {0}", args.LaunchReport.pid));
         }
 
         private void RemoteNoticeReport(ICentralService sender, NoticeReportArgs args)
         {
-            LogHelper.Write2Log(String.Format("Пришел отчет {0} с сервиса {1}", args.Report.GetType().Name, args.Uri), LogLevel.Information);
+            LogHelper.Write2Log(String.Format("Пришел отчет {0} {{{1}}} с сервиса {2}", args.Report.GetType().Name, args.Report.reportGuid, args.Uri), LogLevel.Information);
 
             if (handler == null)
                 return;

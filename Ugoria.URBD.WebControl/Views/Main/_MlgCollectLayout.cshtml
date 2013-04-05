@@ -11,6 +11,8 @@
     List<SelectListItem> codeList = new List<SelectListItem>();
     codeList.AddRange(((IEnumerable<string>)ViewData["base_codes"]).Select<string, SelectListItem>(x => new SelectListItem { Text = x, Value = x }));
 }
+<script src="@Url.Content("~/Scripts/jquery.maskedinput-1.3.1.min.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery-ui-i18n.min.js")" type="text/javascript"></script>
 <script language="javascript" type="text/javascript">
     $( document ).ready( function ()
     {
@@ -19,10 +21,13 @@
         $( "input.date" ).datepicker( {
             defaultDate: null
         } )
-        .mask( "99.99.9999" );
+        .mask( "99.99.9999" ).click( function ()
+        {
+            $( "div#ui-datepicker-div" ).css( "z-index", 120 );
+        } );
     } );
 </script>
-@{Html.BeginForm();}
+@{Html.BeginForm("MlgCollect", "Main", FormMethod.Post);}
 <table>
     <tr>
         <td class="ui-state-default" colspan="2">
@@ -52,8 +57,17 @@
         </td>
     </tr>
     <tr>
+        <td>
+            Период:
+        </td>
+        <td>
+            с @Html.TextBox("startDate", ViewData["date_start"], new { @class = "date" }) по
+            @Html.TextBox("endDate", ViewData["date_end"], new { @class = "date" })
+        </td>
+    </tr>
+    <tr>
         <td colspan="2">
-            <input type="submit" value="Искать" />
+            <input type="submit" value="Найти" />
         </td>
     </tr>
 </table>

@@ -136,7 +136,8 @@ namespace UnitTests
         public void PrepareCommandTest()
         {
             List<DataHandler> handlers = new List<DataHandler>() { new ExchangeDataHandler() };
-            WCFMessageHandler target = new WCFMessageHandler(handlers);
+            WCFMessageHandler target = new WCFMessageHandler();
+            target.AddHandler(new ExchangeDataHandler());
             ExecuteCommand actual;
 
             // Positive test
@@ -161,7 +162,7 @@ namespace UnitTests
         public void HandleReportTest()
         {
             List<DataHandler> handlers = new List<DataHandler>();
-            WCFMessageHandler target = new WCFMessageHandler(handlers);
+            WCFMessageHandler target = new WCFMessageHandler();
             //ReportStatusType actual;
 
             // Negative tests
@@ -195,8 +196,10 @@ namespace UnitTests
             }
 
             // Positive tests
+            target = new WCFMessageHandler();
             handlers = new List<DataHandler>() { new ExchangeDataHandler(), new ExtDirectoriesDataHandler() };
-            target = new WCFMessageHandler(handlers);
+            handlers.ForEach(h=>target.AddHandler(h));
+            
 
             // LaunchReport
             target.HandleReport(launchReport);

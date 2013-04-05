@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using System.Data.Entity;
 using Ugoria.URBD.Contracts.Services;
 using Ugoria.URBD.WebControl.ViewModels;
+using System.Transactions;
 
 namespace Ugoria.URBD.WebControl.Models
 {
@@ -497,7 +498,10 @@ namespace Ugoria.URBD.WebControl.Models
             }
             else if ("MlgCollect".Equals(componentName))
             {
-                return query.Select(MlgCollectSelector).SingleOrDefault();
+                using (TransactionScope scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions() { IsolationLevel = IsolationLevel.Snapshot }))
+                {
+                    return query.Select(MlgCollectSelector).SingleOrDefault();
+                }
             }
             else if ("ExtDirectories".Equals(componentName))
             {
@@ -528,86 +532,22 @@ namespace Ugoria.URBD.WebControl.Models
 
             if ("Exchange".Equals(componentName))
             {
-                return query.Select(x => new BaseReportView
-                {
-                    BaseId = x.base_id,
-                    GroupId = x.group_id,
-                    BaseName = x.base_name,
-                    DateCommand = x.date_command,
-                    DateComplete = x.date_complete,
-                    Message = x.message,
-                    ParentBaseId = x.parent_base_id,
-                    ParentBaseName = x.parent_base_name,
-                    ServiceId = x.service_id,
-                    ServiceAddress = x.service_address,
-                    GroupName = x.group_name,
-                    MDRelease = x.md_release,
-                    ServiceName = x.service_name,
-                    Status = x.status,
-                    Packets = dataContext.Packet.Join(dataContext.ReportPacket,
-                        p => p.packet_id,
-                        rp => rp.packet_id,
-                        (p, rp) =>
-                            new
-                            {
-                                packet = p,
-                                reportPacket = rp
-                            }).Where(rp => rp.packet.base_id == x.base_id && rp.reportPacket.rp_id == dataContext.ReportPacket.Where(rp2 => rp2.packet_id == rp.reportPacket.packet_id).Max(m => m.rp_id)).Select(rp => new ReportPacketViewModel
-                            {
-                                CreatedDate = rp.reportPacket.date_created.Value,
-                                Packet = new PacketViewModel { FileName = rp.packet.filename, PacketId = rp.packet.packet_id, Type = rp.packet.type },
-                                Size = rp.reportPacket.size.Value
-                            })
-                });
+                return query.Select(ExchangeSelector);
             }
             else if ("MlgCollect".Equals(componentName))
             {
-                return query.Select(x => new BaseReportView
+                using (TransactionScope scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions() { IsolationLevel = IsolationLevel.Snapshot }))
                 {
-                    BaseId = x.base_id,
-                    GroupId = x.group_id,
-                    BaseName = x.base_name,
-                    DateCommand = x.date_command,
-                    DateComplete = x.date_complete,
-                    Message = x.message,
-                    ParentBaseId = x.parent_base_id,
-                    ParentBaseName = x.parent_base_name,
-                    ServiceId = x.service_id,
-                    ServiceAddress = x.service_address,
-                    GroupName = x.group_name,
-                    MDRelease = x.md_release,
-                    ServiceName = x.service_name,
-                    Status = x.status,
-                    DateMlgLog = x.mlg_date_log
-                });
+                    return query.Select(MlgCollectSelector);
+                }
+            }
+            else if ("ExtDirectories".Equals(componentName))
+            {
+                return query.Select(ExtDirectorySelector);
             }
             else
             {
-                return query.Select(x => new BaseReportView
-                {
-                    BaseId = x.base_id,
-                    GroupId = x.group_id,
-                    BaseName = x.base_name,
-                    DateCommand = x.date_command,
-                    DateComplete = x.date_complete,
-                    Message = x.message,
-                    ParentBaseId = x.parent_base_id,
-                    ParentBaseName = x.parent_base_name,
-                    ServiceId = x.service_id,
-                    ServiceAddress = x.service_address,
-                    GroupName = x.group_name,
-                    MDRelease = x.md_release,
-                    ServiceName = x.service_name,
-                    Status = x.status,
-                    Files = dataContext.ExtDirectoryFile.Where(f => f.report_id == dataContext.ExtDirectoryFile.Where(f2 => f2.Report.base_id == x.base_id).Max(f2 => f2.report_id)).Select(f =>
-                        new ExtDirectoriesFileViewModel
-                            {
-                                FileId = f.file_id,
-                                Filename = f.filename,
-                                Size = f.size,
-                                DateCopied = f.date_copied
-                            })
-                });
+                return query.Select(GenericSelector);
             }
         }
 

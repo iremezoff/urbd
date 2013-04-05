@@ -175,8 +175,8 @@ namespace Ugoria.URBD.RemoteService
                 while (!launchComplete && !strategy.IsInterrupt)
                 {
                     strategy.StartLaunch();
-                    if(TaskExecuted!=null)
-                    TaskExecuted(messageHandler.GetLaunchReport(task.Command, task.CommandStrategy));
+                    if (TaskExecuted != null)
+                        TaskExecuted(messageHandler.GetLaunchReport(task.Command, task.CommandStrategy));
 
                     launchComplete = strategy.EndLaunch();
                 }
@@ -193,8 +193,8 @@ namespace Ugoria.URBD.RemoteService
             }
             OperationReport report = messageHandler.GetOperationReport(task.Command, strategy);
             report.message = string.Join(". ", new string[] { report.message, message }.Where(s => !string.IsNullOrEmpty(s)));
-            if(TaskExecuted!=null)
-            TaskExecuted(report);
+            if (TaskExecuted != null)
+                TaskExecuted(report);
 
             LogHelper.Write2Log(String.Format("Процесс {0} для ИБ {1} завершен", task.Command.reportGuid, task.Command.baseName), LogLevel.Information);
 

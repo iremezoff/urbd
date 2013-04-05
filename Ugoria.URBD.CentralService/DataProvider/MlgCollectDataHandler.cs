@@ -20,6 +20,11 @@ namespace Ugoria.URBD.CentralService.DataProvider
         public MlgCollectDataHandler()
             : base("MlgCollect") { }
 
+        public override Type ReportType
+        {
+            get { return typeof(MlgCollectReport); }
+        }
+
         public override ExecuteCommand GetPreparedCommand(ExecuteCommand command)
         {
             return GetPreparedMlgCollectCommand((MlgCollectCommand)command);
@@ -43,19 +48,21 @@ namespace Ugoria.URBD.CentralService.DataProvider
 
         public virtual void SetReport(MlgCollectReport report)
         {
-            using (TransactionScope scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }))
+            using (TransactionScope scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.Snapshot }))
             {
                 base.SetReport(report);
-                if (report.messageList.Count > 0)
-                    dataProvider.SetReportParam(report.reportGuid, new Hashtable() { { "mlg_date_log", report.messageList.Last().eventDate } });
-
                 // обрабокта сообщений лога работы 1С на стороне удаленного сервиса
                 foreach (MlgMessage message in report.messageList)
                 {
                     dataProvider.SetReportLog(report.reportGuid, message.eventDate, message.eventType, message.account,message.mode1c, message.information, message.objectTypeCode, message.objectTypeNumber, message.baseCode, message.objectIdentifier, message.additional);
                 }
+                // операция должна быть в конце, чтобы снизить время блокировки записи в таблице Base в рамках текущей транзакции для других транзакций других компонент
+                if (report.messageList.Count > 0)
+                    dataProvider.SetReportParam(report.reportGuid, new Hashtable() { { "mlg_date_log", report.messageList.Last().eventDate } });
                 scope.Complete();
             }
+
+            report.messageList.Clear(); // большие объемы данных передавать не будут
         }
 
         public override void SetReport(OperationReport report)

@@ -2,7 +2,7 @@
 Группировать по <b>
     @if (!TableGrouper.filial.Equals(ViewData["sort"]))
     {
-        @Html.ActionLink("филиалу", "Index", new { sort = TableGrouper.filial })
+        @Html.ActionLink("филиалу", (string)ViewContext.RouteData.Values["action"], new { sort = TableGrouper.filial })
     }
     else
     {
@@ -12,7 +12,7 @@
 </b>, <b>
     @if (!TableGrouper.service.Equals(ViewData["sort"]))
     {
-        @Html.ActionLink("сервису", "Index", new { sort = TableGrouper.service })
+        @Html.ActionLink("сервису", (string)ViewContext.RouteData.Values["action"], new { sort = TableGrouper.service })
     }
     else
     {
@@ -22,7 +22,7 @@
 </b>, <b>
     @if (!TableGrouper.group.Equals(ViewData["sort"]))
     { 
-        @Html.ActionLink("группе", "Index", new { sort = TableGrouper.group })
+        @Html.ActionLink("группе", (string)ViewContext.RouteData.Values["action"], new { sort = TableGrouper.group })
     }
     else
     {

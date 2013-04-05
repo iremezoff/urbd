@@ -66,8 +66,8 @@ namespace Ugoria.URBD.RemoteService.Strategy.ExtDirectory
                 Uri basePathUri = new Uri(basePath);
                 try
                 {
-                    if (basePathUri.IsUnc)
-                        netConn = new NetworkConnection(basePath, new NetworkCredential(username, password));
+                    //if (basePathUri.IsUnc)
+                        //netConn = new NetworkConnection(basePath, new NetworkCredential(username, password));
                     foreach (KeyValuePair<string, string> dirPair in (Dictionary<string, string>)basePair.Value["base.extdir_table"])
                     {
                         DirectoryInfo extFormsDirInfo = new DirectoryInfo(string.Format(@"{0}\{1}", basePath, dirPair.Value));
@@ -80,8 +80,8 @@ namespace Ugoria.URBD.RemoteService.Strategy.ExtDirectory
                 }
                 finally
                 {
-                    if (netConn != null)
-                        netConn.Dispose();
+                    //if (netConn != null)
+                        //netConn.Dispose();
                 }
             }
         }

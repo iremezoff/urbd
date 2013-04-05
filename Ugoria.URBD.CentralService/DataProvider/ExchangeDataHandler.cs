@@ -20,6 +20,11 @@ namespace Ugoria.URBD.CentralService.DataProvider
         public ExchangeDataHandler()
             : base("Exchange") { }
 
+        public override Type ReportType
+        {
+            get { return typeof(ExchangeReport);}
+        }
+
         public override ExecuteCommand GetPreparedCommand(ExecuteCommand command)
         {
             return GetPreparedExchangeCommand((ExchangeCommand)command);
@@ -45,7 +50,7 @@ namespace Ugoria.URBD.CentralService.DataProvider
 
         public void SetReport(ExchangeReport report)
         {
-            using (TransactionScope scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }))
+            using (TransactionScope scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.Snapshot }))
             {
                 base.SetReport(report);
                 if (!string.IsNullOrEmpty(report.mdRelease))

@@ -34,7 +34,7 @@ namespace Ugoria.URBD.RemoteService.Kit
                 netResource,
                 credentials.Password,
                 userName,
-                0);
+                0x00001000);
 
             if (result != 0)
             {
