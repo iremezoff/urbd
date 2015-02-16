@@ -1,0 +1,130 @@
+﻿@using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Models
+@using Ugoria.URBD.WebControl.Helpers
+@using Ugoria.URBD.WebControl.Controllers
+@using Ugoria.URBD.Contracts.Services
+@{
+    Layout = "~/Views/Main/_LayoutTable.cshtml";
+}
+@helper Button(int baseId, int serviceId, string status)
+    {
+    <div style="white-space: nowrap">
+        @{bool isBusy = "Busy".Equals(status);}
+        @Html.ActionLink("Обновить", "ExtDirectoriesGo", new { id = baseId }, new { @class = "go", style = !isBusy ? "display: inline-block" : "display: none" })
+        @Html.ActionLink("Отмена", "ExtDirectoriesInterrupt", new { id = baseId }, new { @class = "interrupt", style = isBusy ? "display: inline-block" : "display: none" })
+        @Html.ActionLink("Menu", "#")
+    </div>
+    <ul class="func_menu">
+        <li>@Html.ActionLink("Параметры ИБ", "Edit", "Base", new { id = baseId }, new object())</li>
+        <li>@Html.ActionLink("Параметры сервиса", "Edit", "Service", new { id = serviceId }, new object())</li>
+        <li>@Html.ActionLink("Логи сервиса", "Logs", "Service", new { id = serviceId }, new object())</li>
+        <li><a href="@(Url.Action("Edit", "Base", new { id = baseId }))#extdirectories">Отчёты
+            обновления</a></li>
+    </ul>
+}
+<script type="text/javascript">
+    var groupColumn = @(!TableGrouper.group.Equals(ViewData["sort"]) ? !TableGrouper.service.Equals(ViewData["sort"]) ? 2 : 3 : 5);
+    var component = "ExtDirectories";
+    function go_action(button)
+    {
+        $( '#go_dialog' ).dialog( 'option', 'title', "Обновление для ИБ: " + $( button ).closest( "tr" ).find( "td.base_name" ).html()  );
+    }
+
+    function send_report( tr, packet )
+    {
+        $( "td.files", tr ).html( packet.files );
+    }
+
+        $(document).ready(function () {
+            var oTable = $('#data').dataTable({
+                "bJQueryUI": true,
+                "sPaginationType": "full_numbers",
+                "aaSorting": [],
+                "bLengthChange": false,
+                "bPaginate": false,        
+                "aoColumnDefs": [
+                        { "bSearchable": false, "bVisible": false, "aTargets": [ groupColumn,2 ] },
+                        { "bSearchable": false, "bSortable":false, "aTargets": [ 6,8,9 ] },
+                        { "sType": "date-eu", "aTargets": [ 5 ] }
+                    ],
+                "oLanguage": {
+                    "sInfo": "Всего информационных баз: _TOTAL_ ",
+                    "sSearch": "Поиск: "
+                },
+                "oColVis": {
+                    "sAlign": "left"
+                },
+                "fnDrawCallback": function (oSettings) {
+if ( oSettings.aiDisplay.length == 0 )
+                {
+                    return;
+                }
+                var nTrs = $( '#data tbody tr' );
+                var iColspan = nTrs[0].getElementsByTagName( 'td' ).length;
+                var sLastGroup = "";
+                var groupNum = 0;
+                var selectoName = "";
+                for ( var i = 0; i < nTrs.length; i++ )
+                {
+                    var iDisplayIndex = oSettings._iDisplayStart + i;
+                    var sGroup = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[groupColumn];
+
+                    if ( sGroup != sLastGroup )
+                    {
+                        groupNum++;
+                        selectoName = "group_" + groupColumn + "_" + groupNum;
+                        var cookie = $.cookie( selectoName );
+                        var nGroup = $( "<tr></tr>" );                        
+                        var aLink = $('<a></a>').attr("href", "#"+selectoName).addClass("group_toggle").text( cookie != "none" && cookie != null ? "свернуть" : "развернуть" );
+                        var nCell = $( '<th></td>').addClass("group").attr("colspan",iColspan).text( sGroup ).append( " (" ).append( aLink ).append( ")" );
+                        $( nGroup ).wrapInner( nCell );
+                        $( nTrs[i] ).before( nGroup );
+                        sLastGroup = sGroup;
+                    }
+                    $( nTrs[i] ).addClass( selectoName ).toggle( cookie != "none" && cookie != null );
+                }
+                $( "a.group_toggle" ).on( "click", function ()
+                {
+            var href= $( this ).attr( "href" );
+            var groupName = href.substr( href.indexOf("#")+1);
+            var display = $( "table#data tr." + groupName ).toggle().css( "display" );
+            $.cookie( groupName, display );
+            $( this ).html( display == "none" ? "развернуть" : "свернуть" );
+            return false;
+        } );                    
+                }
+            });
+            new FixedHeader(oTable);
+            
+        });
+</script>
+@{int index = 1;}
+@(Html.Grid<IBaseReportView>("bases").Columns(column =>
+{
+    column.Custom(b => index++).HeaderAttributes(width => "2%").Named("#");
+    column.For(b => b.BaseName).HeaderAttributes(width => "8%").Named("Имя ИБ").Attributes(@class => "base_name");
+    column.For(b => b.ParentBaseName).HeaderAttributes(width => "8%").Named("Имя родительской ИБ");
+    column.Custom(b => String.Format("{0} ({1})", b.ServiceAddress, b.ServiceName)).HeaderAttributes(width => "8%").Named("Адрес сервиса");
+    column.For(b => b.DateComplete).HeaderAttributes(width => "8%").Named("Дата крайнего обновления").Format("{0:dd.MM.yyyy HH:mm:ss}").Attributes(@class => "date_complete");
+    column.For(b => b.GroupName).Encode(false).Named("Группа");
+    column.Custom(b => "").Attributes(br => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(br.Item.Status) + " status" } }).HeaderAttributes(width => "5");
+    column.Custom(b => (b.Message ?? string.Empty).Replace("\r\n", "<br/>")).HeaderAttributes(width => "25%").Named("Отчёт").Attributes(@class => "message");
+    column.Custom(b => string.Join("<br/>", b.Files.Select(c => string.Format("<b>{0}</b> ({1:0.00} Kb) - {2:dd.MM.yyyy HH:mm:ss}", c.Filename, c.Size / 1024f, c.DateCopied)))).Named("Последние загруженные файлы").HeaderAttributes(width => "40%").Attributes(@class => "files");
+    column.Custom(b => Button(b.BaseId, b.ServiceId, b.Status)).HeaderAttributes(width => "8%").Attributes(@class => "button");
+}).Attributes(id => "data", width => "100%").RowAttributes(br => new Dictionary<string, object>() { { "id", "row" + br.Item.BaseId } }))
+<div id="go_dialog" style="display: none">
+    @{Html.BeginForm("ExchangeGo", "Main", FormMethod.Get);}
+    @{Html.EndForm();}
+    <div id="go_status">
+    </div>
+</div>
+<div id="interrupt_dialog">
+    @{Html.BeginForm("ExtDirectoriesInterrupt", "Main", FormMethod.Get); }
+    <div id="dialog-confirm">
+        <b>Осторожно!</b> Не все файлы будут скопированы, что повлечет ошибки в работе обработок
+        1С!
+    </div>
+    @{Html.EndForm();}
+    <div id="interrupt_status">
+    </div>
+</div>

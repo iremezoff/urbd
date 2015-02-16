@@ -1,0 +1,84 @@
+﻿@using Ugoria.URBD.WebControl.Models
+@using Ugoria.URBD.Contracts.Services
+@using Ugoria.URBD.WebControl.Helpers
+@using Ugoria.URBD.WebControl.ViewModels
+@using MvcContrib.UI.Grid
+@{
+    ServiceViewModel service = (ServiceViewModel)ViewData["service"];
+    ViewBag.Title = string.Format("Сервис {0} ({1})", service.Name, service.Address);
+    Layout = "~/Views/Shared/_MainLayout.cshtml";    
+}
+<script src="@Url.Content("~/Scripts/jquery.jeditable.mini.js")" type="text/javascript"></script>
+<script language="javascript" type="text/javascript">
+        $(document).ready(function () {
+            var hash = window.location.hash;            
+            if(hash == undefined || hash.length == 0) hash = '#service-main';
+
+            $('input:submit').button();
+            
+            @if (ViewBag.AllowChange)
+            {
+            <text>
+            $(".servicename, .path1c, .address").editable(function(value, settings) {
+			        $(this).prev().attr("value", value);
+			        return(value);
+		        }).css("cursor", "pointer").each(function(el) { $(this).html($(this).html().trim());});
+                </text>
+            }             
+            });            
+</script>
+<h1>
+    @ViewBag.Title</h1>
+@{Html.RenderPartial("ServiceBaseMenu");}
+<div class="content">
+    <h3>
+        Общие настройки сервиса</h3>
+    @if (ViewData["success"] != null && !(bool)ViewData["success"])
+    {
+        @Html.Partial("ErrorBlock", "Параметры не сохранены. Имеются ошибки")
+    }
+    @if (ViewData["success"] != null && (bool)ViewData["success"])
+    {
+        @Html.Partial("InformationBlock", "Параметры успешно сохранены")
+    }
+    @Html.ValidationMessage("ReconfigureFail")
+    @{Html.BeginForm(); }
+    @Html.Hidden("service.ServiceId", service.ServiceId)
+    <table class="configuration">
+        <tr>
+            <td class="param-name">
+                @Html.Label("Name", "Имя сервиса: ")
+            </td>
+            @Html.Hidden("service.Name", service.Name)
+            <td class="servicename">@service.Name
+            </td>
+            <td>@Html.ValidationMessage("service.Name")
+            </td>
+        </tr>
+        <tr>
+            <td class="param-name">
+                @Html.Label("Address", "Адрес сервиса: ")
+            </td>
+            @Html.Hidden("service.Address", service.Address)
+            <td class="address">@service.Address
+            </td>
+            <td>@Html.ValidationMessage("service.Address")
+            </td>
+        </tr>
+        <tr>
+            <td class="param-name">
+                @Html.Label("Path1c", "Путь до исполнительного файла 1С: ")
+            </td>
+            @Html.Hidden("service.Path1c", service.Path1C)
+            <td class="path1c">@service.Path1C
+            </td>
+            <td>@Html.ValidationMessage("service.Path1c")
+            </td>
+        </tr>
+    </table>
+    @if (ViewBag.AllowChange)
+    {
+        <input type="submit" value="Сохранить" />
+    }
+    @{Html.EndForm();}
+</div>

@@ -1,0 +1,9 @@
+﻿@{
+    ViewBag.Title = "Error";
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+
+    <h2>
+        Ошибка подключения к центральному сервису</h2>
+    @((HandleErrorInfo)ViewData.Model).Exception.Message
+

@@ -1,0 +1,46 @@
+﻿@helper StatusColor(string status)
+    {
+    switch (status)
+    {
+        case "Critical":
+    <text>critical</text>
+            break;
+        case "Fail":
+    <text>fail</text>
+            break;
+        case "Warning":
+    <text>warning</text>
+            break;
+        case "Success":
+    <text>success</text>
+            break;
+        case "Busy":
+    <text>busy</text>
+            break;
+        case "Interrupt":
+    <text>interrupt</text>
+            break;
+        default: 
+    <text>blank</text>
+            break;
+    }
+}
+
+@helper StatusColorLog(string status)
+    {
+    switch (status)
+    {
+        case "F":
+    <text>fail</text>
+            break;
+        case "W":
+    <text>warning</text>
+            break;
+        case "I":
+    <text>success</text>
+            break;        
+        default: 
+    <text>blank</text>
+            break;
+    }
+}

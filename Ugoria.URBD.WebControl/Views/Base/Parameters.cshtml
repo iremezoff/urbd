@@ -1,0 +1,674 @@
+﻿@using Ugoria.URBD.WebControl.ViewModels
+@using Ugoria.URBD.WebControl.Models
+@using Ugoria.URBD.Contracts.Services
+@model Ugoria.URBD.WebControl.ViewModels.BaseViewModel
+@{
+    ServiceViewModel service = (ServiceViewModel)ViewData["service"];
+}
+<script type="text/javascript" src="@(Url.Content("~/Scripts/swfobject.js"))"></script>
+<script language="javascript" type="text/javascript">
+var extdirs = {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData["extdirectories"]).Select(d => string.Format("'{0}':{{local:'{1}', ftp: '{2}'}}", d.DirId, d.LocalPath, d.FtpPath)))))};
+        var packetTypes = {@(Html.Raw(string.Join(",", ((PacketType[])Enum.GetValues(typeof(PacketType))).Select(e => string.Format("'{0}': '{1}'", (char)e, e.ToString())))))};
+        var modeTypes = {@(Html.Raw(string.Join(",", ((ModeType[])Enum.GetValues(typeof(ModeType))).Select(e => string.Format("'{0}': '{1}'", (char)e, e.ToString())))))};
+     
+    $(document).ready(function () {
+
+        $("input:submit").button().click(function() {        
+            $(this).val("Сохранение...").after('<img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/> ');
+            return false;
+        });
+
+        $("a.addrow").click(function() {
+                var table = $(this).prev();
+                var newRow = $("tr.new-row", table).clone(false).removeClass("new-row"); 
+                $(":disabled", newRow).removeAttr("disabled");
+                $("tbody", table).append(newRow).trigger("changerows");
+                return false;
+            }).button({ icons: {
+                primary: "ui-icon-plusthick"
+                },
+                text: false
+            });
+
+        @if (ViewBag.AllowChange)
+        {
+        <text>
+        $.editable.addInputType('radio', {
+                element : function(settings, original) {
+                    var hidden = $('<input type="hidden"/>');
+                    $(this).append(hidden);
+                    return(hidden);
+                },           
+                content : function(data, settings, original) {
+                    if (String == data.constructor) {      
+                        eval ('var json = ' + data);
+                    } else {                    
+                        var json = data;
+                    }
+                    var div = $("<div>");                    
+                    var form = this;
+                    $(this).append(div);
+                    
+                    for (var key in json) {
+                        if (!json.hasOwnProperty(key)) {
+                            continue;
+                        }
+                        if ('checked' == key) {
+                            continue;
+                        }
+                        var option = $('<input type="radio"/>').attr("name", $(original).attr("id")).attr("id", $(original).attr("id")+"_"+key).val(key).append(json[key]).one("click",function() {                        
+                            $(':hidden', form).val($(this).val());  
+                            form.submit();
+                            return false;
+                            });
+                        var label = $('<label>').attr('for', $(original).attr("id")+"_"+key).val(key).append(json[key]);
+                        $('div', this).append(option).append(label);    
+                    }
+                    $('div', this).children("input").each(function() {
+                        if (//$(this).val() == data.checked || 
+                            $(this).text() == $.trim(original.revert)) {
+                                $(this).attr('checked', 'checked');
+                        }
+                    });                    
+                    $(form).buttonset(); 
+                }
+            });
+        $(".basename, .username, .password, .basepath").editable(function(value, settings) {
+                    $(this).prev().attr("value", value);
+                    return(value);
+                }, {
+                    type: 'text',
+                    placeholder: 'Нажмите для ввода'
+                }).css("cursor", "pointer").each(function(el) { $(this).html($(this).html().trim());});
+
+                $("table#schedulemlgcollect tbody").on("changerows", function() {
+                var trs = $("tr:not(.new-row)", this);
+                $("input.ScheduleId:hidden", trs).attr("name", function(index) { return "base.ScheduleMlgCollectList["+index+"].ScheduleId"});
+                $("input.Time:hidden", trs).attr("name", function(index) { return "base.ScheduleMlgCollectList["+index+"].Time"});
+
+                $(".time").editable(function(value, settings) {
+                    $(this).prev().attr("value", value);
+                    return(value);
+                }).on("click", function() {            
+                    $(':text',this).timeEntry({
+                        show24Hours: true,
+                        spinnerImage: ''
+                    });
+                }).css("cursor","pointer");
+                deleteRow(this);
+            }).trigger("changerows");
+
+            $("table#scheduleextdirs tbody").on("changerows", function() {
+                var trs = $("tr:not(.new-row)", this);
+                $("input.ScheduleId:hidden", trs).attr("name", function(index) { return "base.ScheduleExtDirectoriesList["+index+"].ScheduleId"});
+                $("input.Time:hidden", trs).attr("name", function(index) { return "base.ScheduleExtDirectoriesList["+index+"].Time"});
+
+                $(".time").editable(function(value, settings) {
+                    $(this).prev().attr("value", value);
+                    return(value);
+                }).on("click", function() {            
+                    $(':text',this).timeEntry({
+                        show24Hours: true,
+                        spinnerImage: ''
+                    });
+                }).css("cursor","pointer");
+                deleteRow(this);
+            }).trigger("changerows");
+            
+            $("table#scheduleexchange tbody").on("changerows", function() {
+                var trs = $("tr:not(.new-row)", this);
+                $("input.ScheduleId:hidden", trs).attr("name", function(index) { return "base.ScheduleExchangeList["+index+"].ScheduleId"});
+                $("input.ModeType:hidden", trs).attr("name", function(index) { return "base.ScheduleExchangeList["+index+"].Mode"});
+                $("input.Time:hidden", trs).attr("name", function(index) { return "base.ScheduleExchangeList["+index+"].Time"});
+                
+                $(".time").editable(function(value, settings) {
+                    $(this).prev().attr("value", value);
+                    return(value);
+                }).on("click", function() {            
+                    $(':text',this).timeEntry({
+                        show24Hours: true,
+                        spinnerImage: ''
+                    });
+                }).css("cursor","pointer");                       
+            
+                $(".mode").editable(function(value, settings) {
+                    $(this).prev().attr("value", value); 
+                    return(settings.data[value]); 
+                    },  {
+                        type: 'radio',
+                        data: modeTypes
+                    }
+                ).attr("id", function(arr) {
+                    return "exchsched"+arr;
+                    }).css("cursor","pointer");
+                deleteRow(this);
+            }).trigger("changerows");
+
+            $("table#packets tbody").on("changerows", function() {
+                var trs = $("tr:not(.new-row)", this);
+                $("input.PacketId:hidden", trs).attr("name", function(index) { return "base.PacketList["+index+"].PacketId"});
+                $("input.FileName:hidden", trs).attr("name", function(index) { return "base.PacketList["+index+"].FileName"});
+                $("input.Type:hidden", trs).attr("name", function(index) { return "base.PacketList["+index+"].Type"});
+
+                $(".packettype", this).editable(function(value, settings) {
+                    $(this).prev().attr("value", value); 
+                    return(settings.data[value]); 
+                    }, {
+                        type: 'radio',
+                        data: packetTypes
+                }).attr("id", function(arr) {return "packet"+arr;}).css("cursor","pointer");
+
+                $(".packetname").editable(function(value, settings) {
+                    $(this).prev().attr("value", value); 
+                    return(value); 
+                }, {
+                    type: 'text',
+                    placeholder: 'Нажмите для ввода'
+                }).css("cursor","pointer").each(function() {$(this).html($(this).html().trim());});
+                deleteRow(this);
+            }).trigger("changerows");
+
+            $("table#extdirs tbody").on("changerows", function() {
+                var trs = $("tr:not(.new-row)", this);
+                $("input.DirId:hidden", trs).attr("name", function(index) { return "base.ExtDirectoriesList["+index+"].DirId"});
+                $("input.LocalPath:hidden", trs).attr("name", function(index) { return "base.ExtDirectoriesList["+index+"].LocalPath"});
+                $("input.FtpPath:hidden", trs).attr("name", function(index) { return "base.ExtDirectoriesList["+index+"].FtpPath"});
+                
+                $(".localpath", this).editable(function(value, settings) {
+                    $(this).prev().attr("value", value);
+                    $(this).removeClass("localpath").off("click.editable").css("cursor", "default");
+                    return(settings.data[value]); 
+                },  {
+                    type: 'select',
+                    data: {@(Html.Raw(string.Join(",", ((IEnumerable<IExtDirectory>)ViewData["extdirectories"]).Select(d => string.Format("'{0}': '{1}'", d.DirId, d.LocalPath)))))},
+                    onblur: 'ignore',
+                    submit: 'OK'
+                }).css("cursor","pointer").click();
+                function selectDir(e) {                    
+                    var tr = $(this).closest('tr');
+                    $('td.ftp', tr).html(extdirs[$(e.target).val()].ftp);
+                    $('input.LocalPath:hidden', tr).val(extdirs[$(e.target).val()].local);
+                    $('input.FtpPath:hidden', tr).val(extdirs[$(e.target).val()].ftp);
+                }
+                $(".localpath select").change(selectDir).change();
+                deleteRow(this);
+            }).trigger("changerows");
+
+            $("tr.new-row input:hidden").attr("disabled", "");
+
+            
+        
+    
+            </text>
+        }
+
+        
+        
+
+
+
+
+
+
+
+
+        
+
+
+            @if (ViewBag.IsAdmin)
+            {
+            <text>
+            $(".service").editable(function(value, settings) {
+                    $(this).prev().attr("value", value);
+                    return(settings.data[value]);
+                }, {
+                    type: 'select',
+                    data: $.extend(services, @Model.ServiceId ),
+                    submit: 'Ok'
+                }).css("cursor", "pointer");
+                </text>
+            }
+            
+            $('div#chart_wrap').css('display', 'none');
+            $('a.schedule_show').click(function () {
+                var wrap = $('div#chart_wrap');
+                if ($(wrap).parent()[0] === $(this).parent()[0]) {
+                    $(wrap).toggle();
+                }
+                else $(wrap).insertAfter($(this)).show();
+                $('div#chart_wrap select#scale').change();
+                return false;
+            });           
+            
+            $('div#chart_wrap select#scale').change(function () {                
+                var link = '@(Url.Action("BarData", new { id = ViewContext.RequestContext.RouteData.Values["id"] }))?scale='+ $(this).val();                
+                swfobject.embedSWF("@(Url.Content("~/Content/open-flash-chart.swf"))", "schedule_chart", "100%", "200",
+                    "9.0.0", "expressInstall.swf", 
+                    {"data-file": link}
+                 );
+            });
+
+            $('div#ref_chart_wrap').css('display', 'none');
+            $('a.reference_show').click(function () {
+                var wrap = $('div#ref_chart_wrap');
+                if ($(wrap).parent()[0] === $(this).parent()[0]) {
+                    $(wrap).toggle();
+                }
+                else $(wrap).insertAfter($(this)).show();
+                $('div#ref_chart_wrap select#scaleRef').change();
+                return false;
+            });           
+            
+            $('div#ref_chart_wrap select#scaleRef').change(function () {
+                var link = '@(Url.Action("RefBarData", new { id = ViewContext.RequestContext.RouteData.Values["id"] }))?scale='+ $(this).val();                
+                swfobject.embedSWF("@(Url.Content("~/Content/open-flash-chart.swf"))", "reference_chart", "100%", "200",
+                    "9.0.0", "expressInstall.swf", 
+                    {"data-file": link}
+                 );
+            });
+            
+            swfobject.enableUriEncoding(); //turns on encodeURIComponent
+            swfobject.enableUriEncoding(true);
+            swfobject.embedSWF("@(Url.Content("~/Content/open-flash-chart.swf"))", "schedule_chart", "100%", "200", "9.0.0", "expressInstall.swf", { "data-file": "@(Url.Action("BarData", "Base", new { id = ViewContext.RequestContext.RouteData.Values["id"], scale = 30 }))" });    
+            swfobject.embedSWF("@(Url.Content("~/Content/open-flash-chart.swf"))", "reference_chart", "100%", "200", "9.0.0", "expressInstall.swf", { "data-file": "@(Url.Action("RefBarData", "Base", new { id = ViewContext.RequestContext.RouteData.Values["id"], scale = 30 }))" });    
+    });
+</script>
+@if (ViewData["success"] != null && !(bool)ViewData["success"])
+{
+    @Html.Partial("ErrorBlock", "Параметры не сохранены. Имеются ошибки")
+}
+@if (ViewData["success"] != null && (bool)ViewData["success"])
+{
+    @Html.Partial("InformationBlock", "Параметры успешно сохранены")
+}
+@Html.ValidationMessage("ReconfigureFail")
+<h4>
+    Основные параметры</h4>
+@if (ViewBag.AllowChange)
+{
+    Html.BeginForm();
+}
+@Html.Hidden("base.BaseId", Model.BaseId)
+@Html.Hidden("base.Name", Model.Name)
+<table class="configuration">
+    <tr>
+        <td class="param-name">
+            @Html.Label("base.ServiceId", "Сервис: ")
+        </td>
+        @Html.Hidden("base.ServiceId", Model.ServiceId)
+        <td class="service">
+            @service.Name (@service.Address)
+        </td>
+        <td>
+            @Html.ValidationMessage("ServiceError")
+        </td>
+    </tr>
+    <tr>
+        <td class="param-name">
+            @Html.Label("base.Path", "Путь к директории ИБ: ")
+        </td>
+        @Html.Hidden("base.Path", Model.Path)
+        <td class="basepath">
+            @Model.Path
+        </td>
+        <td>
+            @Html.ValidationMessage("base.Path")
+        </td>
+    </tr>
+    <tr>
+        <td class="param-name">
+            @Html.Label("base.Username", "Имя пользователя: ")
+        </td>
+        @Html.Hidden("base.Username", Model.Username)
+        <td class="username">
+            @Model.Username
+        </td>
+        <td>
+            @Html.ValidationMessage("base.Username")
+        </td>
+    </tr>
+    <tr>
+        <td class="param-name">
+            @Html.Label("base.Password", "Пароль: ")
+        </td>
+        @Html.Hidden("base.Password", Model.Password)
+        <td class="password">
+            @Model.Password
+        </td>
+        <td>
+            @Html.ValidationMessage("base.Password")
+        </td>
+    </tr>
+</table>
+<h4>
+    Связанные ИБ</h4>
+<a href="#" class="reference_show">Посмотреть расписание связанных ИБ</a>
+<div id="ref_chart_wrap">
+    Временной интервал:
+    @(Html.DropDownList("scaleRef", new List<SelectListItem>() { new SelectListItem { Value = "1", Text="1 мин." }, 
+                    new SelectListItem { Value = "10", Text="10 мин." },
+                    new SelectListItem { Value = "20", Text="20 мин." },
+                    new SelectListItem { Value = "30", Text="30 мин.", Selected=true },
+                    new SelectListItem { Value = "60", Text="60 мин." }            
+                },
+                new { style = "display: inline-block" }))
+    <div id="reference_chart"></div>
+</div>
+<br />
+<div style="display: inline-block">
+    <h4>
+        Расписание обмена</h4>
+    <table id="scheduleexchange">
+        <thead>
+            <tr>
+                <th class="ui-state-default">
+                    Время
+                </th>
+                <th class="ui-state-default">
+                    Режим
+                </th>
+                @if (ViewBag.AllowChange)
+                { 
+                    <th class="ui-state-default">
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="new-row">
+                @Html.Hidden(String.Format("base.ScheduleExchangeList[].ScheduleId"), 0, new { @class = "ScheduleId" })
+                @Html.Hidden(String.Format("base.ScheduleExchangeList[].Time"), "00:00", new { @class = "Time" })
+                <td class="time">
+                    00:00
+                </td>
+                @Html.Hidden(String.Format("base.ScheduleExchangeList[].Mode"), "P", new { @class = "ModeType" })
+                <td class="mode">
+                    Passive
+                </td>
+                @if (ViewBag.AllowChange)
+                { 
+                    <td>
+                        @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+                    </td>
+                }
+            </tr>
+            @{int rse = 0;}
+            @foreach (var schedule in Model.ScheduleExchangeList)
+            {
+                <tr>
+                    @Html.Hidden(String.Format("base.ScheduleExchangeList[{0}].ScheduleId", rse), schedule.ScheduleId, new { @class = "ScheduleId" })
+                    @Html.Hidden(String.Format("base.ScheduleExchangeList[{0}].Time", rse), schedule.Time, new { @class = "Time" })
+                    <td class="time">
+                        @schedule.Time
+                    </td>
+                    @Html.Hidden(String.Format("base.ScheduleExchangeList[{0}].Mode", rse++), schedule.Mode, new { @class = "ModeType" })
+                    <td class="mode">
+                        @((ModeType)schedule.Mode[0])
+                    </td>
+                    @if (ViewBag.AllowChange)
+                    { 
+                        <td>
+                            @Html.ActionLink("Удалить", "Delete", new { id = schedule.ScheduleId }, new { @class = "delete-row" })
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (ViewBag.AllowChange)
+    { 
+        <a href="#" class="addrow">добавить</a>
+    }
+    <br />
+</div>
+<div style="display: inline-block; padding-left: 50px; vertical-align: top">
+    <h4>
+        Пакеты</h4>
+    @Html.ValidationMessage("base.PacketList.FileName")
+    <table id="packets">
+        <thead>
+            <tr>
+                <th class="ui-state-default">
+                    Имя файла
+                </th>
+                <th class="ui-state-default">
+                    Тип
+                </th>
+                @if (ViewBag.AllowChange)
+                { 
+                    <th class="ui-state-default">
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="new-row">
+                @Html.Hidden("base.PacketList[].PacketId", 0, new { @class = "PacketId" })
+                @Html.Hidden("base.PacketList[].FileName", string.Empty, new { @class = "FileName" })
+                <td class="packetname">
+                </td>
+                @Html.Hidden(String.Format("base.PacketList[].Type"), "L", new { @class = "Type" })
+                <td class="packettype">
+                    Load
+                </td>
+                @if (ViewBag.AllowChange)
+                { 
+                    <td>
+                        @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+                    </td>
+                }
+            </tr>
+            @{int rp = 0;}
+            @foreach (PacketViewModel packet in Model.PacketList)
+            {                            
+                <tr>
+                    @Html.Hidden(string.Format("base.PacketList[{0}].PacketId", rp), packet.PacketId, new { @class = "PacketId" })
+                    @Html.Hidden(string.Format("base.PacketList[{0}].FileName", rp), packet.FileName, new { @class = "FileName" })
+                    <td class="packetname">
+                        @packet.FileName
+                    </td>
+                    @Html.Hidden(string.Format("base.PacketList[{0}].Type", rp++), packet.Type, new { @class = "Type" })
+                    <td class="packettype">
+                        @((PacketType)packet.Type[0])
+                    </td>
+                    @if (ViewBag.AllowChange)
+                    {
+                        <td>
+                            @Html.ActionLink("Удалить", "Delete", new { id = packet.PacketId }, new { @class = "delete-row" })
+                        </td>
+                    }
+                </tr>                        
+            }
+        </tbody>
+    </table>
+    @if (ViewBag.AllowChange)
+    {
+        <a href="#" class="addrow">добавить</a>
+    }
+    <br />
+</div>
+<br />
+<a href="#" class="schedule_show">Посмотреть распределение обменов всего сервиса</a><br />
+<div id="chart_wrap">
+    Временной интервал:
+    @(Html.DropDownList("scale", new List<SelectListItem>() { new SelectListItem { Value = "1", Text="1 мин." }, 
+                    new SelectListItem { Value = "10", Text="10 мин." },
+                    new SelectListItem { Value = "20", Text="20 мин." },
+                    new SelectListItem { Value = "30", Text="30 мин.", Selected=true },
+                    new SelectListItem { Value = "60", Text="60 мин." }            
+                },
+                new { style = "display: inline-block" }))
+<div id="schedule_chart"></div>
+</div>
+<div style="display: inline-block; vertical-align: top">
+    <h4>
+        Расписание обновления ExtDirectories</h4>
+    <table id="scheduleextdirs">
+        <thead>
+            <tr>
+                <th class="ui-state-default">
+                    Время
+                </th>
+                @if (ViewBag.AllowChange)
+                { 
+                    <th class="ui-state-default">
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="new-row">
+                @Html.Hidden(String.Format("base.ScheduleExtDirectoriesList[].ScheduleId"), 0, new { @class = "ScheduleId" })
+                @Html.Hidden(String.Format("base.ScheduleExtDirectoriesList[].Time"), "00:00", new { @class = "Time" })
+                <td class="time">
+                    00:00
+                </td>
+                <td>
+                    @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+                </td>
+            </tr>
+            @{int rsed = 0;}
+            @foreach (var schedule in Model.ScheduleExtDirectoriesList)
+            {
+                <tr>
+                    @Html.Hidden(String.Format("base.ScheduleExtDirectoriesList[{0}].ScheduleId", rsed), schedule.ScheduleId, new { @class = "ScheduleId" })
+                    @Html.Hidden(String.Format("base.ScheduleExtDirectoriesList[{0}].Time", rsed++), schedule.Time, new { @class = "Time" })
+                    <td class="time">
+                        @schedule.Time
+                    </td>
+                    @if (ViewBag.AllowChange)
+                    {
+                        <td>
+                            @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (ViewBag.AllowChange)
+    {
+        <a href="#" class="addrow">добавить</a>
+    }
+</div>
+<div style="display: inline-block; vertical-align: top; padding-left: 50px;">
+    <h4>
+        Расширенные директории</h4>
+    <table id="extdirs">
+        <thead>
+            <tr>
+                <th class="ui-state-default">
+                    Локальный путь
+                </th>
+                <th class="ui-state-default">
+                    Путь на FTP
+                </th>
+                @if (ViewBag.AllowChange)
+                { 
+                    <th class="ui-state-default">
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="new-row">
+                @Html.Hidden("base.ExtDirectoriesList[].LocalPath", string.Empty, new { @class = "LocalPath" })
+                @Html.Hidden("base.ExtDirectoriesList[].FtpPath", string.Empty, new { @class = "FtpPath" })
+                @Html.Hidden("base.ExtDirectoriesList[].DirId", 0, new { @class = "DirId" })
+                <td class="localpath">
+                </td>
+                <td class="ftp">
+                </td>
+                @if (ViewBag.AllowChange)
+                { 
+                    <td>
+                        @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+                    </td>
+                }
+            </tr>
+            @{int red = 0;}
+            @foreach (var extDirectory in Model.ExtDirectoriesList)
+            {
+                <tr>
+                    @Html.Hidden(String.Format("base.ExtDirectoriesList[{0}].LocalPath", red), extDirectory.LocalPath, new { @class = "LocalPath" })
+                    @Html.Hidden(String.Format("base.ExtDirectoriesList[{0}].FtpPath", red), extDirectory.FtpPath, new { @class = "FtpPath" })
+                    @Html.Hidden(String.Format("base.ExtDirectoriesList[{0}].DirId", red++), extDirectory.DirId, new { @class = "DirId" })
+                    <td>
+                        @extDirectory.LocalPath
+                    </td>
+                    <td class="ftp">
+                        @extDirectory.FtpPath
+                    </td>
+                    @if (ViewBag.AllowChange)
+                    { 
+                        <td>
+                            @Html.ActionLink("Удалить", "Delete", new { id = extDirectory.DirId }, new { @class = "delete-row" })
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (ViewBag.AllowChange)
+    { 
+        <a href="#" class="addrow">добавить</a>
+    }</div>
+<br />
+<div style="display: inline-block; vertical-align: top;">
+    <h4>
+        Расписание сканирования Mlg-лога</h4>
+    <table id="schedulemlgcollect">
+        <thead>
+            <tr>
+                <th class="ui-state-default">
+                    Время
+                </th>
+                @if (ViewBag.AllowChange)
+                { 
+                    <th class="ui-state-default">
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="new-row">
+                @Html.Hidden(String.Format("base.ScheduleMlgCollectList[].ScheduleId"), 0, new { @class = "ScheduleId" })
+                @Html.Hidden(String.Format("base.ScheduleMlgCollectList[].Time"), "00:00", new { @class = "Time" })
+                <td class="time">
+                    00:00
+                </td>
+                <td>
+                    @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+                </td>
+            </tr>
+            @{int rsmc = 0;}
+            @foreach (var schedule in Model.ScheduleMlgCollectList)
+            {
+                <tr>
+                    @Html.Hidden(String.Format("base.ScheduleMlgCollectList[{0}].ScheduleId", rsmc), schedule.ScheduleId, new { @class = "ScheduleId" })
+                    @Html.Hidden(String.Format("base.ScheduleMlgCollectList[{0}].Time", rsmc++), schedule.Time, new { @class = "Time" })
+                    <td class="time">
+                        @schedule.Time
+                    </td>
+                    @if (ViewBag.AllowChange)
+                    {
+                        <td>
+                            @Html.ActionLink("Удалить", "Delete", new { }, new { @class = "delete-row" })
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (ViewBag.AllowChange)
+    {
+        <a href="#" class="addrow">добавить</a>
+    }
+</div>
+@if (ViewBag.AllowChange)
+{
+    <br />
+    <br />
+    <input type="submit" value="Сохранить" />
+    Html.EndForm();
+}

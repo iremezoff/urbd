@@ -1,0 +1,45 @@
+﻿@using Ugoria.URBD.WebControl.Models
+@using Ugoria.URBD.WebControl.Helpers
+@using MvcContrib.UI.Grid
+@model IEnumerable<Ugoria.URBD.WebControl.Models.ComponentReportStatusView>
+<script language="javascript" type="text/javascript">
+    $(document).ready(function () {
+        $("div.notify_group").buttonset();
+        $("input:submit").button().click(function () {
+            $(this).val("Сохранение...").after('<img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/> ');
+            return false;
+        });
+
+        $("#user_notification").change(function () {
+            $(this).next().click();
+        });
+    });
+</script>
+<h4>
+    Настройка оповещений</h4>
+@if (ViewBag.IsAdmin)
+{
+    Html.BeginForm("Notifications", "Base", FormMethod.Get);
+    @(Html.DropDownList("userId", ((IEnumerable<UserBasesPermission>)ViewData["permissions"]).Select<UserBasesPermission, SelectListItem>(ubp => new SelectListItem { Value = ubp.user_id.ToString(), Text = ubp.User.user_name, Selected = ubp.user_id == (int)ViewData["user_id"] }),
+                new { style = "display: inline-block", id = "user_notification" }))
+    <input type="submit" value="Выбрать" style="display: none"/><br />
+    <span>Если вашей учетки нет в списке, необходимо добавить себя в список прав доступа на соответствующей вкладке</span>
+    Html.EndForm();
+}
+<br />
+@{Html.BeginForm();}
+@Html.Hidden("userId", ViewData["user_id"])
+@(Html.Grid(Model).Columns(c =>
+        {
+            int i = 0;
+            c.For(r => r.Component.Name).Named("Модуль").HeaderAttributes(@class => "ui-state-default");
+            c.Custom(r => Html.Hidden(string.Format("notifies[{0}].NotificationId", i), r.Notification != null ? r.Notification.notification_id : 0, new { id = "NotificationId" }).ToHtmlString() + Html.Hidden(string.Format("notifies[{0}].ComponentStatusId", i), r.ComponentReportStatusId).ToHtmlString())
+                .Attributes(new Func<GridRowViewData<ComponentReportStatusView>, Dictionary<string, object>>(item => new Dictionary<string, object>() { { "class", RazorHelpers.StatusColor(item.Item.ReportStatus.Name) } })).HeaderAttributes(width => "5", @class => "ui-state-default");
+            c.For(r => r.ReportStatus.Name).HeaderAttributes(@class => "ui-state-default").Named("Статус");
+            c.Custom(r => "<div class=\"notify_group\">" + Html.CheckBox(string.Format("notifies[{0}].OnMail", i), (r.Notification != null && r.Notification.on_mail.HasValue && r.Notification.on_mail.Value), new { @class = "notify_checkbox" }).ToHtmlString() + Html.Label(string.Format("notifies[{0}].OnMail", i), "E-mail").ToHtmlString() +
+                          Html.CheckBox(string.Format("notifies[{0}].OnPhone", i), (r.Notification != null && r.Notification.on_phone.HasValue && r.Notification.on_phone.Value), new { @class = "notify_checkbox" }) + Html.Label(string.Format("notifies[{0}].OnPhone", i++), "SMS").ToHtmlString() + "</div>").HeaderAttributes(@class => "ui-state-default").Named("Оповещение");
+        }).Attributes(id => "notifications").RenderUsing(new CustomRenderer<ComponentReportStatusView>()))
+Подписка на оповещение по статусу "Busy" подразумевает получение сообщений о превышении
+максимального времени ожидания выполнения операции обмена или обновления.<br />
+<input type="submit" value="Сохранить" />
+@{Html.EndForm();}

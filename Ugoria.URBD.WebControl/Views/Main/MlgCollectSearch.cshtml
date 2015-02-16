@@ -1,0 +1,39 @@
+﻿@using Ugoria.URBD.WebControl.Models
+@using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Helpers
+@{
+    Layout = "~/Views/Main/_MlgCollectLayout.cshtml";  
+}
+<script language="javascript" type="text/javascript">
+    $(document).ready(function () {    
+        var reportTable = $("table#result").dataTable({
+            "bJQueryUI": true,
+            "bAutoWidth":false,
+            "aaSorting": [],
+            "bLengthChange": false,
+            "bDestroy": true,
+            "bPaginate": false,
+            "bFilter": false,
+            "aoColumnDefs": [                
+                { "sType": "date-eu", "aTargets": [ 6 ] }                        
+                ],
+            "oLanguage": {
+                "sUrl": "@(Url.Content("~/Scripts/ru_RU.txt"))"
+                }
+            });
+    });
+</script>
+@(Html.Grid((IEnumerable<ReportLog>)ViewData["logs"]).Columns(c =>
+{
+    c.Custom(b => b.Object != null ? b.Object.identifier : string.Empty).Named("Идентификатор");
+    c.Custom(b => b.Object != null ? b.Object.ObjectType.type : string.Empty).Named("Тип");
+    c.Custom(b => b.Object != null ? b.Object.ObjectType.name : string.Empty).Named("Название объекта");
+    c.Custom(b => string.Format("{0} ({1})", b.EventType.description, b.EventType.name)).Named("Действие");
+    c.Custom(b => string.Format("{0} ({1})", b.EventType.EventGroup.description, b.EventType.EventGroup.name)).Named("Группа действий");
+    c.For(b => b.date_message).Named("Дата действия");
+    c.Custom(b => b.account).Named("Пользователь");
+    c.Custom(b => b.Report.Base.Name).Named("ИБ");
+    c.Custom(b => b.Object != null ? b.Object.base_code : string.Empty).Named("Префикс ИБ");
+    c.For(b => b.information).Named("Информация");
+    c.For(b => b.additional).Named("Дополнительно");
+}).Attributes(id => "result", width=>"100%").RenderUsing(new CustomRenderer<ReportLog>()))

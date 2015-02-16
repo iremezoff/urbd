@@ -1,0 +1,114 @@
+﻿@using Ugoria.URBD.WebControl.Models
+@using Ugoria.URBD.WebControl.Helpers
+@using Ugoria.URBD.WebControl.ViewModels
+@using MvcContrib.UI.Grid
+@using Ugoria.URBD.Contracts.Services
+@{    
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+    BaseViewModel baseVM = (BaseViewModel)ViewData["base"];
+    ServiceViewModel service = (ServiceViewModel)ViewData["service"];
+    ViewBag.Title = string.Format("ИБ {0} (Сервис: {1})", baseVM.Name, service.Name);
+}
+<script src="@Url.Content("~/Scripts/jquery.maskedinput-1.3.1.min.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.timeentry.min.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery-ui-i18n.min.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.jeditable.mini.js")" type="text/javascript"></script>
+<script language="javascript" type="text/javascript">
+    var services = {@(Html.Raw(string.Join(",", ((IEnumerable<ServiceViewModel>)ViewData["services"]).Select(s => string.Format("\"{0}\": \"{1} ({2})\"", s.ServiceId, s.Name, s.Address)))))};
+
+    // on и off для предотвращения навешивания повторяющихся обработчиков
+    function deleteRow(table, except) 
+    {
+                $(".delete-row", table).button({ icons: {
+                    primary: "ui-icon-closethick"
+                },
+                text: false
+            }).off("click").on("click", function() {
+                if(!except)
+                    $(this).closest('tr').remove();
+                else
+                    $(this).closest('tr').css("display", "none").find("input:not("+except+")").val("");
+                $(table).trigger("changerows");
+                return false;
+            });                   
+        }
+
+    function form_process(ui) 
+    {
+        $("form", ui.panel).each(function(index, el) {
+            $(":submit", this).on("click", function () {
+            ui.panel.prepend($('<img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/><span>Запрос...</span>'));
+            $.ajax({
+                url: $(el).attr("action"),
+                type: $(el).attr("method"),
+                data: $(el).serialize(),
+                dataType: "html",
+                success: function (result) {
+                    $(ui.panel).html(result);
+                    form_process(ui);
+                },
+                error: function(xmlHttpRequest, error) {
+                ui.panel.html($("<span>").text("Не удалось загрузить форму конфигурации. Сообщение: " + error).addClass("field-validation-error"));
+                }
+                });            
+            return false;
+            });
+        });
+    }
+    
+    $(document).ready(function () 
+    {
+        $.datepicker.setDefaults($.extend($.datepicker.regional["ru"]));
+        
+        $("#tabs").tabs({
+            beforeLoad: function (event, ui) {
+                ui.ajaxSettings.error = function (jqXHR, textStatus, errorThrown) {
+                    ui.panel.html($("<span>").text("Не удалось загрузить форму конфигурации. Сообщение: " + errorThrown).addClass("field-validation-error"));
+                }
+                if (ui.tab.data("loaded")) {
+                    event.preventDefault();
+                    return;
+                }
+                ui.jqXHR.success(function () {                    
+                    ui.tab.data("loaded", true);
+                });
+                ui.panel.html($('<img src="@(Url.Content("~/Content/images/ajax-loader.gif"))"/><span>Загрузка...</span>'));
+            },
+            load: function (event, ui) {
+                form_process(ui);
+            }
+        });
+        
+        var hashArr = /#(\w+)/.exec(location.hash);
+        if(hashArr && hashArr.length>1 && (link=$("div#tabs ul a."+hashArr[1])).size()>0)
+            $(link).click();
+    });
+</script>
+<h1>
+    Сервис
+    @service.Name
+    (@service.Address)</h1>
+@Html.Partial("ServiceBaseMenu")
+<div class="content">
+    <h3>
+        @baseVM.Name</h3>
+    <div id="tabs">
+        <ul>
+            <li><a href="@(Url.Action("Parameters", new { id = ViewContext.RequestContext.RouteData.Values["id"] }))">
+                Параметры</a></li>
+            @if (ViewBag.IsAdmin)
+            { 
+                <li><a href="@(Url.Action("Permissions", new { id = ViewContext.RequestContext.RouteData.Values["id"] }))">
+                    Права доступа</a></li>
+            }
+            <li><a href="@(Url.Action("Notifications", new { id = ViewContext.RequestContext.RouteData.Values["id"] }))">
+                Оповещения</a></li>
+            <li><a href="@(Url.Action("ExchangeReport", new { id = ViewContext.RequestContext.RouteData.Values["id"] }))" class="exchange">
+                Отчёты обмена</a></li>
+            <li><a href="@(Url.Action("ExtDirectoryReport", new { id = ViewContext.RequestContext.RouteData.Values["id"] }))" class="extdirectories">
+                Отчёты ExtDirectories</a></li>
+            <li><a href="@(Url.Action("MlgCollectReport", new { id = ViewContext.RequestContext.RouteData.Values["id"] }))" class="mlgcollect">
+                Отчёты Mlg-лога</a></li>
+        </ul>
+    </div>
+</div>

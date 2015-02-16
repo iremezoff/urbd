@@ -1,0 +1,106 @@
+﻿@using MvcContrib.UI.Grid
+@using Ugoria.URBD.WebControl.Models
+<script language="javascript" type="text/javascript">
+    $(document).ready(function () {
+        $(".value").css("cursor", "pointer").each(function (el) {
+            $(this).html($(this).html().trim());
+            var type = $(this).siblings(".type").val();
+            if (type == 'integer') {
+                $(this).editable(function (value, settings) {
+                    $(this).prev().attr("value", value);
+                    return (value);
+                }, {
+                    tooltip: 'Нажмите для редактирования',
+                    placeholder: 'Нажмите для ввода',
+                    width: 230
+                }).click(function () {
+                    $(":text", this).keydown(function (event) {
+                        // Allow: backspace, delete, tab, escape, and enter
+                        if (event.keyCode == 46 || event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 13 ||
+                        // Allow: Ctrl+A
+                            (event.keyCode == 65 && event.ctrlKey === true) ||
+                        // Allow: home, end, left, right
+                            (event.keyCode >= 35 && event.keyCode <= 39)) {
+                            // let it happen, don't do anything
+                            return;
+                        }
+                        else {
+                            // Ensure that it is a number and stop the keypress
+                            if (event.shiftKey || (event.keyCode < 48 || event.keyCode > 57) && (event.keyCode < 96 || event.keyCode > 105)) {
+                                event.preventDefault();
+                            }
+                        }
+                    });
+                });
+            }
+            else if (type == "boolean") {
+                $(this).editable(function (value, settings) {
+                    $(this).prev().attr("value", value);
+                    return (value);
+                }, {
+                    type: 'select',
+                    data: { 'true': 'true', 'false': 'false' },
+                    submit: 'OK'
+                });
+            }
+            else {
+                $(this).editable(function (value, settings) {
+                    $(this).prev().attr("value", value);
+                    return (value);
+                }, {
+                    tooltip: 'Нажмите для редактирования',
+                    placeholder: 'Нажмите для ввода',
+                    width: 230
+                });
+            }
+        });
+        $(":submit").button();
+    });
+</script>
+        <h4>
+                Общие настройки</h4>
+<div style="width: 70%">
+    @if (ViewData["success"] != null && (bool)ViewData["success"])
+    {
+        @Html.Partial("InformationBlock", "Настройки успешно сохранены")
+    }
+</div>
+
+        @Html.ValidationMessage("ReconfigureFail")
+@{Html.BeginForm();}
+<table class="configuration" style="width: 70%">
+    <thead>
+        <tr>
+            <th class="ui-state-default" style="text-align: right">
+                Параметр
+            </th>
+            <th class="ui-state-default">
+                Значение
+            </th>
+            <th class="ui-state-default">
+                Ключ
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @{int i = 0;}
+        @foreach (var set in (IEnumerable<ISetting>)ViewData["settings"])
+        {
+            <tr>
+                @Html.Hidden(string.Format("Type", i), @set.Type, new { @class = "type" })
+                <td style="font-weight: bold; text-align: right;">@set.Description
+                </td>
+                @Html.Hidden(string.Format("settings[{0}].Value", i), @set.Value)
+                <td class="value">@set.Value
+                </td>
+                @Html.Hidden(string.Format("settings[{0}].Key", i++), @set.Key)
+                <td>@set.Key
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<input type="submit" value="Сохранить" />
+@{Html.EndForm();}
+
+

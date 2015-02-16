@@ -1,0 +1,26 @@
+﻿@using Ugoria.URBD.WebControl.ViewModels
+@using Ugoria.URBD.WebControl.Helpers
+@{
+    ServiceViewModel service = (ServiceViewModel)ViewData["service"];
+    bool allowAccess = SessionStore.IsAllowedService(SessionStore.GetCurrentUser(), service.ServiceId);
+}
+<div class="sidebar">
+    @if (allowAccess)
+    { 
+        <ul>
+            <li><a href="@(Url.Action("Edit", "Service", new { id = service.ServiceId }))">Общие
+                настройки сервиса</a></li>
+            <li><a href="@(Url.Action("Logs", "Service", new { id = service.ServiceId }))">Логи
+                сервиса</a></li>
+        </ul>    
+    <br />
+    }
+    <b>Информационные базы:</b>
+    <ul>
+        @foreach (var baseVM in (IEnumerable<BaseViewModel>)ViewData["bases"])
+        {
+            <li><a href="@(Url.Action("Edit", "Base", new { id = baseVM.BaseId }))">
+                @baseVM.Name</a></li>
+        }
+    </ul>
+</div>
